@@ -1,0 +1,30 @@
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model ChargingSession {
+  id              String   @id @default(uuid())
+  date            DateTime
+  connector        String   // "CCS-DC", "CCS-AC", "Home", etc.
+  soc_start       Int
+  soc_end         Int
+  energy_kwh      Float
+  price_per_kwh   Float
+  total_cost      Float
+  duration_seconds Int?
+  odo_start_km    Int?
+  odo_end_km      Int?
+  note            String?
+
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  @@index([date])
+  @@index([connector])
+}

@@ -1,0 +1,19 @@
+{
+  "name": "mobility-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate deploy",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@fastify/cors": "^8.5.0",
+    "@prisma/client": "^5.19.1",
+    "fastify": "^4.28.1"
+  },
+  "devDependencies": {
+    "prisma": "^5.19.1"
+  }
+}

@@ -1,0 +1,65 @@
+services:
+  db:
+    image: postgres:16
+    container_name: mobility_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-mobility}
+      POSTGRES_USER: ${POSTGRES_USER:-mobility}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me_strong_password}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: ./api
+    container_name: mobility_api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-mobility}:${POSTGRES_PASSWORD:-change_me_strong_password}@db:5432/${POSTGRES_DB:-mobility}?schema=public"
+      PORT: "3000"
+      NODE_ENV: "production"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 15s
+    ports:
+      # API nur über Tailscale (privat)
+      - "${TAILSCALE_IP:-100.123.167.33}:${API_PORT:-18800}:3000"
+
+  ui:
+    build:
+      context: ./ui
+      args:
+        # Optional für feste API-URLs beim Build; leer = UI nutzt Hostname:18800.
+        VITE_API_BASE: ${VITE_API_BASE:-}
+        # Optional für austauschbare Hero-/Fahrzeugprofile im UI-Build.
+        VITE_VEHICLE_PROFILE: ${VITE_VEHICLE_PROFILE:-}
+    container_name: mobility_ui
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
+      interval: 15s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    ports:
+      # UI lokal für Caddy Reverse Proxy (öffentlich via HTTPS)
+      - "127.0.0.1:${UI_PORT_LOCAL:-18801}:80"
+      # UI zusätzlich über Tailscale-IP (privat)
+      - "${TAILSCALE_IP:-100.123.167.33}:${UI_PORT:-18801}:80"
+
+volumes:
+  db_data:
