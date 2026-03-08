@@ -63,12 +63,6 @@ Sobald die Dateien im Repo liegen, rendert GitHub diese Bilder automatisch:
 ### Verlauf
 ![Dashboard History](docs/images/history.png)
 
-### Jahresvergleich
-![Dashboard Comparison](docs/images/comparison.png)
-
-### Forecast
-![Dashboard Forecast](docs/images/forecast.png)
-
 ## Kernfunktionen
 
 - Jahresauswertung pro Jahr
