@@ -42,6 +42,33 @@ Das Dashboard ist in drei Bereiche gegliedert:
 - `Analyse`: Jahresvergleich, Ladeleistungskurve nach SoC-Bereich, Smart Insights, Median-/Effizienzsicht, Ausreisser
 - `Verlauf`: Sessions pflegen, inline bearbeiten, loeschen, undoen und neue Sessions erfassen
 
+## Screenshots
+
+Lege deine Screenshots in `docs/images/` mit diesen Dateinamen ab:
+
+- `overview.png`
+- `analysis.png`
+- `history.png`
+- optional `comparison.png`
+- optional `forecast.png`
+
+Sobald die Dateien im Repo liegen, rendert GitHub diese Bilder automatisch:
+
+### Uebersicht
+![Dashboard Overview](docs/images/overview.png)
+
+### Analyse
+![Dashboard Analysis](docs/images/analysis.png)
+
+### Verlauf
+![Dashboard History](docs/images/history.png)
+
+### Jahresvergleich
+![Dashboard Comparison](docs/images/comparison.png)
+
+### Forecast
+![Dashboard Forecast](docs/images/forecast.png)
+
 ## Kernfunktionen
 
 - Jahresauswertung pro Jahr
