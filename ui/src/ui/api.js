@@ -1,12 +1,16 @@
 /**
  * Browser-Client
- * UI:  http://<tailscale-ip>:18801
- * API: http://<tailscale-ip>:18800
+ * UI:  http://<host>:<ui-port>
+ * API: http://<host>:18800
  */
 
 const qs = new URLSearchParams(window.location.search);
 const demoByQuery = qs.get("demo") === "1";
-const demoByHost = window.location.hostname.startsWith("edashboard.");
+const ENV_DEMO_HOST_PREFIX = String(import.meta.env.VITE_DEMO_HOST_PREFIX || "")
+  .trim()
+  .toLowerCase();
+const demoByHost =
+  !!ENV_DEMO_HOST_PREFIX && window.location.hostname.toLowerCase().startsWith(ENV_DEMO_HOST_PREFIX);
 export const isDemoMode = demoByQuery || demoByHost;
 
 const ENV_API_BASE = (import.meta.env.VITE_API_BASE || "").trim();

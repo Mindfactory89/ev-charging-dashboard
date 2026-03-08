@@ -1,12 +1,11 @@
 services:
   db:
     image: postgres:16
-    container_name: mobility_db
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-mobility}
       POSTGRES_USER: ${POSTGRES_USER:-mobility}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me_strong_password}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me_local_password}
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:
@@ -17,10 +16,9 @@ services:
 
   api:
     build: ./api
-    container_name: mobility_api
     restart: unless-stopped
     environment:
-      DATABASE_URL: "postgresql://${POSTGRES_USER:-mobility}:${POSTGRES_PASSWORD:-change_me_strong_password}@db:5432/${POSTGRES_DB:-mobility}?schema=public"
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-mobility}:${POSTGRES_PASSWORD:-change_me_local_password}@db:5432/${POSTGRES_DB:-mobility}?schema=public"
       PORT: "3000"
       NODE_ENV: "production"
     depends_on:
@@ -33,20 +31,15 @@ services:
       retries: 10
       start_period: 15s
     ports:
-      # API nur über explizit gesetzte Tailscale-IP (privat)
-      - "${TAILSCALE_IP:?Set TAILSCALE_IP in .env}:${API_PORT:-18800}:3000"
+      - "${API_PORT:-18800}:3000"
 
   ui:
     build:
       context: ./ui
       args:
-        # Optional für feste API-URLs beim Build; leer = UI nutzt Hostname:18800.
         VITE_API_BASE: ${VITE_API_BASE:-}
-        # Optional für austauschbare Hero-/Fahrzeugprofile im UI-Build.
-        VITE_VEHICLE_PROFILE: ${VITE_VEHICLE_PROFILE:-}
-        # Optional für Demo-Hosts wie demo.example.com.
+        VITE_VEHICLE_PROFILE: ${VITE_VEHICLE_PROFILE:-cupra-born}
         VITE_DEMO_HOST_PREFIX: ${VITE_DEMO_HOST_PREFIX:-}
-    container_name: mobility_ui
     restart: unless-stopped
     depends_on:
       api:
@@ -58,10 +51,7 @@ services:
       retries: 10
       start_period: 10s
     ports:
-      # UI lokal für Caddy Reverse Proxy (öffentlich via HTTPS)
-      - "127.0.0.1:${UI_PORT_LOCAL:-18801}:80"
-      # UI zusätzlich über explizit gesetzte Tailscale-IP (privat)
-      - "${TAILSCALE_IP:?Set TAILSCALE_IP in .env}:${UI_PORT:-18801}:80"
+      - "${UI_PORT:-8080}:80"
 
 volumes:
   db_data:

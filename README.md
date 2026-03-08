@@ -2,39 +2,180 @@
 
 Privates E-Mobility-Dashboard fuer Ladeverlaeufe, Kostenanalyse und Jahresauswertungen eines Cupra Born.
 
+Das Projekt ist jetzt so vorbereitet, dass es als oeffentliches GitHub-Repo genutzt werden kann:
+
+- keine privaten `.env`-Dateien im Repo
+- keine festen SSH- oder Server-Zugaenge im Code
+- generische Beispiel-Konfigurationen
+- einfache `docker-compose`-Variante fuer Einsteiger
+
+## Fuer wen ist was gedacht?
+
+Es gibt zwei Wege:
+
+### 1. Einsteiger
+
+Nutze `docker-compose.beginner.yml`.
+
+Das ist der einfachste Start:
+
+- keine Tailscale-Kenntnisse noetig
+- keine VPS-Kenntnisse noetig
+- alles lokal mit eigener Datenbank
+- eigene Sessions, eigene Daten
+
+### 2. Fortgeschrittene / privater VPS
+
+Nutze `docker-compose.yml` mit `.env`.
+
+Das ist fuer:
+
+- Tailscale
+- Reverse Proxy / Caddy / private Infrastruktur
+- eigenes Deploy ueber SSH + `rsync`
+
+## Produktbild
+
+Das Dashboard ist in drei Bereiche gegliedert:
+
+- `Uebersicht`: Hero, KPI-Rail, Monatsverlauf, Monatsbericht, Spotlight, Forecast
+- `Analyse`: Jahresvergleich, Ladeleistungskurve nach SoC-Bereich, Smart Insights, Median-/Effizienzsicht, Ausreisser
+- `Verlauf`: Sessions pflegen, inline bearbeiten, loeschen, undoen und neue Sessions erfassen
+
+## Kernfunktionen
+
+- Jahresauswertung pro Jahr
+- sauberer Leerzustand fuer Jahre ohne Daten
+- Monatsanalyse mit Kosten, Energie, Sessions und Preisniveau
+- Jahresvergleich zwischen zwei Jahren mit Monatsreihen
+- Forecast / Jahreshochrechnung
+- persoenlicher Monatsbericht mit Vergleich zum vorherigen aktiven Monat
+- Smart Insights
+- SoC-Band-Analyse und Ladeleistungskurve
+- Medianwerte zusaetzlich zu Durchschnittswerten
+- Cost Efficiency Score
+- Ausreisseranalyse
+- Session-Tabelle mit Inline-Edit
+- Undo nach Loeschen
+- CSV-Exporte fuer Sessions, Monate und Saisons
+- Demo-Modus im Frontend
+
+## Demo-Modus
+
+Der Demo-Modus ist aktiv, wenn:
+
+- die URL `?demo=1` enthaelt
+- oder optional ein Host-Praefix ueber `VITE_DEMO_HOST_PREFIX` gesetzt wurde
+
+Verhalten im Demo-Modus:
+
+- Demo-Daten werden nur im Frontend gehalten
+- es gibt keine Speicherung in API oder DB
+- beim Reload entstehen neue Demo-Daten
+- pro Reload werden `10-15` realistische Sessions erzeugt
+- insgesamt sind maximal `20` Demo-Sessions erlaubt
+- standardmaessig wird nur `2026` mit Demo-Daten befuellt
+- `2027` und `2028` bleiben leer, bis dort manuell Sessions erfasst werden
+
 ## Stack
 
 - `ui/`: React + Vite + Recharts
 - `api/`: Fastify + Prisma
 - `db`: PostgreSQL via Docker Compose
 
-## Kernfunktionen
-
-- Sessions anlegen und loeschen
-- KPI-Auswertung pro Jahr
-- Monatsanalyse mit Trends
-- Saisonanalyse
-- Cost Efficiency Score
-- CSV-Exporte fuer Sessions, Monate und Saisons
-- Demo-Modus im Frontend
-
-## Wichtige Dateien
+## Projektstruktur
 
 - `api/server.js`: produktiver Backend-Einstieg
 - `api/prisma/schema.prisma`: Datenmodell
-- `ui/src/App.jsx`: Hauptansicht
+- `ui/src/App.jsx`: Hauptansicht und Informationsarchitektur
 - `ui/src/ui/api.js`: API-Client und Demo-Datenlogik
-- `docker-compose.yml`: VPS-Stack
-- `.env.example`: Beispiel fuer Compose-/Deploy-Variablen
+- `ui/src/ui/SessionsCard.jsx`: Verlauf, Inline-Edit, Undo
+- `ui/src/ui/MonthlyChart.jsx`: Monatsverlauf
+- `ui/src/ui/YearComparisonPanel.jsx`: Jahresvergleich
+- `ui/src/ui/PowerCurveCard.jsx`: Ladeleistungskurve nach SoC-Bereich
+- `ui/src/ui/MonthlyReportCard.jsx`: persoenlicher Monatsbericht
+- `ui/src/ui/ForecastCard.jsx`: Jahreshochrechnung
+- `ui/src/ui/SmartInsightsCard.jsx`: Smart Insights
+- `ui/src/ui/VehicleHero.jsx`: Fahrzeug-Hero
+- `docker-compose.beginner.yml`: einfacher lokaler Start
+- `docker-compose.yml`: fortgeschrittener privater/Tailscale-Betrieb
+- `.env.example`: Beispiel fuer Konfiguration
 - `scripts/deploy-to-vps.sh`: Upload + Remote-Rebuild
 - `scripts/sync-from-vps.sh`: Snapshot vom VPS ziehen
+- `LICENSE`: MIT Lizenz
+- `CONTRIBUTING.md`: Hinweise fuer Mitwirkende
+- `SECURITY.md`: Security-Hinweise
+- `GITHUB_PUBLIC_RELEASE.md`: Vorschlaege fuer Repo-Name, Topics und ersten Release
 
-## Konfiguration
+## Schnellstart fuer Einsteiger
 
-Empfohlen:
+Voraussetzungen:
 
-1. `.env.example` nach `.env` kopieren
-2. Werte fuer Datenbank, Ports und Tailscale-IP anpassen
+- Docker
+- Docker Compose
+
+Start:
+
+```bash
+git clone <dein-repo-url>
+cd mobility-dashboard
+docker compose -f docker-compose.beginner.yml up -d --build
+```
+
+Danach:
+
+- UI: `http://localhost:8080`
+- API: `http://localhost:18800`
+
+Stoppen:
+
+```bash
+docker compose -f docker-compose.beginner.yml down
+```
+
+Mit persistenter Datenbank loeschen:
+
+```bash
+docker compose -f docker-compose.beginner.yml down -v
+```
+
+## Lokale Entwicklung ohne Docker
+
+UI:
+
+```bash
+cd ui
+npm install
+npm run dev
+```
+
+API:
+
+```bash
+cd api
+npm install
+npx prisma generate
+npm start
+```
+
+UI Build lokal:
+
+```bash
+cd ui
+npm run build
+```
+
+Hinweis:
+
+- In diesem Repo sind aktuell keine `lint`- oder `test`-Scripts hinterlegt.
+
+## Fortgeschrittene Konfiguration ueber `.env`
+
+Nutze dafuer `.env.example` als Vorlage:
+
+```bash
+cp .env.example .env
+```
 
 Wichtige Variablen:
 
@@ -46,10 +187,19 @@ Wichtige Variablen:
 - `UI_PORT`
 - `UI_PORT_LOCAL`
 - `VITE_API_BASE`
+- `VITE_VEHICLE_PROFILE`
+- `VITE_DEMO_HOST_PREFIX`
+- `SSH_DEPLOY_HOST`
+- `SSH_DEPLOY_USER`
+- `SSH_DEPLOY_PATH`
 
-`VITE_API_BASE` kann leer bleiben. Dann verwendet die UI automatisch `protocol://hostname:18800`.
+Hinweise:
 
-## Betrieb auf dem VPS
+- `VITE_API_BASE` kann leer bleiben. Dann nutzt die UI automatisch `protocol://hostname:18800`.
+- `VITE_DEMO_HOST_PREFIX` ist optional, z. B. `demo.`
+- `docker-compose.yml` erwartet fuer die privaten Tailscale-Bindings eine explizit gesetzte `TAILSCALE_IP`
+
+## Betrieb mit `docker-compose.yml`
 
 Build und Start:
 
@@ -76,38 +226,76 @@ docker logs -f mobility_api
 docker logs -f mobility_ui
 ```
 
-Hinweis:
-
-- `docker compose up -d --build ui` kann je nach Compose-Aufloesung zusaetzlich andere Images mitbauen.
-- Fuer gezielte Einzel-Rebuilds ist `--no-deps` die bessere Wahl.
-
 Healthchecks:
 
 - API: `GET /health`
-- DB wird ueber `pg_isready` geprueft
-- UI wird ueber lokalen HTTP-Check geprueft
+- DB: `pg_isready`
+- UI: lokaler HTTP-Check im Container
 
-## Deploy vom Mac
+## Deploy auf einen eigenen VPS
 
-Im Projektordner:
+Das Deploy-Script ist jetzt generisch. Es enthaelt keine persoenlichen Host- oder User-Defaults mehr.
+
+Standardbeispiel:
 
 ```bash
-USER_NAME=bjoern ./scripts/deploy-to-vps.sh
+HOST=your.server.ip USER_NAME=deploy ./scripts/deploy-to-vps.sh
+```
+
+Nur UI deployen:
+
+```bash
+HOST=your.server.ip USER_NAME=deploy SERVICES=ui ./scripts/deploy-to-vps.sh
+```
+
+Nur API deployen:
+
+```bash
+HOST=your.server.ip USER_NAME=deploy SERVICES=api ./scripts/deploy-to-vps.sh
+```
+
+Nur Upload ohne Remote-Rebuild:
+
+```bash
+HOST=your.server.ip USER_NAME=deploy RUN_REMOTE_DEPLOY=0 ./scripts/deploy-to-vps.sh
 ```
 
 Das Script:
 
 - synchronisiert den lokalen Repo-Stand per `rsync`
 - laesst `.env`, `node_modules`, Logs und Build-Artefakte unberuehrt
-- fuehrt danach auf dem VPS `docker compose up -d --build api ui` aus
+- fuehrt danach auf dem VPS `docker compose up -d --build ${SERVICES}` aus
 
-Nur Upload ohne Remote-Rebuild:
+## Snapshot vom VPS ziehen
 
 ```bash
-USER_NAME=bjoern RUN_REMOTE_DEPLOY=0 ./scripts/deploy-to-vps.sh
+HOST=your.server.ip USER_NAME=deploy ./scripts/sync-from-vps.sh
 ```
 
-## Hinweise
+## Hinweise fuer ein oeffentliches GitHub-Repo
 
-- Die produktive Backend-Logik lebt ausschliesslich in `api/server.js`.
-- Alte Backup- und Parallel-Dateien wurden bewusst entfernt, um den produktiven Pfad klar zu halten.
+Wenn du dieses Repo oeffentlich machst:
+
+- committe niemals `.env`
+- committe niemals DB-Dumps oder Exportdateien mit echten Daten
+- committe niemals SSH-Keys
+- nutze nur `.env.example` als Vorlage
+- wenn frueher echte Secrets in einem privaten Repo lagen, solltest du sie rotieren, bevor du oeffentlich gehst
+
+## Daten und Sicherheit
+
+Andere Nutzer bekommen durch das Repo:
+
+- deinen Code
+- deine generischen Compose-Dateien
+- deine Beispiel-Konfiguration
+
+Andere Nutzer bekommen nicht:
+
+- deine echten Sessions
+- deine PostgreSQL-Daten
+- deine `.env`
+- deinen SSH-Zugriff
+- deinen Server
+
+Jeder betreibt das Dashboard mit seiner eigenen Datenbank und seinen eigenen Sessions.

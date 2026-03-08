@@ -2,26 +2,26 @@
 
 set -euo pipefail
 
-HOST="${HOST:-100.123.167.33}"
+HOST="${HOST:-}"
 USER_NAME="${USER_NAME:-${1:-}}"
 REMOTE_PATH="${REMOTE_PATH:-/srv/mobility-dashboard}"
 DEST_ROOT="${DEST_ROOT:-$(pwd)/vps-snapshots}"
 STAMP="$(date +%Y%m%d-%H%M%S)"
 DEST_DIR="${DEST_DIR:-$DEST_ROOT/$STAMP}"
 
-if [[ -z "${USER_NAME}" ]]; then
+if [[ -z "${USER_NAME}" || -z "${HOST}" ]]; then
   cat >&2 <<'EOF'
 Usage:
-  USER_NAME=<ssh-user> ./scripts/sync-from-vps.sh
+  HOST=<server-host> USER_NAME=<ssh-user> ./scripts/sync-from-vps.sh
 
 Optional env vars:
-  HOST=100.123.167.33
+  HOST=your.server.ip
   REMOTE_PATH=/srv/mobility-dashboard
   DEST_ROOT=/local/target/root
   DEST_DIR=/local/target/root/custom-name
 
 Example:
-  USER_NAME=bjorn ./scripts/sync-from-vps.sh
+  HOST=your.server.ip USER_NAME=deploy ./scripts/sync-from-vps.sh
 EOF
   exit 1
 fi

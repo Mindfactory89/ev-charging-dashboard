@@ -2,27 +2,27 @@
 
 set -euo pipefail
 
-HOST="${HOST:-${SSH_DEPLOY_HOST:-87.106.31.45}}"
+HOST="${HOST:-${SSH_DEPLOY_HOST:-}}"
 USER_NAME="${USER_NAME:-${SSH_DEPLOY_USER:-${1:-}}}"
 REMOTE_PATH="${REMOTE_PATH:-${SSH_DEPLOY_PATH:-/srv/mobility-dashboard}}"
 LOCAL_PATH="${LOCAL_PATH:-$(pwd)}"
 SERVICES="${SERVICES:-api ui}"
 RUN_REMOTE_DEPLOY="${RUN_REMOTE_DEPLOY:-1}"
 
-if [[ -z "${USER_NAME}" ]]; then
+if [[ -z "${USER_NAME}" || -z "${HOST}" ]]; then
   cat >&2 <<'EOF'
 Usage:
-  USER_NAME=<ssh-user> ./scripts/deploy-to-vps.sh
+  HOST=<server-host> USER_NAME=<ssh-user> ./scripts/deploy-to-vps.sh
 
 Optional env vars:
-  HOST=87.106.31.45
+  HOST=your.server.ip
   REMOTE_PATH=/srv/mobility-dashboard
   LOCAL_PATH=/Users/.../mobility-dashboard
   SERVICES="api ui"
   RUN_REMOTE_DEPLOY=1
 
 Example:
-  USER_NAME=bjoern ./scripts/deploy-to-vps.sh
+  HOST=your.server.ip USER_NAME=deploy ./scripts/deploy-to-vps.sh
 EOF
   exit 1
 fi
