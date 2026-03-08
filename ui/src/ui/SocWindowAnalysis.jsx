@@ -23,8 +23,9 @@ function scoreTone(score) {
 }
 
 export default function SocWindowAnalysis({ analysis, year = 2026 }) {
-  const windows = Array.isArray(analysis?.windows) ? analysis.windows : [];
+  const windows = Array.isArray(analysis?.bands) && analysis.bands.length ? analysis.bands : Array.isArray(analysis?.windows) ? analysis.windows : [];
   const highlights = analysis?.highlights || {};
+  const hasAnalyzedSessions = Number(analysis?.analyzed_session_count || 0) > 0;
 
   return (
     <section className="row">
@@ -33,14 +34,14 @@ export default function SocWindowAnalysis({ analysis, year = 2026 }) {
           <div>
             <div className="sectionKicker">SoC</div>
             <div className="ttTitleRow panelTitleRow">
-              <div className="sectionTitle">SoC-Fenster-Analyse ({year})</div>
+              <div className="sectionTitle">SoC-Band-Analyse ({year})</div>
               <Tooltip
-                content="Die Analyse gruppiert deine Sessions in 20%-SoC-Fenster wie 0-80%, 20-80% oder 40-100%. Pro Fenster werden durchschnittlicher Efficiency Score, Preis pro kWh, Ladeleistung, Dauer und SoC-Hub berechnet."
+                content="Die Analyse bricht deine Sessions in feine 10%-SoC-Bänder herunter, damit Preis, Ladeleistung, Score und SoC-Hub deutlich granularer sichtbar werden."
                 placement="top"
                 openDelayMs={120}
                 closeDelayMs={220}
               >
-                <button className="ttTrigger" type="button" aria-label="Erklärung: SoC-Fenster-Analyse">
+                <button className="ttTrigger" type="button" aria-label="Erklärung: SoC-Band-Analyse">
                   i
                 </button>
               </Tooltip>
@@ -52,47 +53,53 @@ export default function SocWindowAnalysis({ analysis, year = 2026 }) {
           </div>
         </div>
 
-        <div className="summaryGrid">
-          <div className="summaryCard warm">
-            <div className="summaryLabel">Bestes Fenster</div>
-            <div className="summaryValue">{highlights?.best_efficiency_window?.label || "–"}</div>
-            <div className="summarySub">
-              {highlights?.best_efficiency_window?.avg_score != null
-                ? `${num(highlights.best_efficiency_window.avg_score, 1)}/100`
-                : "Keine Daten"}
+        {hasAnalyzedSessions ? (
+          <div className="summaryGrid">
+            <div className="summaryCard warm">
+              <div className="summaryLabel">Bestes Band</div>
+              <div className="summaryValue">{highlights?.best_efficiency_window?.label || "–"}</div>
+              <div className="summarySub">
+                {highlights?.best_efficiency_window?.avg_score != null
+                  ? `${num(highlights.best_efficiency_window.avg_score, 1)}/100`
+                  : "Keine Daten"}
+              </div>
             </div>
-          </div>
 
-          <div className="summaryCard">
-            <div className="summaryLabel">Günstigstes Fenster</div>
-            <div className="summaryValue">{highlights?.cheapest_window?.label || "–"}</div>
-            <div className="summarySub">
-              {highlights?.cheapest_window?.avg_price_per_kwh != null
-                ? `${num(highlights.cheapest_window.avg_price_per_kwh, 3)} €/kWh`
-                : "Keine Daten"}
+            <div className="summaryCard">
+              <div className="summaryLabel">Günstigstes Band</div>
+              <div className="summaryValue">{highlights?.cheapest_window?.label || "–"}</div>
+              <div className="summarySub">
+                {highlights?.cheapest_window?.avg_price_per_kwh != null
+                  ? `${num(highlights.cheapest_window.avg_price_per_kwh, 3)} €/kWh`
+                  : "Keine Daten"}
+              </div>
             </div>
-          </div>
 
-          <div className="summaryCard frost">
-            <div className="summaryLabel">Schnellstes Fenster</div>
-            <div className="summaryValue">{highlights?.fastest_window?.label || "–"}</div>
-            <div className="summarySub">
-              {highlights?.fastest_window?.avg_power_kw != null
-                ? `${num(highlights.fastest_window.avg_power_kw, 1)} kW`
-                : "Keine Daten"}
+            <div className="summaryCard frost">
+              <div className="summaryLabel">Schnellstes Band</div>
+              <div className="summaryValue">{highlights?.fastest_window?.label || "–"}</div>
+              <div className="summarySub">
+                {highlights?.fastest_window?.avg_power_kw != null
+                  ? `${num(highlights.fastest_window.avg_power_kw, 1)} kW`
+                  : "Keine Daten"}
+              </div>
             </div>
-          </div>
 
-          <div className="summaryCard mint">
-            <div className="summaryLabel">Größter SoC-Hub</div>
-            <div className="summaryValue">{highlights?.widest_window?.label || "–"}</div>
-            <div className="summarySub">
-              {highlights?.widest_window?.avg_soc_delta != null
-                ? `${num(highlights.widest_window.avg_soc_delta, 1)} %-Punkte`
-                : "Keine Daten"}
+            <div className="summaryCard mint">
+              <div className="summaryLabel">Größter SoC-Hub</div>
+              <div className="summaryValue">{highlights?.widest_window?.label || "–"}</div>
+              <div className="summarySub">
+                {highlights?.widest_window?.avg_soc_delta != null
+                  ? `${num(highlights.widest_window.avg_soc_delta, 1)} %-Punkte`
+                  : "Keine Daten"}
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="summaryGrid">
+            <div className="emptyStateCard">Keine Werte für {year} vorhanden.</div>
+          </div>
+        )}
 
         <div className="detailCardGrid">
           {windows.length ? (
@@ -102,7 +109,7 @@ export default function SocWindowAnalysis({ analysis, year = 2026 }) {
                 <article key={window.key} className={`detailCard ${isBest ? "featured" : ""}`}>
                   <div className="detailCardTop">
                     <div className="detailCardTitle">{window.label}</div>
-                    <div className="detailCardMeta">{num(window.share_pct, 1)}%</div>
+                    <div className="detailCardMeta">{num(window.coverage_pct ?? window.share_pct, 1)}% der Sessions</div>
                   </div>
 
                   <div className={`summaryValue detailScoreValue ${scoreTone(window.avg_score)}`}>
@@ -118,7 +125,7 @@ export default function SocWindowAnalysis({ analysis, year = 2026 }) {
                     <div className="metricMiniItem">
                       <div className="metricMiniLabel">Ø €/kWh</div>
                       <div className="metricMiniValue">
-                        {window.avg_price_per_kwh != null ? `${num(window.avg_price_per_kwh, 3)} €` : "–"}
+                        {window.avg_price_per_kwh != null ? `${num(window.avg_price_per_kwh, 3)} €/kWh` : "–"}
                       </div>
                     </div>
                     <div className="metricMiniItem">
@@ -148,7 +155,9 @@ export default function SocWindowAnalysis({ analysis, year = 2026 }) {
               );
             })
           ) : (
-            <div className="emptyStateCard">Noch keine ausreichenden SoC-Daten für {year}.</div>
+            <div className="emptyStateCard">
+              {hasAnalyzedSessions ? `Noch keine ausreichenden SoC-Daten für ${year}.` : `Keine Werte für ${year} vorhanden.`}
+            </div>
           )}
         </div>
       </div>

@@ -10,8 +10,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import Tooltip from "./Tooltip.jsx";
-
-const MONATE = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
+import { monthLabel } from "./monthLabels.js";
 
 function euro(n) {
   if (n == null || Number.isNaN(Number(n))) return "–";
@@ -47,7 +46,7 @@ export default function MonthlyChart({ months }) {
   const [mode, setMode] = React.useState("energie"); // energie | kosten | vorgaenge | preis
 
   const data = (months || []).map((m) => ({
-    name: MONATE[(m.month || 1) - 1] || String(m.month),
+    name: monthLabel(m.month),
     energie: Number(m.energy_kwh || 0),
     kosten: Number(m.cost || 0),
     vorgaenge: Number(m.count || 0),
@@ -113,7 +112,7 @@ export default function MonthlyChart({ months }) {
   );
 
   return (
-    <div className="card glassStrong">
+    <div className="card glassStrong monthlyChartCard">
       <div className="sectionHeader">
         <div>
           <div className="sectionKicker">Monate</div>
@@ -133,7 +132,7 @@ export default function MonthlyChart({ months }) {
         </div>
 
         {/* ✅ Toggle rechts wie im Screenshot */}
-        <div className="toggle" aria-label="Monatschart Modus">
+        <div className="toggle monthlyChartToggle" aria-label="Monatschart Modus">
           <ToggleItem id="energie" label="Energie" tip={tips.energie} />
           <ToggleItem id="kosten" label="Kosten" tip={tips.kosten} />
           <ToggleItem id="preis" label="€/kWh" tip={tips.preis} />
@@ -141,9 +140,9 @@ export default function MonthlyChart({ months }) {
         </div>
       </div>
 
-      <div className="chartWrap compact">
+      <div className="chartWrap compact monthlyChartShell">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 16, right: 16, left: 0, bottom: 0 }}>
+          <AreaChart data={data} margin={{ top: 20, right: 18, left: -6, bottom: 2 }}>
             <defs>
               <linearGradient id="monthlyEnergyFill" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="rgba(205,132,64,0.30)" />
@@ -162,16 +161,17 @@ export default function MonthlyChart({ months }) {
                 <stop offset="100%" stopColor="rgba(120,190,255,0.00)" />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="2 8" stroke="rgba(255,255,255,0.055)" vertical={false} />
+            <CartesianGrid strokeDasharray="2 10" stroke="rgba(255,255,255,0.045)" vertical={false} />
             <XAxis
               dataKey="name"
-              tick={{ fill: "rgba(255,255,255,0.48)", fontSize: 11 }}
+              height={40}
+              tick={{ fill: "rgba(255,255,255,0.42)", fontSize: 10 }}
               axisLine={false}
               tickLine={false}
-              tickMargin={12}
+              tickMargin={16}
             />
             <YAxis
-              tick={{ fill: "rgba(255,255,255,0.46)", fontSize: 11 }}
+              tick={{ fill: "rgba(255,255,255,0.40)", fontSize: 10.5 }}
               axisLine={false}
               tickLine={false}
               tickMargin={10}
@@ -194,9 +194,9 @@ export default function MonthlyChart({ months }) {
                   type="monotone"
                   dataKey="energie"
                   stroke={strokeByMode.energie}
-                  strokeWidth={2.6}
+                  strokeWidth={2.25}
                   dot={false}
-                  activeDot={{ r: 4.8, fill: strokeByMode.energie, stroke: "rgba(255,255,255,0.82)", strokeWidth: 1.4 }}
+                  activeDot={{ r: 4.4, fill: strokeByMode.energie, stroke: "rgba(255,255,255,0.78)", strokeWidth: 1.2 }}
                 />
               </>
             ) : null}
@@ -207,9 +207,9 @@ export default function MonthlyChart({ months }) {
                   type="monotone"
                   dataKey="kosten"
                   stroke={strokeByMode.kosten}
-                  strokeWidth={2.6}
+                  strokeWidth={2.25}
                   dot={false}
-                  activeDot={{ r: 4.8, fill: strokeByMode.kosten, stroke: "rgba(20,20,28,0.9)", strokeWidth: 1.4 }}
+                  activeDot={{ r: 4.4, fill: strokeByMode.kosten, stroke: "rgba(20,20,28,0.9)", strokeWidth: 1.2 }}
                 />
               </>
             ) : null}
@@ -220,9 +220,9 @@ export default function MonthlyChart({ months }) {
                   type="monotone"
                   dataKey="preis"
                   stroke={strokeByMode.preis}
-                  strokeWidth={2.6}
+                  strokeWidth={2.25}
                   dot={false}
-                  activeDot={{ r: 4.8, fill: strokeByMode.preis, stroke: "rgba(20,20,28,0.9)", strokeWidth: 1.4 }}
+                  activeDot={{ r: 4.4, fill: strokeByMode.preis, stroke: "rgba(20,20,28,0.9)", strokeWidth: 1.2 }}
                 />
               </>
             ) : null}
@@ -233,9 +233,9 @@ export default function MonthlyChart({ months }) {
                   type="monotone"
                   dataKey="vorgaenge"
                   stroke={strokeByMode.vorgaenge}
-                  strokeWidth={2.6}
+                  strokeWidth={2.25}
                   dot={false}
-                  activeDot={{ r: 4.8, fill: strokeByMode.vorgaenge, stroke: "rgba(20,20,28,0.9)", strokeWidth: 1.4 }}
+                  activeDot={{ r: 4.4, fill: strokeByMode.vorgaenge, stroke: "rgba(20,20,28,0.9)", strokeWidth: 1.2 }}
                 />
               </>
             ) : null}

@@ -79,6 +79,7 @@ function buildAutoHints(analysis) {
 export default function OutlierAnalysis({ analysis, year = 2026 }) {
   const sessions = Array.isArray(analysis?.flagged_sessions) ? analysis.flagged_sessions : [];
   const hints = useMemo(() => buildAutoHints(analysis), [analysis]);
+  const hasSessions = Number(analysis?.session_count || 0) > 0;
 
   return (
     <section className="row">
@@ -118,7 +119,9 @@ export default function OutlierAnalysis({ analysis, year = 2026 }) {
               </div>
             ))
           ) : (
-            <div className="emptyStateCard">Keine auffälligen Sessions für {year} erkannt.</div>
+            <div className="emptyStateCard">
+              {hasSessions ? `Keine auffälligen Sessions für ${year} erkannt.` : `Keine Werte für ${year} vorhanden.`}
+            </div>
           )}
         </div>
 
@@ -179,7 +182,9 @@ export default function OutlierAnalysis({ analysis, year = 2026 }) {
               </article>
             ))
           ) : (
-            <div className="emptyStateCard detailEmpty">Keine Details für {year}.</div>
+            <div className="emptyStateCard detailEmpty">
+              {hasSessions ? `Keine Details für ${year}.` : `Keine Werte für ${year} vorhanden.`}
+            </div>
           )}
         </div>
       </div>

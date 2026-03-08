@@ -15,7 +15,7 @@ fastify.addHook('onClose', async () => {
  */
 fastify.addHook('onRequest', async (req, reply) => {
   reply.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-  reply.header('Access-Control-Allow-Methods', 'GET,POST,DELETE,OPTIONS');
+  reply.header('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS');
   reply.header('Access-Control-Allow-Headers', 'Content-Type, Accept');
   if (req.method === 'OPTIONS') {
     reply.code(204).send();
@@ -54,6 +54,18 @@ function round(n, d = 2) {
   if (!Number.isFinite(v)) return 0;
   const f = 10 ** d;
   return Math.round(v * f) / f;
+}
+
+function median(values) {
+  const clean = (values || [])
+    .map((value) => Number(value))
+    .filter((value) => Number.isFinite(value))
+    .sort((a, b) => a - b);
+
+  if (!clean.length) return null;
+  const mid = Math.floor(clean.length / 2);
+  if (clean.length % 2 === 1) return clean[mid];
+  return (clean[mid - 1] + clean[mid]) / 2;
 }
 
 function clamp(n, min, max) {
@@ -195,14 +207,16 @@ function aggregateGroup(rows, label, meta = {}) {
   const count = rows.length;
   const totalEnergy = rows.reduce((a, s) => a + Number(s.energy_kwh || 0), 0);
   const totalCost = rows.reduce((a, s) => a + Number(s.total_cost || 0), 0);
-  const durations = rows.map((s) => Number(s.duration_seconds || 0)).filter((n) => Number.isFinite(n) && n > 0);
+  const timedRows = rows.filter((row) => Number.isFinite(Number(row.duration_seconds)) && Number(row.duration_seconds) > 0);
+  const durations = timedRows.map((s) => Number(s.duration_seconds || 0)).filter((n) => Number.isFinite(n) && n > 0);
   const totalDuration = durations.reduce((a, n) => a + n, 0);
+  const totalTimedEnergy = timedRows.reduce((sum, row) => sum + Number(row.energy_kwh || 0), 0);
 
   const avgDurationSeconds = durations.length ? totalDuration / durations.length : 0;
   const avgKwhPerSession = count ? totalEnergy / count : 0;
   const avgCostPerSession = count ? totalCost / count : 0;
   const avgPricePerKwh = totalEnergy > 0 ? totalCost / totalEnergy : 0;
-  const avgPowerKw = totalDuration > 0 ? totalEnergy / (totalDuration / 3600) : 0;
+  const avgPowerKw = totalDuration > 0 ? totalTimedEnergy / (totalDuration / 3600) : 0;
 
   return {
     key: meta.key || label.toLowerCase(),
@@ -494,6 +508,88 @@ function parseOptionalNonNegativeInteger(value) {
   return num;
 }
 
+function parseSessionMutation(body) {
+  const b = body || {};
+
+  const required = ['date', 'connector', 'soc_start', 'soc_end', 'energy_kwh', 'price_per_kwh'];
+  for (const key of required) {
+    if (b[key] === undefined || b[key] === null || b[key] === '') {
+      return { error: `Fehlendes Feld: ${key}` };
+    }
+  }
+
+  const date = new Date(b.date);
+  if (Number.isNaN(date.getTime())) {
+    return { error: 'Ungültiges Datum.' };
+  }
+
+  const connector = String(b.connector).replace(/\s+/g, ' ').trim();
+  if (!connector) {
+    return { error: 'Anschluss darf nicht leer sein.' };
+  }
+
+  const soc_start = parseBoundedInteger(b.soc_start, 0, 100);
+  const soc_end = parseBoundedInteger(b.soc_end, 0, 100);
+  if (soc_start == null || soc_end == null) {
+    return { error: 'SoC Start/Ende muss zwischen 0 und 100 liegen.' };
+  }
+  if (soc_end < soc_start) {
+    return { error: 'SoC Ende darf nicht kleiner als SoC Start sein.' };
+  }
+
+  const energy = parseFiniteNumber(b.energy_kwh);
+  if (energy == null || energy <= 0) {
+    return { error: 'Energie (kWh) muss größer als 0 sein.' };
+  }
+
+  const price = parseFiniteNumber(b.price_per_kwh);
+  if (price == null || price <= 0) {
+    return { error: 'Preis pro kWh muss größer als 0 sein.' };
+  }
+
+  let duration_seconds = null;
+  if (b.duration_hhmm != null && b.duration_hhmm !== '') {
+    duration_seconds = hhmmToSeconds(b.duration_hhmm);
+    if (duration_seconds == null || duration_seconds <= 0) {
+      return { error: 'Dauer muss als HH:MM angegeben werden.' };
+    }
+  } else if (b.duration_seconds != null && b.duration_seconds !== '') {
+    duration_seconds = parseFiniteNumber(b.duration_seconds);
+    if (duration_seconds == null || duration_seconds <= 0) {
+      return { error: 'Dauer in Sekunden muss größer als 0 sein.' };
+    }
+  }
+
+  if (duration_seconds != null) {
+    duration_seconds = Math.round(duration_seconds);
+  }
+
+  const odo_start_km = parseOptionalNonNegativeInteger(b.odo_start_km);
+  const odo_end_km = parseOptionalNonNegativeInteger(b.odo_end_km);
+  if (Number.isNaN(odo_start_km) || Number.isNaN(odo_end_km)) {
+    return { error: 'Kilometerstände müssen positive Ganzzahlen sein.' };
+  }
+  if (odo_start_km != null && odo_end_km != null && odo_end_km < odo_start_km) {
+    return { error: 'Kilometer Ende darf nicht kleiner als Kilometer Start sein.' };
+  }
+
+  return {
+    data: {
+      date,
+      connector,
+      soc_start,
+      soc_end,
+      energy_kwh: energy,
+      price_per_kwh: price,
+      total_cost: Number((energy * price).toFixed(2)),
+      duration_seconds,
+      note: b.note ? String(b.note) : null,
+      odo_start_km,
+      odo_end_km,
+    },
+  };
+}
+
 fastify.get('/api/sessions', async (req, reply) => {
   const { range, error } = optionalYearFilter(req.query?.year);
   if (error) return reply.code(400).send({ ok: false, error });
@@ -509,94 +605,46 @@ fastify.get('/api/sessions', async (req, reply) => {
 });
 
 fastify.post('/api/sessions', async (req, reply) => {
-  const b = req.body || {};
-
-  const required = ['date', 'connector', 'soc_start', 'soc_end', 'energy_kwh', 'price_per_kwh'];
-  for (const k of required) {
-    if (b[k] === undefined || b[k] === null || b[k] === '') {
-      return reply.code(400).send({ ok: false, error: `Fehlendes Feld: ${k}` });
-    }
+  const parsed = parseSessionMutation(req.body);
+  if (parsed.error) {
+    return reply.code(400).send({ ok: false, error: parsed.error });
   }
-
-  const date = new Date(b.date);
-  if (Number.isNaN(date.getTime())) {
-    return reply.code(400).send({ ok: false, error: 'Ungültiges Datum.' });
-  }
-
-  const connector = String(b.connector).replace(/\s+/g, ' ').trim();
-  if (!connector) {
-    return reply.code(400).send({ ok: false, error: 'Anschluss darf nicht leer sein.' });
-  }
-
-  const soc_start = parseBoundedInteger(b.soc_start, 0, 100);
-  const soc_end = parseBoundedInteger(b.soc_end, 0, 100);
-  if (soc_start == null || soc_end == null) {
-    return reply.code(400).send({ ok: false, error: 'SoC Start/Ende muss zwischen 0 und 100 liegen.' });
-  }
-  if (soc_end < soc_start) {
-    return reply.code(400).send({ ok: false, error: 'SoC Ende darf nicht kleiner als SoC Start sein.' });
-  }
-
-  const energy = parseFiniteNumber(b.energy_kwh);
-  if (energy == null || energy <= 0) {
-    return reply.code(400).send({ ok: false, error: 'Energie (kWh) muss größer als 0 sein.' });
-  }
-
-  const price = parseFiniteNumber(b.price_per_kwh);
-  if (price == null || price <= 0) {
-    return reply.code(400).send({ ok: false, error: 'Preis pro kWh muss größer als 0 sein.' });
-  }
-
-  let duration_seconds = null;
-  if (b.duration_hhmm != null && b.duration_hhmm !== '') {
-    duration_seconds = hhmmToSeconds(b.duration_hhmm);
-    if (duration_seconds == null || duration_seconds <= 0) {
-      return reply.code(400).send({ ok: false, error: 'Dauer muss als HH:MM angegeben werden.' });
-    }
-  } else if (b.duration_seconds != null && b.duration_seconds !== '') {
-    duration_seconds = parseFiniteNumber(b.duration_seconds);
-    if (duration_seconds == null || duration_seconds <= 0) {
-      return reply.code(400).send({ ok: false, error: 'Dauer in Sekunden muss größer als 0 sein.' });
-    }
-    duration_seconds = Math.round(duration_seconds);
-  }
-
-  const odo_start_km = parseOptionalNonNegativeInteger(b.odo_start_km);
-  const odo_end_km = parseOptionalNonNegativeInteger(b.odo_end_km);
-  if (Number.isNaN(odo_start_km) || Number.isNaN(odo_end_km)) {
-    return reply.code(400).send({ ok: false, error: 'Kilometerstände müssen positive Ganzzahlen sein.' });
-  }
-  if (odo_start_km != null && odo_end_km != null && odo_end_km < odo_start_km) {
-    return reply.code(400).send({ ok: false, error: 'Kilometer Ende darf nicht kleiner als Kilometer Start sein.' });
-  }
-
-  const total_cost = Number((energy * price).toFixed(2));
 
   const created = await prisma.chargingSession.create({
-    data: {
-      date,
-      connector,
-      soc_start,
-      soc_end,
-      energy_kwh: energy,
-      price_per_kwh: price,
-      total_cost,
-      duration_seconds,
-      note: b.note ? String(b.note) : null,
-      odo_start_km,
-      odo_end_km,
-    },
+    data: parsed.data,
   });
 
   return { ok: true, created };
+});
+
+fastify.patch('/api/sessions/:id', async (req, reply) => {
+  const id = String(req.params.id);
+  const parsed = parseSessionMutation(req.body);
+  if (parsed.error) {
+    return reply.code(400).send({ ok: false, error: parsed.error });
+  }
+
+  try {
+    const updated = await prisma.chargingSession.update({
+      where: { id },
+      data: parsed.data,
+    });
+    return { ok: true, updated };
+  } catch (err) {
+    if (err?.code === 'P2025') {
+      return reply.code(404).send({ ok: false, error: 'not found' });
+    }
+    req.log.error(err);
+    return reply.code(500).send({ ok: false, error: 'update failed' });
+  }
 });
 
 fastify.delete('/api/sessions/:id', async (req, reply) => {
   const id = String(req.params.id);
 
   try {
-    await prisma.chargingSession.delete({ where: { id } });
-    return reply.send({ ok: true });
+    const deleted = await prisma.chargingSession.delete({ where: { id } });
+    return reply.send({ ok: true, deleted });
   } catch (err) {
     if (err?.code === 'P2025') {
       return reply.code(404).send({ ok: false, error: 'not found' });
@@ -621,15 +669,27 @@ fastify.get('/api/stats', async (req, reply) => {
   const total_cost = sessions.reduce((a, s) => a + Number(s.total_cost || 0), 0);
   const avg_kwh_per_session = count ? total_energy_kwh / count : 0;
 
-  const durations = sessions
-    .map((s) => Number(s.duration_seconds || 0))
-    .filter((n) => Number.isFinite(n) && n > 0);
-
+  const timedSessions = sessions.filter((s) => Number.isFinite(Number(s.duration_seconds)) && Number(s.duration_seconds) > 0);
+  const durations = timedSessions.map((s) => Number(s.duration_seconds || 0));
+  const total_timed_energy_kwh = timedSessions.reduce((sum, session) => sum + Number(session.energy_kwh || 0), 0);
   const avg_duration_seconds = durations.length ? durations.reduce((a, n) => a + n, 0) / durations.length : 0;
   const avg_price_per_kwh = total_energy_kwh > 0 ? total_cost / total_energy_kwh : 0;
   const avg_price_per_charge = count ? total_cost / count : 0;
-  const avg_power_kw = avg_duration_seconds > 0 ? avg_kwh_per_session / (avg_duration_seconds / 3600) : 0;
+  const avg_power_kw = durations.length ? total_timed_energy_kwh / (durations.reduce((a, n) => a + n, 0) / 3600) : 0;
   const avg_cost_per_min = avg_duration_seconds > 0 ? avg_price_per_charge / (avg_duration_seconds / 60) : 0;
+
+  const perSessionPrices = sessions
+    .map((session) => buildSessionDerived(session).price_per_kwh_effective)
+    .filter((value) => Number.isFinite(value) && value > 0);
+  const perSessionPowers = sessions
+    .map((session) => buildSessionDerived(session).avg_power_kw)
+    .filter((value) => Number.isFinite(value) && value > 0);
+  const energyValues = sessions
+    .map((session) => Number(session.energy_kwh))
+    .filter((value) => Number.isFinite(value) && value > 0);
+  const costValues = sessions
+    .map((session) => Number(session.total_cost))
+    .filter((value) => Number.isFinite(value) && value >= 0);
 
   const best_session_kwh = sessions.reduce((best, s) => (best == null || s.energy_kwh > best.energy_kwh ? s : best), null);
   const most_expensive = sessions.reduce((best, s) => (best == null || s.total_cost > best.total_cost ? s : best), null);
@@ -650,6 +710,13 @@ fastify.get('/api/stats', async (req, reply) => {
     avg_price_per_charge: Number(avg_price_per_charge.toFixed(2)),
     avg_power_kw: Number(avg_power_kw.toFixed(1)),
     avg_cost_per_min: Number(avg_cost_per_min.toFixed(2)),
+    medians: {
+      energy_kwh: median(energyValues) != null ? round(median(energyValues), 1) : null,
+      cost_per_session: median(costValues) != null ? round(median(costValues), 2) : null,
+      duration_seconds: median(durations) != null ? Math.round(median(durations)) : null,
+      price_per_kwh: median(perSessionPrices) != null ? round(median(perSessionPrices), 3) : null,
+      power_kw: median(perSessionPowers) != null ? round(median(perSessionPowers), 1) : null,
+    },
     best_session_kwh,
     most_expensive,
     longest,

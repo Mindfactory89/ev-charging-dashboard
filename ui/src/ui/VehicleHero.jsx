@@ -92,8 +92,8 @@ export default function VehicleHero({ profile, latestDateLabel, year }) {
           ) : null}
         </div>
 
-        <div className="heroRight heroPillStack">
-          <div className="pill">
+        <div className="heroRight heroPillStack heroMetaRail">
+          <div className="pill heroStatusPill">
             {latestDateLabel ? `Letzter Ladevorgang: ${latestDateLabel}` : `Keine Daten für ${year}`}
           </div>
         </div>

@@ -68,6 +68,552 @@ a{ color:inherit; text-decoration:none; }
 }
 .chip:hover{ filter: brightness(1.06); }
 
+.premiumLayout{
+  gap: 28px;
+}
+
+.topBarPremium{
+  align-items: flex-start;
+  gap: 34px;
+}
+
+.premiumTopCopy{
+  flex: 1;
+  min-width: 0;
+  max-width: 780px;
+}
+
+.premiumTopControls{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap: 16px;
+}
+
+.premiumYearRail{
+  margin-top: 0;
+  padding: 14px 16px;
+  border-radius: 24px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background:
+    radial-gradient(380px 120px at 0% 0%, rgba(205,132,64,0.10), transparent 62%),
+    rgba(255,255,255,0.04);
+}
+
+.premiumHeaderMeta{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.premiumScreenBar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 22px;
+  flex-wrap: wrap;
+}
+
+.premiumScreenMeta{
+  max-width: 360px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: rgba(255,255,255,0.58);
+}
+
+.premiumScreenToggle{
+  flex-wrap: nowrap;
+}
+
+.premiumHeroStage{
+  display:grid;
+  grid-template-columns: minmax(0, 1.12fr) minmax(420px, 0.88fr);
+  gap: 24px;
+  align-items: stretch;
+}
+
+.premiumHeroStage > *{
+  min-width: 0;
+}
+
+.premiumHeroStage .heroCard{
+  height: 100%;
+}
+
+.premiumHeroRail{
+  display:grid;
+  grid-template-rows: auto 1fr;
+  gap: 18px;
+  min-width: 0;
+}
+
+.premiumMetricRail{
+  display:grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.premiumMetricCard{
+  min-height: 152px;
+  padding: 20px 18px;
+  border-color: rgba(255,255,255,0.08);
+  background:
+    radial-gradient(240px 120px at 0% 0%, rgba(255,255,255,0.08), transparent 60%),
+    rgba(255,255,255,0.04);
+}
+
+.premiumMetricValue{
+  margin-top: 14px;
+  font-size: clamp(26px, 3vw, 36px);
+  line-height: 1;
+  font-weight: 760;
+  letter-spacing: -0.04em;
+  color: rgba(255,255,255,0.96);
+}
+
+.premiumMetricSub{
+  margin-top: 12px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: rgba(255,255,255,0.58);
+}
+
+.premiumSpotlightCard{
+  min-height: 268px;
+  padding: 24px;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-end;
+  border-color: rgba(205,132,64,0.18);
+  background:
+    radial-gradient(520px 180px at 0% 0%, rgba(205,132,64,0.14), transparent 58%),
+    radial-gradient(420px 160px at 100% 100%, rgba(126,192,255,0.10), transparent 60%),
+    linear-gradient(180deg, rgba(255,255,255,0.05), rgba(8,8,12,0.72));
+}
+
+.premiumSpotlightEyebrow,
+.premiumEditorialEyebrow,
+.premiumDataIntroEyebrow{
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: rgba(255,255,255,0.52);
+}
+
+.premiumSpotlightTitle,
+.premiumEditorialTitle,
+.premiumDataIntroTitle{
+  margin-top: 12px;
+  font-size: 20px;
+  font-weight: 720;
+  letter-spacing: -0.02em;
+  color: rgba(255,255,255,0.94);
+}
+
+.premiumSpotlightValue,
+.premiumEditorialValue{
+  margin-top: 14px;
+  font-size: clamp(30px, 3.8vw, 46px);
+  line-height: 0.96;
+  font-weight: 780;
+  letter-spacing: -0.05em;
+  color: rgba(255,255,255,0.98);
+}
+
+.premiumSpotlightMeta,
+.premiumEditorialMeta,
+.premiumDataIntroText{
+  margin-top: 12px;
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: rgba(255,255,255,0.60);
+}
+
+.premiumEditorialMeta{
+  max-width: 32ch;
+}
+
+.premiumSpotlightText,
+.premiumEditorialText{
+  margin: 16px 0 0;
+  font-size: 14.5px;
+  line-height: 1.7;
+  color: rgba(255,255,255,0.78);
+}
+
+.premiumEditorialText{
+  max-width: 34ch;
+}
+
+.premiumSpotlightFoot{
+  margin-top: 18px;
+  display:flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: rgba(255,255,255,0.58);
+}
+
+.premiumModeBar{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.premiumModeIntro{
+  min-width: 0;
+}
+
+.premiumModeTitle{
+  margin-top: 10px;
+  font-size: clamp(22px, 2.6vw, 31px);
+  line-height: 1.05;
+  font-weight: 760;
+  letter-spacing: -0.04em;
+}
+
+.premiumModeToggle{
+  flex-wrap: nowrap;
+}
+
+.premiumFeatureCard{
+  overflow: hidden;
+}
+
+.premiumChartFeature{
+  min-height: 352px;
+}
+
+.premiumMiniGrid{
+  margin-top: 14px;
+  padding: 0 20px 20px;
+  display:grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.premiumMiniCard,
+.premiumLatestCard{
+  padding: 18px;
+  border-radius: 22px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background:
+    radial-gradient(180px 80px at 0% 0%, rgba(255,255,255,0.06), transparent 60%),
+    rgba(255,255,255,0.03);
+}
+
+.premiumMiniLabel,
+.premiumLatestLabel{
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(255,255,255,0.48);
+}
+
+.premiumMiniValue,
+.premiumLatestValue{
+  margin-top: 10px;
+  font-size: clamp(22px, 2.2vw, 28px);
+  line-height: 1;
+  font-weight: 730;
+  letter-spacing: -0.03em;
+}
+
+.premiumMiniSub,
+.premiumLatestSub{
+  margin-top: 8px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: rgba(255,255,255,0.56);
+}
+
+.premiumLatestCard{
+  min-height: 128px;
+}
+
+.premiumLatestCardFeature{
+  min-height: 136px;
+}
+
+.premiumLatestCardWide{
+  min-height: 118px;
+  background:
+    radial-gradient(220px 90px at 0% 0%, rgba(205,132,64,0.09), transparent 60%),
+    radial-gradient(180px 80px at 100% 100%, rgba(126,192,255,0.06), transparent 62%),
+    rgba(255,255,255,0.03);
+}
+
+.premiumSecondaryGrid{
+  display:grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(360px, 0.92fr);
+  gap: 22px;
+  align-items:start;
+}
+
+.premiumSecondarySlot{
+  min-width: 0;
+}
+
+.premiumSecondarySpotlight{
+  min-width: 0;
+}
+
+.premiumSpotlightReportCard{
+  height: 100%;
+}
+
+.premiumSpotlightSummaryGrid{
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.premiumSpotlightSignalCard{
+  min-height: 224px;
+  background:
+    radial-gradient(540px 200px at 0% 0%, rgba(205,132,64,0.16), transparent 62%),
+    linear-gradient(180deg, rgba(255,255,255,0.055), rgba(8,9,12,0.72));
+}
+
+.premiumSpotlightSignalCard .summaryValue{
+  font-size: clamp(42px, 4vw, 64px);
+  letter-spacing: -0.055em;
+}
+
+.premiumSpotlightSignalCard .summarySub{
+  font-size: 14px;
+}
+
+.premiumSpotlightReportCard .summaryCard:not(.premiumSpotlightSignalCard){
+  min-height: 180px;
+}
+
+.premiumSpotlightReportCard .summaryCard:not(.premiumSpotlightSignalCard) .summaryValue{
+  font-size: clamp(24px, 2.4vw, 34px);
+}
+
+.premiumSpotlightImpulseCard{
+  background:
+    radial-gradient(420px 140px at 0% 0%, rgba(255,255,255,0.06), transparent 62%),
+    linear-gradient(180deg, rgba(255,255,255,0.04), rgba(8,9,12,0.76));
+}
+
+.premiumSpotlightMetaLine{
+  margin-top: 6px;
+  color: rgba(255,255,255,0.52);
+}
+
+.premiumSecondarySlot > .row{
+  margin: 0;
+}
+
+.premiumEditorialCard{
+  height: 100%;
+  display:flex;
+  flex-direction:column;
+  padding-bottom: 12px;
+  border-color: rgba(255,255,255,0.08);
+  background:
+    radial-gradient(420px 140px at 0% 0%, rgba(205,132,64,0.12), transparent 60%),
+    linear-gradient(180deg, rgba(255,255,255,0.04), rgba(7,8,10,0.70));
+}
+
+.premiumEditorialHeader{
+  align-items:flex-start;
+  margin-bottom: 4px;
+}
+
+.premiumEditorialCompactCard{
+  height: auto;
+  padding-bottom: 0;
+}
+
+.premiumEditorialCompact{
+  padding: 0 22px 22px;
+  display:grid;
+  gap: 18px;
+}
+
+.premiumEditorialStats{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.premiumLatestCardFull{
+  grid-column: 1 / -1;
+}
+
+.premiumEditorialBodyCompact{
+  max-width: none;
+}
+
+.premiumEditorialCompactCard .premiumEditorialMeta{
+  max-width: 38ch;
+}
+
+.premiumEditorialCompactCard .premiumEditorialText{
+  max-width: 36ch;
+}
+
+.premiumEditorialCompactCard .premiumLatestCard{
+  min-height: 116px;
+  padding: 16px;
+}
+
+.premiumEditorialCompactCard .premiumLatestValue{
+  font-size: clamp(18px, 2.1vw, 28px);
+}
+
+.premiumEditorialCardExpanded{
+  padding-bottom: 0;
+}
+
+.premiumEditorialLayout{
+  padding: 0 24px 24px;
+  display:grid;
+  grid-template-columns: minmax(0, 1.16fr) minmax(340px, 0.84fr);
+  gap: 24px;
+  align-items:start;
+}
+
+.premiumEditorialBody{
+  padding: 0;
+  max-width: 44rem;
+}
+
+.premiumEditorialMetrics{
+  margin-top: 0;
+  padding: 0;
+  display:grid;
+  gap: 14px;
+  align-content:start;
+}
+
+.premiumEditorialMetricsStack{
+  grid-template-columns: 1fr;
+}
+
+.premiumLatestGrid{
+  padding: 0;
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.premiumLatestGridSingle{
+  grid-template-columns: 1fr;
+}
+
+.premiumDataIntro{
+  padding: 22px 24px;
+  border-color: rgba(255,255,255,0.08);
+  background:
+    radial-gradient(480px 160px at 0% 0%, rgba(126,192,255,0.08), transparent 58%),
+    linear-gradient(180deg, rgba(255,255,255,0.04), rgba(8,8,12,0.68));
+}
+
+.premiumEmptyNotice{
+  border-color: rgba(255,255,255,0.08);
+}
+
+@media (max-width: 1180px){
+  .topBarPremium{
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .premiumTopControls{
+    width: 100%;
+    align-items: flex-start;
+  }
+
+  .premiumHeaderMeta{
+    justify-content: flex-start;
+  }
+
+  .premiumHeroStage{
+    grid-template-columns: 1fr;
+  }
+
+  .premiumSecondaryGrid{
+    grid-template-columns: 1fr;
+  }
+
+  .premiumEditorialLayout{
+    grid-template-columns: 1fr;
+  }
+
+  .premiumEditorialCompact{
+    padding: 0 20px 20px;
+  }
+}
+
+@media (max-width: 920px){
+  .premiumMetricRail,
+  .premiumMiniGrid,
+  .premiumLatestGrid{
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .premiumScreenBar,
+  .premiumModeBar{
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .premiumScreenToggle,
+  .premiumModeToggle{
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px){
+  .premiumYearRail{
+    width: 100%;
+  }
+
+  .premiumMetricRail,
+  .premiumMiniGrid,
+  .premiumLatestGrid{
+    grid-template-columns: 1fr;
+  }
+
+  .premiumSpotlightCard,
+  .premiumMetricCard,
+  .premiumDataIntro{
+    padding: 16px;
+  }
+
+  .premiumEditorialLayout,
+  .premiumEditorialCompact,
+  .premiumMiniGrid{
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .premiumEditorialBody,
+  .premiumEditorialMetrics{
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .premiumEditorialStats{
+    grid-template-columns: 1fr;
+  }
+
+  .premiumSpotlightSummaryGrid{
+    grid-template-columns: 1fr;
+  }
+
+  .premiumLatestGrid{
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+
 /* ===== Cards / Glass ===== */
 .card{ border-radius: 22px; border: 1px solid var(--border); overflow:hidden; }
 .glass{
@@ -969,8 +1515,8 @@ a{ color:inherit; text-decoration:none; }
   justify-content:space-between;
   gap: 14px;
 
-  padding: 10px 14px;
-  margin: 10px 0 14px;
+  padding: 12px 16px;
+  margin: 14px 0 18px;
 
   border-radius: 16px;
 
@@ -1183,12 +1729,12 @@ body::before{
 }
 
 .app{
-  max-width: 1280px;
-  padding: 22px 24px 30px;
+  max-width: 1420px;
+  padding: 28px 32px 44px;
 }
 
 .topLeft{ max-width: 760px; }
-.topBar{ margin-bottom: 16px; }
+.topBar{ margin-bottom: 24px; }
 
 .kicker,
 .sectionKicker,
@@ -1215,7 +1761,7 @@ body::before{
   color: rgba(255,255,255,0.66);
 }
 
-.filters{ margin-top: 14px; gap: 10px; flex-wrap: wrap; }
+.filters{ margin-top: 16px; gap: 12px; flex-wrap: wrap; }
 .chipRow{ gap: 10px; }
 
 .chip{
@@ -1234,7 +1780,7 @@ body::before{
 }
 
 .card{
-  border-radius: 28px;
+  border-radius: 30px;
   border-color: rgba(255,255,255,0.09);
 }
 
@@ -1287,7 +1833,7 @@ body::before{
 }
 
 .heroCard{
-  padding: 18px;
+  padding: 24px;
   background:
     radial-gradient(1200px 420px at 5% 0%, rgba(255,255,255,0.05), transparent 56%),
     radial-gradient(800px 320px at 88% 110%, rgba(205,132,64,0.08), transparent 58%),
@@ -1300,7 +1846,7 @@ body::before{
     radial-gradient(36% 40% at 70% 20%, rgba(205,132,64,0.08), transparent 78%);
 }
 
-.heroHeaderHybrid{ margin-bottom: 14px; gap: 12px; }
+.heroHeaderHybrid{ margin-bottom: 18px; gap: 16px; }
 
 .heroTitle{
   margin-top: 8px;
@@ -1311,12 +1857,12 @@ body::before{
 }
 
 .heroChips{
-  gap: 8px;
-  margin-top: 12px;
+  gap: 10px;
+  margin-top: 14px;
 }
 
 .chipSpec{
-  padding: 7px 10px;
+  padding: 8px 11px;
   border-radius: 12px;
   font-size: 10.8px;
   letter-spacing: 0.08em;
@@ -1331,8 +1877,8 @@ body::before{
 }
 
 .heroImg{
-  height: 274px;
-  border-radius: 22px;
+  height: 316px;
+  border-radius: 24px;
   border-color: rgba(255,255,255,0.08);
   background:
     radial-gradient(900px 360px at 50% 118%, rgba(205,132,64,0.12), transparent 64%),
@@ -1365,11 +1911,11 @@ body::before{
 .heroGlow{ opacity: 0.72; filter: blur(16px); }
 
 .heroRowGrid{
-  grid-template-columns: 1.22fr 0.95fr;
-  gap: 12px;
+  grid-template-columns: 1.16fr 0.92fr;
+  gap: 18px;
 }
 
-.kpiGrid{ gap: 12px; }
+.kpiGrid{ gap: 16px; }
 
 .kpi{
   padding: 14px 14px 13px;
@@ -1536,7 +2082,7 @@ body::before{
 }
 
 .toggle{
-  padding: 7px;
+  padding: 8px;
   border-radius: 16px;
   border-color: rgba(255,255,255,0.08);
   background: rgba(255,255,255,0.035);
@@ -1556,10 +2102,10 @@ body::before{
 }
 
 .chartWrap{
-  margin-top: 14px;
-  height: 288px;
-  padding: 14px 14px 8px;
-  border-radius: 24px;
+  margin-top: 16px;
+  height: 312px;
+  padding: 18px 18px 12px;
+  border-radius: 28px;
   border: 1px solid rgba(255,255,255,0.07);
   background:
     radial-gradient(820px 220px at 20% 0%, rgba(255,255,255,0.03), transparent 58%),
@@ -1568,8 +2114,8 @@ body::before{
 }
 
 .chartWrap.compact{
-  height: 300px;
-  margin-top: 12px;
+  height: 330px;
+  margin-top: 14px;
 }
 
 .chartLegendRow{
@@ -1661,14 +2207,14 @@ body::before{
 }
 
 .footer{
-  margin-top: 22px;
+  margin-top: 30px;
   font-size: 12.5px;
   color: rgba(255,255,255,0.46);
 }
 
 @media (max-width: 980px){
-  .app{ padding: 20px 18px 26px; }
-  .heroImg{ height: 246px; }
+  .app{ padding: 22px 20px 32px; }
+  .heroImg{ height: 272px; }
 }
 
 @media (max-width: 640px){
@@ -1698,14 +2244,14 @@ body::before{
 }
 
 .analysisPanel{
-  padding: 18px;
+  padding: 24px;
 }
 
 .panelHeader{
   display:flex;
   align-items:flex-end;
   justify-content:space-between;
-  gap: 14px;
+  gap: 18px;
   flex-wrap: wrap;
 }
 
@@ -1732,8 +2278,8 @@ body::before{
 }
 
 .metricNarrative{
-  margin-top: 16px;
-  padding: 13px 14px;
+  margin-top: 18px;
+  padding: 15px 16px;
   border-radius: 18px;
   border: 1px solid rgba(255,255,255,0.06);
   background:
@@ -1745,18 +2291,18 @@ body::before{
 }
 
 .summaryGrid{
-  margin-top: 16px;
+  margin-top: 20px;
   display:grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 18px;
 }
 
 .summaryCard{
   position: relative;
   overflow: hidden;
-  min-height: 134px;
-  padding: 16px 16px 15px;
-  border-radius: 24px;
+  min-height: 148px;
+  padding: 18px 18px 16px;
+  border-radius: 26px;
   border: 1px solid rgba(255,255,255,0.07);
   background:
     radial-gradient(640px 180px at 10% 0%, rgba(255,255,255,0.04), transparent 58%),
@@ -1816,8 +2362,8 @@ body::before{
 .summaryValue{
   position: relative;
   z-index: 1;
-  margin-top: 14px;
-  font-size: clamp(26px, 2.2vw, 36px);
+  margin-top: 16px;
+  font-size: clamp(28px, 2.2vw, 38px);
   line-height: 0.96;
   letter-spacing: -0.04em;
   font-weight: 700;
@@ -1835,21 +2381,21 @@ body::before{
 }
 
 .chartPanel{
-  margin-top: 10px;
+  margin-top: 14px;
 }
 
 .detailCardGrid{
-  margin-top: 16px;
+  margin-top: 20px;
   display:grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px;
 }
 
 .detailCard{
   position: relative;
   overflow: hidden;
-  padding: 16px;
-  border-radius: 24px;
+  padding: 18px;
+  border-radius: 26px;
   border: 1px solid rgba(255,255,255,0.07);
   background:
     radial-gradient(720px 180px at 12% 0%, rgba(255,255,255,0.035), transparent 58%),
@@ -2141,11 +2687,161 @@ body::before{
   color: rgba(255,255,255,0.76);
 }
 
+.tableMetaInline{
+  display:none;
+  width: fit-content;
+  margin-top: 8px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(126,192,255,0.20);
+  background: rgba(126,192,255,0.09);
+  color: rgba(212,232,255,0.92);
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
 .tableCostCell{
   display:flex;
   align-items:center;
   justify-content:space-between;
   gap: 10px;
+}
+
+.tableCostStack{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap: 6px;
+  min-width: 0;
+}
+
+.tablePricePill{
+  display:inline-flex;
+  align-items:center;
+  min-height: 26px;
+  padding: 0 10px;
+  white-space: nowrap;
+  border-radius: 999px;
+  border: 1px solid rgba(126,192,255,0.20);
+  background:
+    radial-gradient(220px 90px at 0% 0%, rgba(255,255,255,0.08), transparent 60%),
+    rgba(126,192,255,0.08);
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: help;
+  color: rgba(214,232,255,0.94);
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums lining-nums;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.tablePricePill:hover{
+  border-color: rgba(126,192,255,0.30);
+  background:
+    radial-gradient(220px 90px at 0% 0%, rgba(255,255,255,0.10), transparent 60%),
+    rgba(126,192,255,0.12);
+}
+
+.tablePricePill:focus{
+  outline:none;
+}
+
+.tablePricePill:focus-visible{
+  box-shadow:
+    0 0 0 1px rgba(126,192,255,0.30),
+    0 0 0 4px rgba(126,192,255,0.14),
+    inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.sessionUndoToast{
+  margin-top: 14px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 14px 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(205,132,64,0.22);
+  background:
+    radial-gradient(420px 140px at 0% 0%, rgba(205,132,64,0.12), transparent 62%),
+    linear-gradient(180deg, rgba(255,255,255,0.04), rgba(10,10,14,0.64));
+  animation: sessionToastIn .26s ease;
+}
+
+.sessionUndoText{
+  color: rgba(255,255,255,0.84);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.sessionScoreStrip{
+  margin-top: 8px;
+  display:flex;
+  align-items:center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sessionScorePill,
+.sessionFlagPill{
+  display:inline-flex;
+  align-items:center;
+  min-height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.08);
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.sessionScorePill{
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.88);
+}
+
+.sessionScorePill.success{
+  border-color: rgba(132,218,174,0.26);
+  background: rgba(132,218,174,0.10);
+  color: rgba(188,244,214,0.96);
+}
+
+.sessionScorePill.warm{
+  border-color: rgba(205,132,64,0.28);
+  background: rgba(205,132,64,0.10);
+  color: rgba(244,212,186,0.96);
+}
+
+.sessionScorePill.warn{
+  border-color: rgba(255,210,120,0.24);
+  background: rgba(255,210,120,0.09);
+  color: rgba(255,230,172,0.96);
+}
+
+.sessionScorePill.danger{
+  border-color: rgba(255,138,138,0.28);
+  background: rgba(255,138,138,0.10);
+  color: rgba(255,214,214,0.96);
+}
+
+.sessionFlagPill{
+  border-color: rgba(255,138,138,0.20);
+  background: rgba(255,138,138,0.08);
+  color: rgba(255,214,214,0.92);
+}
+
+.sessionMiniMeta{
+  margin-top: 7px;
+  font-size: 11px;
+  color: rgba(255,255,255,0.44);
+  line-height: 1.35;
 }
 
 .rowDeleteBtn{
@@ -2161,6 +2857,275 @@ body::before{
 .rowDeleteBtn:hover{
   background: rgba(255,138,138,0.12);
   border-color: rgba(255,138,138,0.34);
+}
+
+.rowEditBtn{
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(126,192,255,0.24);
+  background: rgba(126,192,255,0.08);
+  color: rgba(214,232,255,0.94);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+}
+
+.rowEditBtn:hover{
+  background: rgba(126,192,255,0.12);
+  border-color: rgba(126,192,255,0.34);
+}
+
+.rowActions{
+  display:flex;
+  align-items:center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content:flex-end;
+}
+
+.tableRow.editing{
+  border-color: rgba(126,192,255,0.24);
+  box-shadow:
+    0 18px 42px rgba(0,0,0,0.20),
+    0 0 0 1px rgba(126,192,255,0.08) inset;
+}
+
+.tableRow.flash-saved{
+  border-color: rgba(132,218,174,0.30);
+  animation: sessionRowFlashSaved 1.8s ease;
+}
+
+.tableRow.flash-restored{
+  border-color: rgba(126,192,255,0.28);
+  animation: sessionRowFlashRestored 1.8s ease;
+}
+
+.tableEditRow{
+  padding: 16px;
+  border-radius: 22px;
+  border: 1px solid rgba(126,192,255,0.16);
+  background:
+    radial-gradient(520px 160px at 0% 0%, rgba(126,192,255,0.10), transparent 62%),
+    linear-gradient(180deg, rgba(255,255,255,0.04), rgba(10,10,14,0.62));
+  box-shadow: 0 16px 36px rgba(0,0,0,0.18);
+}
+
+.tableEditRow.isDirty{
+  border-color: rgba(205,132,64,0.20);
+}
+
+.tableEditRow.isPristine{
+  border-color: rgba(126,192,255,0.14);
+}
+
+.tableEditGrid{
+  display:grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.tableEditPreview{
+  margin-top: 14px;
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.editStatusPill,
+.editPreviewPill{
+  display:inline-flex;
+  align-items:center;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.86);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.editPreviewPill{
+  background:
+    radial-gradient(180px 80px at 0% 0%, rgba(255,255,255,0.08), transparent 60%),
+    rgba(255,255,255,0.04);
+}
+
+.editStatusPill.dirty{
+  border-color: rgba(205,132,64,0.26);
+  background: rgba(205,132,64,0.10);
+  color: rgba(248,220,195,0.98);
+}
+
+.editStatusPill.pristine{
+  border-color: rgba(126,192,255,0.18);
+  background: rgba(126,192,255,0.08);
+  color: rgba(214,232,255,0.94);
+}
+
+.editStatusPill.needsAttention{
+  border-color: rgba(255,210,120,0.24);
+  color: rgba(255,230,172,0.98);
+}
+
+.editStatusPill.ready{
+  box-shadow: 0 0 0 1px rgba(132,218,174,0.10) inset;
+}
+
+.tableEditActions{
+  margin-top: 14px;
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.comparisonSelectors{
+  display:flex;
+  align-items:flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.comparisonSelectField{
+  min-width: 140px;
+}
+
+.comparisonChartHeader{
+  margin-top: 26px;
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.comparisonChartTitle{
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: rgba(255,255,255,0.94);
+}
+
+.comparisonChartSub{
+  margin-top: 6px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.56);
+}
+
+.comparisonChartShell{
+  margin-top: 18px;
+  min-height: 336px;
+  padding: 16px 18px 8px;
+  border-radius: 30px;
+  border: 1px solid rgba(255,255,255,0.06);
+  background:
+    radial-gradient(520px 180px at 0% 0%, rgba(205,132,64,0.10), transparent 60%),
+    radial-gradient(420px 180px at 100% 0%, rgba(126,192,255,0.08), transparent 60%),
+    linear-gradient(180deg, rgba(255,255,255,0.03), rgba(10,10,14,0.66));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+.comparisonSpreadRow{
+  margin-top: 18px;
+  display:flex;
+}
+
+.comparisonSpreadCard{
+  width: 100%;
+  padding: 18px 20px;
+  border-radius: 24px;
+  border: 1px solid rgba(132,218,174,0.16);
+  background:
+    radial-gradient(380px 120px at 0% 0%, rgba(132,218,174,0.10), transparent 60%),
+    linear-gradient(180deg, rgba(255,255,255,0.03), rgba(10,10,14,0.58));
+}
+
+.comparisonSpreadLabel{
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.50);
+}
+
+.comparisonSpreadValue{
+  margin-top: 10px;
+  font-size: clamp(24px, 3vw, 34px);
+  line-height: 1;
+  font-weight: 750;
+  letter-spacing: -0.04em;
+  color: rgba(255,255,255,0.96);
+}
+
+.comparisonSpreadSub{
+  margin-top: 8px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.58);
+}
+
+.premiumCurvePanel{
+  min-height: 280px;
+}
+
+@keyframes sessionToastIn{
+  from{
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to{
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes sessionRowFlashSaved{
+  0%{
+    box-shadow:
+      0 0 0 0 rgba(132,218,174,0.32),
+      0 16px 36px rgba(0,0,0,0.14);
+  }
+  100%{
+    box-shadow:
+      0 0 0 0 rgba(132,218,174,0),
+      0 10px 24px rgba(0,0,0,0.10);
+  }
+}
+
+@keyframes sessionRowFlashRestored{
+  0%{
+    box-shadow:
+      0 0 0 0 rgba(126,192,255,0.30),
+      0 16px 36px rgba(0,0,0,0.14);
+  }
+  100%{
+    box-shadow:
+      0 0 0 0 rgba(126,192,255,0),
+      0 10px 24px rgba(0,0,0,0.10);
+  }
+}
+
+.forecastBarShell{
+  margin-top: 18px;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.06);
+  overflow: hidden;
+}
+
+.forecastBarFill{
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, rgba(205,132,64,0.82), rgba(126,192,255,0.76));
+  box-shadow: 0 0 18px rgba(205,132,64,0.24);
+}
+
+@media (max-width: 900px){
+  .tableMetaInline{
+    display:inline-flex;
+  }
 }
 
 .formCard{
@@ -2337,6 +3302,14 @@ body::before{
   .summaryGrid{
     grid-template-columns: 1fr;
   }
+
+  .tableEditGrid{
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .comparisonChartShell{
+    padding: 12px 10px 4px;
+  }
 }
 
 @media (max-width: 640px){
@@ -2350,5 +3323,1747 @@ body::before{
 
   .metricMiniGrid{
     grid-template-columns: 1fr 1fr;
+  }
+
+  .tableEditGrid{
+    grid-template-columns: 1fr;
+  }
+
+  .tableEditActions{
+    flex-direction: column;
+  }
+
+  .rowActions{
+    justify-content:flex-start;
+  }
+
+  .tableEditPreview,
+  .comparisonChartHeader{
+    flex-direction: column;
+    align-items:flex-start;
+  }
+}
+
+/* =========================================================
+   DESIGN LANGUAGE PASS
+   Ziel: eine konsistente Cupra / Apple / Tesla Designsprache
+   ========================================================= */
+:root{
+  --design-radius-panel: 32px;
+  --design-radius-tile: 28px;
+  --design-radius-pill: 999px;
+  --design-line: rgba(255,255,255,0.085);
+  --design-line-strong: rgba(255,255,255,0.13);
+  --design-fill-soft: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(8,9,12,0.76));
+  --design-fill-strong:
+    radial-gradient(980px 260px at 12% 0%, rgba(255,255,255,0.055), transparent 58%),
+    radial-gradient(860px 260px at 88% 112%, rgba(205,132,64,0.08), transparent 62%),
+    linear-gradient(180deg, rgba(255,255,255,0.055), rgba(8,9,12,0.80));
+  --design-shadow-soft: 0 18px 48px rgba(0,0,0,0.26);
+  --design-shadow-strong: 0 34px 110px rgba(0,0,0,0.48);
+}
+
+body{
+  background:
+    radial-gradient(1360px 760px at 12% -6%, rgba(205,132,64,0.12), transparent 56%),
+    radial-gradient(1040px 760px at 92% 2%, rgba(126,192,255,0.08), transparent 54%),
+    linear-gradient(180deg, #04060a 0%, #080910 34%, #0a0c12 100%);
+}
+
+body::before{
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.028), rgba(255,255,255,0.00) 20%),
+    radial-gradient(780px 320px at 50% -12%, rgba(255,255,255,0.045), transparent 72%);
+  opacity: 0.82;
+}
+
+.app{
+  max-width: 1460px;
+  padding: 34px 36px 58px;
+}
+
+.layout{
+  gap: 32px;
+}
+
+.topBarPremium{
+  gap: 42px;
+}
+
+.premiumLayout{
+  gap: 34px;
+}
+
+.title{
+  margin-top: 8px;
+  font-size: clamp(36px, 4.8vw, 60px);
+  line-height: 0.94;
+  letter-spacing: -0.06em;
+  text-wrap: balance;
+}
+
+.sub{
+  margin-top: 14px;
+  max-width: 58ch;
+  font-size: 15px;
+  line-height: 1.62;
+  color: rgba(255,255,255,0.68);
+}
+
+.kicker,
+.sectionKicker,
+.summaryLabel,
+.premiumMiniLabel,
+.premiumLatestLabel,
+.metricMiniLabel,
+.kpiTitle,
+.chipLabel{
+  letter-spacing: 0.18em;
+}
+
+.card{
+  border-radius: var(--design-radius-panel);
+  border: 1px solid var(--design-line);
+  transition:
+    border-color 180ms ease,
+    box-shadow 220ms ease,
+    transform 220ms ease,
+    background 220ms ease;
+}
+
+.glass{
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+  box-shadow: 0 20px 58px rgba(0,0,0,0.36);
+}
+
+.glassStrong{
+  background: var(--design-fill-strong);
+  box-shadow: var(--design-shadow-strong);
+}
+
+.heroCard,
+.analysisPanel,
+.premiumMetricCard,
+.premiumSpotlightCard,
+.premiumDataIntro,
+.tableWrap,
+.addComposerFrame{
+  border-color: rgba(255,255,255,0.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.03),
+    0 28px 80px rgba(0,0,0,0.38);
+}
+
+.sectionHeader,
+.panelHeader{
+  gap: 20px;
+}
+
+.sectionTitle{
+  font-size: 20px;
+  letter-spacing: -0.035em;
+}
+
+.sectionTitle::after{
+  width: 36%;
+  bottom: -8px;
+  opacity: 0.48;
+  animation: none;
+}
+
+.chip,
+.pill,
+.toggle,
+.toggleBtn,
+.btnPrimary,
+.rowEditBtn,
+.rowDeleteBtn,
+.tablePricePill{
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.chip,
+.pill{
+  min-height: 38px;
+  border-color: rgba(255,255,255,0.10);
+  background:
+    radial-gradient(180px 80px at 0% 0%, rgba(255,255,255,0.07), transparent 60%),
+    rgba(255,255,255,0.038);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.04),
+    0 10px 24px rgba(0,0,0,0.14);
+}
+
+.chip:hover,
+.pill:hover{
+  border-color: rgba(255,255,255,0.14);
+}
+
+.chip:hover{
+  transform: translateY(-1px);
+}
+
+.premiumScreenBar,
+.premiumModeBar{
+  padding-inline: 2px;
+}
+
+.premiumScreenMeta{
+  font-size: 14px;
+  line-height: 1.6;
+  color: rgba(255,255,255,0.60);
+}
+
+.premiumModeTitle{
+  font-size: clamp(24px, 2.8vw, 32px);
+  letter-spacing: -0.045em;
+}
+
+.toggle{
+  padding: 9px;
+  border-radius: 20px;
+  border-color: rgba(255,255,255,0.09);
+  background:
+    radial-gradient(220px 90px at 0% 0%, rgba(255,255,255,0.05), transparent 60%),
+    rgba(255,255,255,0.028);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.03),
+    0 16px 34px rgba(0,0,0,0.18);
+}
+
+.toggleBtn{
+  min-height: 38px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  color: rgba(255,255,255,0.72);
+}
+
+.toggleBtn:hover{
+  color: rgba(255,255,255,0.92);
+}
+
+.toggleBtn.active{
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.07)),
+    rgba(255,255,255,0.02);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.09),
+    0 0 0 1px rgba(255,255,255,0.05),
+    0 14px 26px rgba(0,0,0,0.18);
+}
+
+.ttTrigger{
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.76);
+}
+
+.ttTrigger:hover{
+  border-color: rgba(205,132,64,0.26);
+  background: rgba(205,132,64,0.08);
+}
+
+.premiumYearRail,
+.demoBanner{
+  border-color: rgba(255,255,255,0.08);
+  background:
+    radial-gradient(420px 140px at 0% 0%, rgba(205,132,64,0.12), transparent 62%),
+    linear-gradient(180deg, rgba(255,255,255,0.04), rgba(10,10,14,0.56));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.04),
+    0 18px 52px rgba(0,0,0,0.26);
+}
+
+.heroCard{
+  padding: 28px;
+}
+
+.heroImg{
+  height: 328px;
+  border-radius: 28px;
+}
+
+.premiumMetricCard,
+.premiumMiniCard,
+.premiumLatestCard,
+.summaryCard,
+.detailCard{
+  border-radius: var(--design-radius-tile);
+}
+
+.premiumMetricCard{
+  padding: 22px 20px;
+  min-height: 160px;
+}
+
+.premiumMetricValue{
+  font-size: clamp(28px, 3vw, 38px);
+}
+
+.premiumMetricSub{
+  line-height: 1.62;
+}
+
+.analysisPanel{
+  padding: 26px;
+  background: var(--design-fill-strong);
+}
+
+.premiumFeatureCard,
+.premiumSpotlightReportCard{
+  position: relative;
+  overflow: hidden;
+}
+
+.premiumFeatureCard::before,
+.premiumSpotlightReportCard::before{
+  content:"";
+  position:absolute;
+  inset: 0;
+  pointer-events:none;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.02), transparent 24%),
+    radial-gradient(720px 220px at 100% 0%, rgba(126,192,255,0.04), transparent 62%);
+  opacity: 0.9;
+}
+
+.premiumSecondaryGrid{
+  gap: 26px;
+}
+
+.summaryGrid{
+  margin-top: 22px;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(248px, 1fr));
+}
+
+.summaryCard{
+  min-height: 156px;
+  padding: 20px 20px 18px;
+  border-color: rgba(255,255,255,0.075);
+  background:
+    radial-gradient(760px 220px at 0% 0%, rgba(255,255,255,0.05), transparent 60%),
+    linear-gradient(180deg, rgba(255,255,255,0.05), rgba(8,9,12,0.76));
+  box-shadow: var(--design-shadow-soft);
+}
+
+.summaryCard::before{
+  left: 20px;
+  right: 20px;
+  top: 12px;
+  opacity: 0.28;
+}
+
+.summaryValue{
+  margin-top: 16px;
+  font-size: clamp(30px, 2.4vw, 40px);
+  letter-spacing: -0.05em;
+}
+
+.summarySub{
+  margin-top: 9px;
+  line-height: 1.58;
+}
+
+.metricNarrative{
+  margin-top: 20px;
+  padding: 17px 18px;
+  border-radius: 24px;
+  border-color: rgba(255,255,255,0.07);
+  background:
+    radial-gradient(420px 180px at 0% 0%, rgba(205,132,64,0.09), transparent 62%),
+    linear-gradient(180deg, rgba(255,255,255,0.04), rgba(10,10,14,0.52));
+  font-size: 13.5px;
+  line-height: 1.68;
+  color: rgba(255,255,255,0.74);
+}
+
+.premiumMiniGrid{
+  gap: 18px;
+  padding: 0 22px 22px;
+}
+
+.premiumMiniCard,
+.premiumLatestCard{
+  padding: 18px 18px 16px;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.20);
+}
+
+.premiumMiniValue,
+.premiumLatestValue{
+  font-size: clamp(22px, 2.1vw, 30px);
+  letter-spacing: -0.04em;
+}
+
+.premiumMiniSub,
+.premiumLatestSub{
+  line-height: 1.62;
+}
+
+.premiumSpotlightSummaryGrid{
+  gap: 18px;
+}
+
+.premiumSpotlightSignalCard{
+  min-height: 236px;
+  background:
+    radial-gradient(560px 220px at 0% 0%, rgba(205,132,64,0.18), transparent 62%),
+    linear-gradient(180deg, rgba(255,255,255,0.058), rgba(8,9,12,0.74));
+}
+
+.premiumSpotlightSignalCard .summaryValue{
+  font-size: clamp(44px, 4.2vw, 68px);
+}
+
+.premiumSpotlightReportCard .summaryCard:not(.premiumSpotlightSignalCard){
+  min-height: 188px;
+}
+
+.premiumSpotlightImpulseCard{
+  background:
+    radial-gradient(420px 160px at 0% 0%, rgba(126,192,255,0.08), transparent 62%),
+    linear-gradient(180deg, rgba(255,255,255,0.04), rgba(8,9,12,0.76));
+}
+
+.chartWrap,
+.comparisonChartShell{
+  margin-top: 18px;
+  border-radius: 30px;
+  border-color: rgba(255,255,255,0.07);
+  background:
+    radial-gradient(860px 240px at 0% 0%, rgba(255,255,255,0.03), transparent 58%),
+    radial-gradient(760px 220px at 100% 100%, rgba(205,132,64,0.05), transparent 62%),
+    linear-gradient(180deg, rgba(255,255,255,0.03), rgba(7,8,10,0.70));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.03),
+    0 18px 46px rgba(0,0,0,0.22);
+}
+
+.chartWrap{
+  padding: 20px 20px 14px;
+}
+
+.chartWrap.compact{
+  height: 344px;
+}
+
+.chartTooltip{
+  border-radius: 20px;
+  border-color: rgba(255,255,255,0.08);
+  box-shadow: 0 24px 72px rgba(0,0,0,0.46);
+}
+
+.comparisonChartHeader{
+  margin-top: 30px;
+}
+
+.comparisonSpreadCard{
+  padding: 20px 22px;
+  border-radius: 26px;
+}
+
+.tableWrap{
+  margin-top: 16px;
+  border-radius: 28px;
+}
+
+.tableHead{
+  padding: 16px 18px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.025), rgba(255,255,255,0.01));
+}
+
+.tableRow{
+  padding: 16px 16px;
+  border-radius: 22px;
+  border-color: rgba(255,255,255,0.07);
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease;
+}
+
+.tableRow:hover{
+  transform: translateY(-1px);
+  border-color: rgba(205,132,64,0.14);
+  box-shadow: 0 20px 46px rgba(0,0,0,0.24);
+}
+
+.tablePrimary{
+  font-size: 15px;
+  font-weight: 670;
+}
+
+.tableSecondary{
+  font-size: 12.5px;
+}
+
+.field > span{
+  color: rgba(255,255,255,0.72);
+  letter-spacing: 0.06em;
+}
+
+.input{
+  height: 44px;
+  border-radius: 16px;
+  background:
+    radial-gradient(220px 90px at 0% 0%, rgba(255,255,255,0.05), transparent 60%),
+    rgba(0,0,0,0.22);
+  border-color: rgba(255,255,255,0.11);
+  transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.input:focus{
+  border-color: rgba(205,132,64,0.32);
+  background:
+    radial-gradient(220px 90px at 0% 0%, rgba(205,132,64,0.08), transparent 60%),
+    rgba(0,0,0,0.20);
+  box-shadow: 0 0 0 4px rgba(205,132,64,0.10);
+}
+
+.btnPrimary{
+  height: 44px;
+  border-radius: 16px;
+  border-color: rgba(205,132,64,0.28);
+  background:
+    linear-gradient(180deg, rgba(205,132,64,0.22), rgba(205,132,64,0.10));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.05),
+    0 14px 28px rgba(0,0,0,0.18);
+}
+
+.btnPrimary:hover{
+  background:
+    linear-gradient(180deg, rgba(205,132,64,0.26), rgba(205,132,64,0.12));
+}
+
+@media (max-width: 1180px){
+  .app{
+    padding: 28px 24px 44px;
+  }
+
+  .layout{
+    gap: 28px;
+  }
+
+  .title{
+    font-size: clamp(34px, 5vw, 50px);
+  }
+}
+
+@media (max-width: 760px){
+  .app{
+    padding: 22px 18px 34px;
+  }
+
+  .chartWrap.compact{
+    height: 320px;
+  }
+
+  .summaryCard{
+    min-height: 144px;
+  }
+}
+
+@media (max-width: 640px){
+  .layout{
+    gap: 24px;
+  }
+
+  .title{
+    font-size: 32px;
+  }
+
+  .heroCard,
+  .analysisPanel{
+    padding: 20px 18px;
+  }
+
+  .heroImg{
+    height: 244px;
+  }
+
+  .summaryGrid,
+  .premiumSpotlightSummaryGrid{
+    gap: 16px;
+  }
+
+  .summaryCard{
+    padding: 18px 18px 16px;
+  }
+
+  .premiumSpotlightSignalCard .summaryValue{
+    font-size: 42px;
+  }
+}
+
+/* =========================================================
+   PREMIUM RESTRAINT PASS
+   Ziel: weniger Lautstärke, mehr Ruhe und klarere Hierarchie
+   ========================================================= */
+
+.title{
+  font-size: clamp(34px, 4.2vw, 54px);
+}
+
+.sub{
+  max-width: 54ch;
+  font-size: 14px;
+  line-height: 1.56;
+}
+
+.premiumScreenMeta{
+  font-size: 13px;
+  line-height: 1.56;
+}
+
+.premiumHeroStage{
+  gap: 20px;
+}
+
+.premiumHeroRail{
+  gap: 16px;
+}
+
+.premiumMetricRail{
+  gap: 14px;
+}
+
+.premiumMetricCard{
+  min-height: 138px;
+  padding: 18px 18px 16px;
+}
+
+.premiumMetricValue{
+  margin-top: 12px;
+  font-size: clamp(24px, 2.5vw, 32px);
+  letter-spacing: -0.045em;
+}
+
+.premiumMetricSub{
+  margin-top: 10px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.premiumSpotlightCard{
+  min-height: 240px;
+  padding: 22px;
+}
+
+.premiumSpotlightTitle{
+  margin-top: 10px;
+  font-size: 18px;
+  letter-spacing: -0.03em;
+}
+
+.premiumSpotlightValue{
+  margin-top: 12px;
+  font-size: clamp(28px, 3vw, 38px);
+}
+
+.premiumSpotlightMeta,
+.premiumSpotlightText{
+  font-size: 13px;
+  line-height: 1.56;
+}
+
+.premiumSpotlightFoot{
+  margin-top: 16px;
+  font-size: 11.5px;
+  color: rgba(255,255,255,0.54);
+}
+
+.sectionTitle{
+  font-size: 18px;
+}
+
+.summaryGrid{
+  gap: 18px;
+}
+
+.summaryCard{
+  min-height: 144px;
+  padding: 18px 18px 16px;
+}
+
+.summaryValue{
+  margin-top: 14px;
+  font-size: clamp(26px, 2vw, 34px);
+}
+
+.summarySub{
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.52;
+}
+
+.metricNarrative{
+  font-size: 13px;
+  line-height: 1.62;
+}
+
+.premiumSpotlightSignalCard{
+  min-height: 208px;
+}
+
+.premiumSpotlightSignalCard .summaryValue{
+  font-size: clamp(36px, 3.3vw, 52px);
+}
+
+.premiumSpotlightReportCard .summaryCard:not(.premiumSpotlightSignalCard){
+  min-height: 170px;
+}
+
+.sessionsPanel .sectionHeader{
+  gap: 18px;
+}
+
+.sessionsPanel .tableWrap{
+  margin-top: 18px;
+  border-radius: 30px;
+  border: 1px solid rgba(255,255,255,0.07);
+  background:
+    radial-gradient(920px 220px at 0% 0%, rgba(255,255,255,0.022), transparent 58%),
+    linear-gradient(180deg, rgba(255,255,255,0.02), rgba(7,8,10,0.72));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.03),
+    0 18px 42px rgba(0,0,0,0.18);
+}
+
+.sessionsPanel .tableHead{
+  grid-template-columns: 1.28fr 0.84fr 0.92fr 0.94fr 0.76fr 1.12fr;
+  gap: 16px;
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  background: linear-gradient(180deg, rgba(255,255,255,0.022), rgba(255,255,255,0.008));
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  color: rgba(255,255,255,0.42);
+}
+
+.sessionsPanel .tableBody{
+  --rowH: 82px;
+  gap: 0;
+  padding: 8px 18px 12px;
+  max-height: calc(var(--rowH) * 5 + 24px);
+}
+
+.sessionsPanel .tableRow{
+  grid-template-columns: 1.28fr 0.84fr 0.92fr 0.94fr 0.76fr 1.12fr;
+  gap: 16px;
+  min-height: var(--rowH);
+  padding: 16px 4px;
+  border: 0;
+  border-bottom: 1px solid rgba(255,255,255,0.055);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.sessionsPanel .tableRow:last-child{
+  border-bottom: 0;
+}
+
+.sessionsPanel .tableRow:hover{
+  transform: none;
+  border-color: rgba(255,255,255,0.08);
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01)),
+    radial-gradient(280px 120px at 0% 0%, rgba(205,132,64,0.05), transparent 62%);
+  box-shadow: none;
+}
+
+.sessionsPanel .tableRow.editing{
+  margin: 8px 0 0;
+  padding: 16px 16px;
+  border-radius: 22px;
+  border: 1px solid rgba(205,132,64,0.16);
+  background:
+    radial-gradient(520px 180px at 0% 0%, rgba(205,132,64,0.07), transparent 60%),
+    linear-gradient(180deg, rgba(255,255,255,0.03), rgba(10,10,14,0.62));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.03),
+    0 16px 36px rgba(0,0,0,0.16);
+}
+
+.sessionsPanel .tablePrimary{
+  font-size: 14.5px;
+  font-weight: 640;
+  letter-spacing: -0.018em;
+}
+
+.sessionsPanel .tableSecondary{
+  margin-top: 4px;
+  font-size: 12.5px;
+  line-height: 1.46;
+  color: rgba(255,255,255,0.54);
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.sessionsPanel .sessionScoreStrip{
+  margin-top: 8px;
+  gap: 7px;
+}
+
+.sessionsPanel .sessionScorePill{
+  min-height: 24px;
+  padding: 0 9px;
+  border-color: rgba(255,255,255,0.07);
+  background: rgba(255,255,255,0.035);
+  font-size: 10.5px;
+  font-weight: 620;
+}
+
+.sessionsPanel .sessionScorePill.success{
+  border-color: rgba(132,218,174,0.18);
+  background: rgba(132,218,174,0.07);
+}
+
+.sessionsPanel .sessionScorePill.warm{
+  border-color: rgba(205,132,64,0.20);
+  background: rgba(205,132,64,0.08);
+}
+
+.sessionsPanel .sessionScorePill.warn{
+  border-color: rgba(255,210,120,0.18);
+  background: rgba(255,210,120,0.07);
+}
+
+.sessionsPanel .sessionScorePill.danger{
+  border-color: rgba(255,138,138,0.18);
+  background: rgba(255,138,138,0.07);
+}
+
+.sessionMetaHint{
+  font-size: 11px;
+  line-height: 1.2;
+  color: rgba(255,255,255,0.42);
+}
+
+.sessionsPanel .tableBadge,
+.sessionsPanel .tableSoc{
+  min-height: 28px;
+  padding: 0 11px;
+  border-color: rgba(255,255,255,0.07);
+  background: rgba(255,255,255,0.028);
+  font-size: 11.5px;
+  color: rgba(255,255,255,0.74);
+}
+
+.sessionsPanel .tableSoc{
+  border-color: rgba(205,132,64,0.14);
+  background: rgba(205,132,64,0.05);
+}
+
+.sessionsPanel .tableValueStrong,
+.sessionsPanel .tableValueSoft{
+  font-size: 14px;
+}
+
+.sessionsPanel .tableValueStrong{
+  font-weight: 640;
+}
+
+.sessionsPanel .sessionMiniMeta{
+  margin-top: 6px;
+  font-size: 10.5px;
+  line-height: 1.38;
+  color: rgba(255,255,255,0.40);
+}
+
+.sessionsPanel .tableCostCell{
+  gap: 14px;
+}
+
+.sessionsPanel .tablePricePill{
+  min-height: 24px;
+  padding: 0 9px;
+  border-color: rgba(126,192,255,0.14);
+  background:
+    radial-gradient(160px 70px at 0% 0%, rgba(255,255,255,0.045), transparent 60%),
+    rgba(126,192,255,0.05);
+  font-size: 10.5px;
+  font-weight: 620;
+  color: rgba(214,232,255,0.78);
+}
+
+.sessionsPanel .rowActions{
+  gap: 6px;
+}
+
+.sessionsPanel .rowEditBtn,
+.sessionsPanel .rowDeleteBtn{
+  height: 30px;
+  padding: 0 11px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.025);
+  box-shadow: none;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.sessionsPanel .rowEditBtn{
+  border-color: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.76);
+}
+
+.sessionsPanel .rowEditBtn:hover{
+  border-color: rgba(126,192,255,0.18);
+  background: rgba(126,192,255,0.06);
+  color: rgba(226,238,255,0.92);
+}
+
+.sessionsPanel .rowDeleteBtn{
+  border-color: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.62);
+}
+
+.sessionsPanel .rowDeleteBtn:hover{
+  border-color: rgba(255,138,138,0.20);
+  background: rgba(255,138,138,0.07);
+  color: rgba(255,222,222,0.90);
+}
+
+.sessionsPanel .tableMetaInline{
+  margin-top: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: rgba(255,255,255,0.44);
+  font-size: 10.5px;
+  font-weight: 560;
+}
+
+.sessionsPanel .sessionUndoToast{
+  margin-top: 16px;
+  border-color: rgba(205,132,64,0.18);
+  box-shadow: none;
+}
+
+.sessionsPanel .tableEditRow{
+  margin-top: 8px;
+  border-color: rgba(255,255,255,0.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.03),
+    0 18px 34px rgba(0,0,0,0.16);
+}
+
+@media (max-width: 900px){
+  .sessionsPanel .tableHead,
+  .sessionsPanel .tableRow{
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 640px){
+  .title{
+    font-size: 30px;
+  }
+
+  .premiumMetricCard{
+    min-height: 128px;
+  }
+
+  .premiumMetricValue{
+    font-size: 28px;
+  }
+
+  .premiumSpotlightValue{
+    font-size: 34px;
+  }
+
+  .sessionsPanel .tableBody{
+    --rowH: 92px;
+    padding-inline: 14px;
+  }
+
+  .sessionsPanel .tableRow.editing{
+    padding-inline: 12px;
+  }
+}
+
+/* =========================================================
+   HERO REFINEMENT PASS
+   Ziel: ruhigeres Cockpit, weniger Showroom, mehr Präzision
+   ========================================================= */
+
+.topBarPremium{
+  align-items: flex-start;
+  gap: 30px;
+}
+
+.premiumTopCopy{
+  max-width: 720px;
+}
+
+.topBarPremium .title{
+  margin-top: 6px;
+  font-size: clamp(32px, 4vw, 50px);
+  letter-spacing: -0.062em;
+}
+
+.topBarPremium .sub{
+  margin-top: 12px;
+  max-width: 50ch;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: rgba(255,255,255,0.64);
+}
+
+.premiumTopControls{
+  gap: 12px;
+}
+
+.premiumYearRail{
+  padding: 12px 14px;
+  border-radius: 22px;
+  border-color: rgba(255,255,255,0.07);
+  background:
+    radial-gradient(320px 110px at 0% 0%, rgba(205,132,64,0.09), transparent 62%),
+    linear-gradient(180deg, rgba(255,255,255,0.035), rgba(9,10,14,0.42));
+}
+
+.premiumYearRail .chipLabel{
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: rgba(255,255,255,0.46);
+}
+
+.premiumYearRail .chipRow{
+  gap: 7px;
+}
+
+.premiumYearRail .chip,
+.premiumYearRail .chip.ghost{
+  height: 32px;
+  padding: 0 11px;
+  border-radius: 14px;
+  font-size: 12px;
+  font-weight: 620;
+}
+
+.premiumHeaderMeta{
+  gap: 10px;
+}
+
+.premiumHeaderMeta .pill{
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: 11.5px;
+  color: rgba(255,255,255,0.70);
+}
+
+.premiumHeroStage{
+  grid-template-columns: minmax(0, 1.16fr) minmax(340px, 0.84fr);
+  gap: 18px;
+}
+
+.premiumHeroRail{
+  gap: 14px;
+}
+
+.premiumMetricRail{
+  gap: 12px;
+}
+
+.premiumMetricCard{
+  min-height: 126px;
+  padding: 16px 16px 14px;
+  border-radius: 24px;
+}
+
+.premiumMetricValue{
+  margin-top: 10px;
+  font-size: clamp(22px, 2.2vw, 30px);
+  font-weight: 710;
+}
+
+.premiumMetricSub{
+  margin-top: 8px;
+  font-size: 11.5px;
+  line-height: 1.48;
+  color: rgba(255,255,255,0.52);
+}
+
+.premiumSpotlightCard{
+  min-height: 212px;
+  padding: 20px 20px 18px;
+  border-color: rgba(255,255,255,0.075);
+  background:
+    radial-gradient(420px 160px at 0% 0%, rgba(205,132,64,0.11), transparent 60%),
+    radial-gradient(360px 140px at 100% 100%, rgba(126,192,255,0.06), transparent 60%),
+    linear-gradient(180deg, rgba(255,255,255,0.035), rgba(8,9,12,0.74));
+}
+
+.premiumSpotlightEyebrow{
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+}
+
+.premiumSpotlightTitle{
+  margin-top: 8px;
+  font-size: 16px;
+  font-weight: 660;
+  color: rgba(255,255,255,0.90);
+}
+
+.premiumSpotlightValue{
+  margin-top: 10px;
+  font-size: clamp(26px, 2.5vw, 34px);
+  letter-spacing: -0.05em;
+}
+
+.premiumSpotlightMeta{
+  margin-top: 10px;
+  font-size: 12.5px;
+  line-height: 1.52;
+  color: rgba(255,255,255,0.56);
+}
+
+.premiumSpotlightText{
+  margin-top: 12px;
+  font-size: 13px;
+  line-height: 1.56;
+  color: rgba(255,255,255,0.72);
+}
+
+.premiumSpotlightFoot{
+  margin-top: 14px;
+  gap: 12px;
+  font-size: 11px;
+  color: rgba(255,255,255,0.48);
+}
+
+.heroCard{
+  padding: 20px 20px 18px;
+  background:
+    radial-gradient(920px 320px at 8% 0%, rgba(255,255,255,0.038), transparent 56%),
+    radial-gradient(680px 240px at 88% 112%, rgba(205,132,64,0.06), transparent 58%),
+    linear-gradient(180deg, rgba(255,255,255,0.045), rgba(5,6,10,0.84));
+}
+
+.heroCard::before{
+  background:
+    radial-gradient(58% 48% at 30% 16%, rgba(255,255,255,0.026), transparent 72%),
+    radial-gradient(32% 36% at 72% 18%, rgba(205,132,64,0.05), transparent 78%);
+}
+
+.heroHeaderHybrid{
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.heroTitle{
+  margin-top: 6px;
+  font-size: clamp(20px, 2vw, 28px);
+  line-height: 1;
+  font-weight: 680;
+  letter-spacing: -0.042em;
+}
+
+.heroChips{
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.chipSpec{
+  gap: 7px;
+  padding: 7px 10px;
+  border-radius: 11px;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  border-color: rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.028);
+  color: rgba(255,255,255,0.84);
+}
+
+.chipSpec.accent{
+  background: rgba(205,132,64,0.09);
+  border-color: rgba(205,132,64,0.24);
+  color: rgba(248,232,216,0.92);
+}
+
+.chipIcon{
+  width: 14px;
+  height: 14px;
+  color: rgba(205,132,64,0.82);
+}
+
+.heroMetaRail{
+  align-self: flex-start;
+}
+
+.heroStatusPill{
+  min-height: 34px;
+  padding: 0 12px;
+  border-color: rgba(255,255,255,0.08);
+  background:
+    radial-gradient(160px 60px at 0% 0%, rgba(255,255,255,0.05), transparent 60%),
+    rgba(255,255,255,0.03);
+  font-size: 11.5px;
+  color: rgba(255,255,255,0.72);
+  box-shadow: none;
+}
+
+.heroImg{
+  height: 318px;
+  padding: 18px;
+  border-radius: 26px;
+  border-color: rgba(255,255,255,0.075);
+  background:
+    radial-gradient(760px 300px at 50% 116%, rgba(205,132,64,0.10), transparent 64%),
+    radial-gradient(560px 260px at 24% 12%, rgba(255,255,255,0.05), transparent 60%),
+    linear-gradient(180deg, rgba(255,255,255,0.03), rgba(4,4,8,0.80));
+  box-shadow:
+    0 20px 58px rgba(0,0,0,0.34),
+    inset 0 0 0 1px rgba(255,255,255,0.035);
+}
+
+.heroImg::before{
+  left: 20px;
+  right: 20px;
+  bottom: 16px;
+  height: 1px;
+  opacity: 0.44;
+}
+
+.heroImg::after{
+  opacity: 0.58;
+}
+
+.heroImg img{
+  max-width: 100%;
+  max-height: 100%;
+  transform: translateY(2px);
+  filter:
+    drop-shadow(0 30px 56px rgba(0,0,0,0.54))
+    saturate(1.01)
+    contrast(1.02);
+}
+
+.heroCupraSlash{
+  top: -16px;
+  left: -22px;
+  width: 170px;
+  height: 52px;
+  opacity: 0.28;
+}
+
+.heroGlow{
+  width: 72%;
+  height: 40%;
+  opacity: 0.44;
+  filter: blur(18px);
+}
+
+@media (max-width: 1180px){
+  .premiumHeroStage{
+    grid-template-columns: 1fr;
+  }
+
+  .premiumTopCopy{
+    max-width: 100%;
+  }
+
+  .premiumTopControls{
+    align-items: flex-start;
+  }
+
+  .premiumHeaderMeta{
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 760px){
+  .topBarPremium{
+    gap: 22px;
+  }
+
+  .topBarPremium .title{
+    font-size: 34px;
+  }
+
+  .premiumMetricRail{
+    grid-template-columns: 1fr;
+  }
+
+  .premiumSpotlightCard{
+    min-height: 192px;
+  }
+
+  .heroCard{
+    padding: 18px;
+  }
+
+  .heroImg{
+    height: 270px;
+    padding: 14px;
+  }
+
+  .heroTitle{
+    font-size: 26px;
+  }
+}
+
+@media (max-width: 640px){
+  .topBarPremium .title{
+    font-size: 30px;
+  }
+
+  .premiumYearRail{
+    width: 100%;
+  }
+
+  .premiumYearRail .filters,
+  .premiumYearRail{
+    justify-content: flex-start;
+  }
+
+  .heroHeaderHybrid{
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .heroStatusPill{
+    width: fit-content;
+  }
+}
+
+/* =========================================================
+   FINAL PRODUCT POLISH
+   Ziel: Chart, Vergleich, Composer und Edit-Flow weiter beruhigen
+   ========================================================= */
+
+.premiumSecondaryGrid{
+  gap: 22px;
+  align-items: stretch;
+}
+
+.premiumEditorialReportCard,
+.premiumSpotlightReportCard{
+  height: 100%;
+}
+
+.premiumEditorialSummaryGrid,
+.premiumSpotlightSummaryGrid{
+  margin-top: 18px;
+  gap: 16px;
+}
+
+.premiumEditorialReportCard .summaryCard,
+.premiumSpotlightReportCard .summaryCard{
+  min-height: 156px;
+}
+
+.premiumEditorialReportCard .metricNarrative,
+.premiumSpotlightReportCard .metricNarrative{
+  margin-top: 18px;
+}
+
+.premiumFeatureChartPanel{
+  padding-bottom: 18px;
+}
+
+.monthlyChartCard{
+  border-radius: 26px;
+  border-color: rgba(255,255,255,0.06);
+  background:
+    radial-gradient(760px 220px at 0% 0%, rgba(255,255,255,0.022), transparent 60%),
+    linear-gradient(180deg, rgba(255,255,255,0.028), rgba(6,7,10,0.62));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.03),
+    0 16px 36px rgba(0,0,0,0.16);
+}
+
+.monthlyChartCard .sectionHeader{
+  padding: 0;
+}
+
+.monthlyChartCard .sectionTitle{
+  font-size: 17px;
+}
+
+.monthlyChartToggle{
+  padding: 7px;
+  gap: 8px;
+  border-radius: 18px;
+  background:
+    radial-gradient(180px 72px at 0% 0%, rgba(255,255,255,0.04), transparent 60%),
+    rgba(255,255,255,0.025);
+}
+
+.monthlyChartToggle .toggleItem{
+  gap: 6px;
+}
+
+.monthlyChartToggle .toggleBtn{
+  min-height: 34px;
+  padding: 8px 12px;
+  font-size: 12px;
+}
+
+.monthlyChartShell{
+  margin-top: 16px;
+  border-radius: 28px;
+  border-color: rgba(255,255,255,0.06);
+  background:
+    radial-gradient(820px 220px at 0% 0%, rgba(255,255,255,0.02), transparent 58%),
+    linear-gradient(180deg, rgba(255,255,255,0.022), rgba(7,8,10,0.72));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.025),
+    0 14px 32px rgba(0,0,0,0.14);
+}
+
+.premiumFeatureStats{
+  margin-top: 18px;
+  padding: 0;
+  gap: 14px;
+}
+
+.premiumFeatureStatCard{
+  min-height: 110px;
+  padding: 16px 16px 14px;
+  border-radius: 22px;
+  border-color: rgba(255,255,255,0.06);
+  background:
+    radial-gradient(300px 120px at 0% 0%, rgba(255,255,255,0.03), transparent 62%),
+    linear-gradient(180deg, rgba(255,255,255,0.026), rgba(8,9,12,0.66));
+  box-shadow: none;
+}
+
+.premiumFeatureStatCard .premiumMiniLabel{
+  font-size: 10px;
+  color: rgba(255,255,255,0.44);
+}
+
+.premiumFeatureStatCard .premiumMiniValue{
+  margin-top: 10px;
+  font-size: clamp(20px, 1.9vw, 26px);
+  letter-spacing: -0.038em;
+}
+
+.premiumFeatureStatCard .premiumMiniSub{
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: rgba(255,255,255,0.50);
+}
+
+.comparisonPanel .summaryGrid{
+  gap: 16px;
+}
+
+.comparisonPanel .summaryCard{
+  min-height: 142px;
+}
+
+.comparisonPanel .summaryValue{
+  font-size: clamp(24px, 2vw, 31px);
+}
+
+.comparisonChartHeader{
+  margin-top: 24px;
+  align-items: center;
+}
+
+.comparisonChartTitle{
+  font-size: 17px;
+}
+
+.comparisonChartSub{
+  margin-top: 5px;
+  font-size: 12.5px;
+  color: rgba(255,255,255,0.50);
+}
+
+.comparisonChartShell{
+  overflow: hidden;
+  padding: 14px 16px 8px;
+  border-radius: 28px;
+  border-color: rgba(255,255,255,0.06);
+  background:
+    radial-gradient(620px 200px at 0% 0%, rgba(205,132,64,0.07), transparent 60%),
+    radial-gradient(520px 180px at 100% 0%, rgba(126,192,255,0.06), transparent 62%),
+    linear-gradient(180deg, rgba(255,255,255,0.022), rgba(8,9,12,0.68));
+}
+
+.comparisonLegendRow{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.comparisonLegendPill{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  font-size: 11px;
+  color: rgba(255,255,255,0.72);
+}
+
+.comparisonLegendPill.left{
+  border-color: rgba(205,132,64,0.22);
+}
+
+.comparisonLegendPill.right{
+  border-color: rgba(126,192,255,0.20);
+}
+
+.comparisonLegendDot{
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(205,132,64,0.92);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.08);
+}
+
+.comparisonLegendPill.right .comparisonLegendDot{
+  background: rgba(126,192,255,0.92);
+}
+
+.comparisonLegendMeta{
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.40);
+}
+
+.comparisonSpreadRow{
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.14fr) minmax(0, 0.86fr);
+  gap: 14px;
+}
+
+.comparisonSpreadCard{
+  min-height: 118px;
+  padding: 16px 18px;
+  border-radius: 24px;
+}
+
+.comparisonSpreadCard.primary{
+  border-color: rgba(132,218,174,0.14);
+  background:
+    radial-gradient(340px 120px at 0% 0%, rgba(132,218,174,0.08), transparent 62%),
+    linear-gradient(180deg, rgba(255,255,255,0.025), rgba(9,10,14,0.60));
+}
+
+.comparisonSpreadCard.subtle{
+  border-color: rgba(255,255,255,0.07);
+  background:
+    radial-gradient(260px 100px at 0% 0%, rgba(255,255,255,0.03), transparent 60%),
+    linear-gradient(180deg, rgba(255,255,255,0.02), rgba(9,10,14,0.58));
+}
+
+.comparisonSpreadValue{
+  font-size: clamp(22px, 2vw, 30px);
+}
+
+.comparisonSpreadSub{
+  font-size: 12px;
+  color: rgba(255,255,255,0.50);
+}
+
+.sessionsPanel .tableEditRow{
+  padding: 14px;
+  border-radius: 24px;
+  background:
+    radial-gradient(520px 160px at 0% 0%, rgba(255,255,255,0.04), transparent 62%),
+    linear-gradient(180deg, rgba(255,255,255,0.025), rgba(10,10,14,0.60));
+}
+
+.sessionsPanel .tableEditGrid{
+  gap: 10px;
+}
+
+.sessionsPanel .tableEditPreview{
+  margin-top: 12px;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.sessionsPanel .editStatusPill{
+  min-height: 36px;
+  padding: 0 12px;
+  font-size: 11px;
+  font-weight: 620;
+}
+
+.editPreviewGrid{
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.editPreviewMetric{
+  min-height: 72px;
+  padding: 12px 12px 10px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.07);
+  background:
+    radial-gradient(180px 80px at 0% 0%, rgba(255,255,255,0.04), transparent 62%),
+    rgba(255,255,255,0.02);
+}
+
+.editPreviewLabel{
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.42);
+}
+
+.editPreviewValue{
+  margin-top: 10px;
+  font-size: 18px;
+  line-height: 1.05;
+  font-weight: 680;
+  letter-spacing: -0.03em;
+  color: rgba(255,255,255,0.92);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.sessionsPanel .tableEditActions{
+  margin-top: 12px;
+  align-items: center;
+}
+
+.sessionsPanel .tableEditActions .formHint{
+  margin-bottom: 0;
+  padding: 11px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  line-height: 1.48;
+  color: rgba(255,255,255,0.58);
+  background: rgba(255,255,255,0.02);
+}
+
+.addComposer{
+  border-color: rgba(255,255,255,0.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.03),
+    0 18px 42px rgba(0,0,0,0.20);
+}
+
+.addComposerGlow{
+  opacity: 0.52;
+}
+
+.addComposerInner{
+  padding: 16px 18px 18px;
+}
+
+.addComposerClosed{
+  margin-top: 10px;
+}
+
+.addComposerLead{
+  max-width: 56ch;
+  font-size: 13px;
+  line-height: 1.58;
+  color: rgba(255,255,255,0.62);
+}
+
+.addComposerMiniGrid{
+  margin-top: 14px;
+  gap: 12px;
+}
+
+.addComposerStatCard{
+  min-height: 116px;
+  padding: 16px 16px 14px;
+  border-radius: 22px;
+}
+
+.addComposerStatCard .summaryValue{
+  margin-top: 10px;
+  font-size: clamp(22px, 2vw, 28px);
+}
+
+.addComposerStatCard .summarySub{
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.48;
+  color: rgba(255,255,255,0.54);
+}
+
+.addComposerFrame{
+  margin-top: 12px;
+  border-radius: 24px;
+  border-color: rgba(255,255,255,0.07);
+  background:
+    radial-gradient(520px 180px at 0% 0%, rgba(255,255,255,0.025), transparent 58%),
+    linear-gradient(180deg, rgba(255,255,255,0.02), rgba(8,9,12,0.40));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.03),
+    0 12px 28px rgba(0,0,0,0.12);
+}
+
+@media (max-width: 980px){
+  .comparisonSpreadRow{
+    grid-template-columns: 1fr;
+  }
+
+  .editPreviewGrid{
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px){
+  .premiumSecondaryGrid{
+    gap: 18px;
+  }
+
+  .monthlyChartToggle{
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .premiumFeatureStats{
+    grid-template-columns: 1fr;
+  }
+
+  .comparisonLegendRow{
+    margin-bottom: 10px;
+  }
+}
+
+@media (max-width: 640px){
+  .comparisonSelectors{
+    width: 100%;
+  }
+
+  .comparisonSelectField{
+    min-width: 0;
+    flex: 1 1 100%;
+  }
+
+  .editPreviewGrid{
+    grid-template-columns: 1fr;
+  }
+
+  .sessionsPanel .tableEditActions{
+    align-items: stretch;
+  }
+
+  .addComposerMiniGrid{
+    grid-template-columns: 1fr;
   }
 }

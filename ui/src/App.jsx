@@ -12,7 +12,6 @@ import {
   isDemoMode,
 } from "./ui/api.js";
 import Charts from "./ui/Charts.jsx";
-import CategorySection from "./ui/CategorySection.jsx";
 import MonthlyChart from "./ui/MonthlyChart.jsx";
 import SessionsCard from "./ui/SessionsCard.jsx";
 import AddSessionCard from "./ui/AddSessionCard.jsx";
@@ -20,16 +19,16 @@ import OutlierAnalysis from "./ui/OutlierAnalysis.jsx";
 import SocWindowAnalysis from "./ui/SocWindowAnalysis.jsx";
 import Tooltip from "./ui/Tooltip.jsx";
 import VehicleHero from "./ui/VehicleHero.jsx";
+import MedianSnapshotPanel from "./ui/MedianSnapshotPanel.jsx";
+import YearComparisonPanel from "./ui/YearComparisonPanel.jsx";
+import PowerCurveCard from "./ui/PowerCurveCard.jsx";
+import MonthlyReportCard from "./ui/MonthlyReportCard.jsx";
+import ForecastCard from "./ui/ForecastCard.jsx";
+import SmartInsightsCard from "./ui/SmartInsightsCard.jsx";
+import { monthLabel } from "./ui/monthLabels.js";
 import { resolveVehicleProfile } from "./config/vehicleProfiles.js";
 
-const MONATE = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
-const CATEGORY_STORAGE_KEY = "mobility-dashboard.category-state.v1";
-const CATEGORY_DEFAULTS = {
-  signals: true,
-  efficiency: true,
-  trends: false,
-  data: true,
-};
+const YEARS = [2026, 2027, 2028];
 
 function euro(n) {
   const v = Number(n);
@@ -51,6 +50,16 @@ function minutesFromSeconds(seconds) {
   const v = Number(seconds);
   if (!Number.isFinite(v)) return "–";
   return `${Math.round(v / 60)} min`;
+}
+
+function sessionPricePerKwh(session) {
+  const direct = Number(session?.price_per_kwh);
+  if (Number.isFinite(direct) && direct > 0) return direct;
+
+  const energy = Number(session?.energy_kwh);
+  const totalCost = Number(session?.total_cost);
+  if (!Number.isFinite(energy) || energy <= 0 || !Number.isFinite(totalCost) || totalCost < 0) return null;
+  return totalCost / energy;
 }
 
 function datumDE(value) {
@@ -81,14 +90,6 @@ function trendPctLabel(value) {
   return `${sign}${Math.round(v * 100)}%`;
 }
 
-function trendClass(value) {
-  const v = Number(value);
-  if (!Number.isFinite(v)) return "";
-  if (v > 0) return "trendUp";
-  if (v < 0) return "trendDown";
-  return "trendFlat";
-}
-
 function scoreTone(score) {
   const v = Number(score);
   if (!Number.isFinite(v)) return "rgba(255,255,255,0.78)";
@@ -115,66 +116,6 @@ function KpiTitle({ label, tip }) {
         {label}
       </span>
     </Tooltip>
-  );
-}
-
-function CategoryGlyph({ kind }) {
-  if (kind === "signals") {
-    return (
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path
-          d="M4 14c2.2 0 2.8-6 5-6s2.8 10 5 10 2.8-7 6-7"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    );
-  }
-
-  if (kind === "efficiency") {
-    return (
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path
-          d="M13 2L5 13h5l-1 9 10-13h-5l1-7z"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinejoin="round"
-        />
-      </svg>
-    );
-  }
-
-  if (kind === "trends") {
-    return (
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path
-          d="M4 16l5-5 4 3 7-8"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <path
-          d="M18 6h2v2"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    );
-  }
-
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M4 6h16M4 12h16M4 18h16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-    </svg>
   );
 }
 
@@ -253,54 +194,39 @@ export default function App() {
   const [outliers, setOutliers] = useState(null);
   const [err, setErr] = useState(null);
   const [loading, setLoading] = useState(true);
+  const refreshRequestRef = useRef(0);
+  const [activeScreen, setActiveScreen] = useState("overview");
+  const [overviewMode, setOverviewMode] = useState("cost");
+  const [analysisMode, setAnalysisMode] = useState("compare");
 
   const [addOpen, setAddOpen] = useState(false);
   const addSectionRef = useRef(null);
   const addPanelRef = useRef(null);
-  const [categoryOpen, setCategoryOpen] = useState(() => {
-    if (typeof window === "undefined") return CATEGORY_DEFAULTS;
-    try {
-      const raw = window.localStorage.getItem(CATEGORY_STORAGE_KEY);
-      if (!raw) return CATEGORY_DEFAULTS;
-      return { ...CATEGORY_DEFAULTS, ...(JSON.parse(raw) || {}) };
-    } catch {
-      return CATEGORY_DEFAULTS;
-    }
-  });
 
   const openAdd = useCallback(() => {
-    setCategoryOpen((prev) => ({ ...prev, data: true }));
+    setActiveScreen("verlauf");
     setAddOpen(true);
     requestAnimationFrame(() => {
-      addSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      setTimeout(() => addPanelRef.current?.focus?.(), 350);
+      requestAnimationFrame(() => {
+        addSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        setTimeout(() => addPanelRef.current?.focus?.(), 350);
+      });
     });
   }, []);
 
   const closeAdd = useCallback(() => setAddOpen(false), []);
 
-  const toggleCategory = useCallback((key) => {
-    setCategoryOpen((prev) => {
-      const nextOpen = !prev[key];
-      if (key === "data" && !nextOpen) {
-        setAddOpen(false);
-      }
-      return { ...prev, [key]: nextOpen };
-    });
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      window.localStorage.setItem(CATEGORY_STORAGE_KEY, JSON.stringify(categoryOpen));
-    } catch {
-      // ignore
-    }
-  }, [categoryOpen]);
-
   const refresh = useCallback(async () => {
+    const requestId = ++refreshRequestRef.current;
     setLoading(true);
     setErr(null);
+    setStats(null);
+    setSessions([]);
+    setMonthly(null);
+    setSeasons(null);
+    setEfficiency(null);
+    setOutliers(null);
+
     try {
       const [statsData, sessionsData, monthlyData, seasonsData, efficiencyData, outlierData] = await Promise.all([
         ladeAuswertung(jahr),
@@ -311,6 +237,8 @@ export default function App() {
         ladeAusreisserAnalyse(jahr),
       ]);
 
+      if (requestId !== refreshRequestRef.current) return;
+
       setStats(statsData ?? null);
       setSessions(Array.isArray(sessionsData) ? sessionsData : []);
       setMonthly(monthlyData ?? null);
@@ -318,9 +246,12 @@ export default function App() {
       setEfficiency(efficiencyData ?? null);
       setOutliers(outlierData ?? null);
     } catch (e) {
+      if (requestId !== refreshRequestRef.current) return;
       setErr(String(e?.message || e));
     } finally {
-      setLoading(false);
+      if (requestId === refreshRequestRef.current) {
+        setLoading(false);
+      }
     }
   }, [jahr]);
 
@@ -341,16 +272,8 @@ export default function App() {
         "Summe aller Kosten im gewählten Jahr. Enthält jede erfasste Session und bildet dein reales Kostenniveau ab.",
       totalEnergy:
         "Gesamte geladene Energie im Jahr. Das ist die Basis für Kosten-, Trend- und Effizienzanalysen.",
-      avgKwh:
-        "Durchschnittlich geladene Energie pro Session. Zeigt, ob du eher kleinere Top-ups oder größere Ladeblöcke fährst.",
-      avgDur:
-        "Durchschnittliche Dauer je Session. Zusammen mit kWh ergibt sich daraus deine durchschnittliche Ladeleistung.",
-      avgPrice: "Durchschnittliche Kosten pro Ladung. Gut, um kostspielige Sessions schneller einzuordnen.",
-      avgPower:
-        "Durchschnittliche Ladeleistung auf Basis von Energie und Dauer. Das ist keine Peak-Leistung der Säule.",
       efficiency:
         "Relativer Jahres-Score auf Basis deiner Sessions. Bewertet Preis pro kWh, Ladeleistung und Zeit pro kWh.",
-      sessionCount: "Anzahl aller erfassten Ladevorgänge im gewählten Jahr.",
     }),
     []
   );
@@ -407,7 +330,25 @@ export default function App() {
   }, [priceMonths]);
 
   const socWindowAnalysis = useMemo(() => computeSocWindowAnalysis(sessions, jahr), [sessions, jahr]);
-  const seasonRows = useMemo(() => (Array.isArray(seasons?.seasons) ? [...seasons.seasons] : []), [seasons]);
+  const sessionScoresById = useMemo(() => {
+    const entries = Array.isArray(efficiency?.sessions) ? efficiency.sessions : [];
+    return Object.fromEntries(entries.map((row) => [String(row.session_id), row]));
+  }, [efficiency]);
+  const sessionOutliersById = useMemo(() => {
+    const entries = Array.isArray(outliers?.flagged_sessions) ? outliers.flagged_sessions : [];
+    return Object.fromEntries(entries.map((row) => [String(row.session_id), row]));
+  }, [outliers]);
+  const seasonRows = useMemo(
+    () =>
+      Array.isArray(seasons?.seasons)
+        ? seasons.seasons.filter((season) => Number(season?.count || 0) > 0)
+        : [],
+    [seasons]
+  );
+  const hasYearData = (Number(stats?.count) || 0) > 0 || sessions.length > 0;
+  const noYearData = !loading && !err && !hasYearData;
+  const displayStats = hasYearData ? stats : null;
+  const displayEfficiency = hasYearData ? efficiency : null;
 
   const insights = useMemo(() => {
     const items = [];
@@ -442,7 +383,7 @@ export default function App() {
       items.push({
         id: "top_energy",
         titel: "Intensivster Monat",
-        wert: MONATE[(monthly.top_energy_month.month || 1) - 1] || "–",
+        wert: monthLabel(monthly.top_energy_month.month),
         sub: `${num(monthly.top_energy_month.energy_kwh, 1)} kWh`,
         tip: "Monat mit der höchsten geladenen Energie.",
       });
@@ -514,28 +455,6 @@ export default function App() {
     return items.slice(0, 5);
   }, [outliers, monthly, seasons, socWindowAnalysis, efficiency, currentPrev]);
 
-  const categoryPills = useMemo(
-    () => ({
-      signals: [
-        insights.length ? `${num(insights.length, 0)} Insights` : "Keine Insights",
-        outliers?.outlier_count ? `${num(outliers.outlier_count, 0)} Auffällig` : "Keine Ausreißer",
-      ],
-      efficiency: [
-        efficiency?.overall_score != null ? `${num(efficiency.overall_score, 1)}/100 Score` : "Kein Score",
-        socWindowAnalysis?.analyzed_session_count
-          ? `${num(socWindowAnalysis.analyzed_session_count, 0)} SoC-Sessions`
-          : "Keine SoC-Fenster",
-      ],
-      trends: [
-        seasonRows.length ? `${num(seasonRows.length, 0)} Saisons` : "Keine Saisons",
-        priceMonths.length ? `${num(priceMonths.length, 0)} Preis-Monate` : "Keine Preisreihe",
-        activeMonths.length ? `${num(activeMonths.length, 0)} Aktiv` : "Keine Monatsdaten",
-      ],
-      data: [`${num(sessions.length, 0)} Sessions`, addOpen ? "Formular offen" : "Formular geschlossen"],
-    }),
-    [insights.length, outliers, efficiency, socWindowAnalysis, seasonRows.length, priceMonths.length, activeMonths.length, sessions.length, addOpen]
-  );
-
   const monthlyCsvUrl = useMemo(() => getMonthlyCsvUrl(jahr), [jahr]);
   const seasonsCsvUrl = useMemo(() => getSeasonsCsvUrl(jahr), [jahr]);
 
@@ -548,6 +467,542 @@ export default function App() {
     if (!seasonsCsvUrl) return;
     window.open(seasonsCsvUrl, "_blank", "noopener,noreferrer");
   }, [seasonsCsvUrl]);
+
+  const primaryInsight = insights[0] || null;
+  const latestSessionPrice = useMemo(() => sessionPricePerKwh(latestSession), [latestSession]);
+
+  const heroMetrics = useMemo(
+    () => [
+      {
+        key: "cost",
+        label: "Gesamtkosten",
+        tip: kpiTips.totalCost,
+        value: euro(displayStats?.total_cost),
+        sub:
+          displayStats?.medians?.price_per_kwh != null
+            ? `Median ${num(displayStats.medians.price_per_kwh, 3)} €/kWh`
+            : noYearData
+              ? "Keine Werte vorhanden"
+              : `${num(displayStats?.count, 0)} Sessions`,
+      },
+      {
+        key: "energy",
+        label: "Geladene Energie",
+        tip: kpiTips.totalEnergy,
+        value: displayStats ? `${num(displayStats.total_energy_kwh, 1)} kWh` : "–",
+        sub:
+          currentPrev.current?.energy_kwh != null
+            ? `${monthLabel(currentPrev.current.month)} ${num(currentPrev.current.energy_kwh, 1)} kWh`
+            : noYearData
+              ? "Keine Werte vorhanden"
+              : "Jahressumme",
+      },
+      {
+        key: "efficiency",
+        label: "Effizienz",
+        tip: kpiTips.efficiency,
+        value: displayEfficiency ? `${num(displayEfficiency.overall_score, 1)}/100` : "–",
+        sub:
+          noYearData
+            ? "Keine Werte vorhanden"
+            : displayEfficiency?.score_label || scoreLabel(displayEfficiency?.overall_score),
+        tone: scoreTone(displayEfficiency?.overall_score),
+      },
+    ],
+    [currentPrev.current, displayEfficiency, displayStats, kpiTips, noYearData]
+  );
+
+  const spotlightCard = useMemo(() => {
+    if (primaryInsight) {
+      return {
+        eyebrow: "Signal",
+        title: primaryInsight.titel,
+        value: primaryInsight.wert,
+        meta: primaryInsight.sub || "Jahresfokus",
+        body: primaryInsight.tip || "Markantestes Signal des gewählten Jahres.",
+      };
+    }
+
+    if (latestSession) {
+      return {
+        eyebrow: "Letzte Session",
+        title: datumDE(latestSession.date),
+        value: `${num(latestSession.energy_kwh, 1)} kWh`,
+        meta: [latestSessionPrice != null ? `${num(latestSessionPrice, 3)} €/kWh` : null, latestSession.connector || null]
+          .filter(Boolean)
+          .join(" • "),
+        body: latestSession.note || "Zuletzt erfasster Ladevorgang.",
+      };
+    }
+
+    const latestMonth = currentPrev.current || null;
+    if (latestMonth) {
+      return {
+        eyebrow: "Monat",
+        title: monthLabel(latestMonth.month),
+        value: euro(latestMonth.cost),
+        meta: `${num(latestMonth.energy_kwh, 1)} kWh • ${num(latestMonth.price_per_kwh, 3)} €/kWh`,
+        body: "Aktuell stärkster Monatsimpuls im gewählten Jahr.",
+      };
+    }
+
+    return {
+      eyebrow: "Status",
+      title: `Jahr ${jahr}`,
+      value: "Keine Daten",
+      meta: "Noch keine Sessions vorhanden",
+      body: `Für ${jahr} sind aktuell noch keine Werte vorhanden.`,
+    };
+  }, [currentPrev.current, jahr, latestSession, latestSessionPrice, primaryInsight]);
+
+  const spotlightImpulseValue =
+    currentPrev.current?.trend?.cost?.pct != null
+      ? trendPctLabel(currentPrev.current.trend.cost.pct)
+      : currentPrev.prev
+        ? trendPctLabel(calcTrend(currentPrev.current?.cost, currentPrev.prev?.cost)?.pct) ?? "–"
+        : "–";
+
+  function renderEfficiencyPanel() {
+    return (
+      <section className="row">
+        <div className="card glassStrong analysisPanel">
+          <div className="panelHeader">
+            <div>
+              <div className="sectionKicker">Efficiency</div>
+              <div className="ttTitleRow panelTitleRow">
+                <div className="sectionTitle">Cost Efficiency Score ({jahr})</div>
+                <Tooltip
+                  content="Der Cost Efficiency Score ist ein relativer Jahres-Score auf Basis von Preis pro kWh, Ladeleistung und Zeit pro kWh."
+                  placement="top"
+                  openDelayMs={120}
+                  closeDelayMs={220}
+                >
+                  <button className="ttTrigger" type="button" aria-label="Erklärung: Cost Efficiency Score">
+                    i
+                  </button>
+                </Tooltip>
+              </div>
+            </div>
+
+            <div className="pill panelMetaPill pillWarm" style={{ color: scoreTone(displayEfficiency?.overall_score) }}>
+              {displayEfficiency
+                ? `${num(displayEfficiency.overall_score, 1)}/100 • ${displayEfficiency.score_label || scoreLabel(displayEfficiency.overall_score)}`
+                : "Keine Daten"}
+            </div>
+          </div>
+
+          {displayEfficiency?.session_count ? (
+            <div className="summaryGrid">
+              <div className="summaryCard warm heroMetric">
+                <div className="summaryLabel">Gesamt-Score</div>
+                <div className="summaryValue" style={{ color: scoreTone(displayEfficiency.overall_score) }}>
+                  {num(displayEfficiency.overall_score, 1)}/100
+                </div>
+                <div className="summarySub">{displayEfficiency.score_label || scoreLabel(displayEfficiency.overall_score)}</div>
+              </div>
+
+              <div className="summaryCard">
+                <div className="summaryLabel">Ø Preis / kWh</div>
+                <div className="summaryValue">
+                  {displayEfficiency.averages?.price_per_kwh != null ? `${num(displayEfficiency.averages.price_per_kwh, 3)} €/kWh` : "–"}
+                </div>
+                <div className="summarySub">Mittelwert der bewerteten Sessions</div>
+              </div>
+
+              <div className="summaryCard frost">
+                <div className="summaryLabel">Ø Ladeleistung</div>
+                <div className="summaryValue">
+                  {displayEfficiency.averages?.power_kw != null ? `${num(displayEfficiency.averages.power_kw, 1)} kW` : "–"}
+                </div>
+                <div className="summarySub">Berechnet aus Energie und Dauer</div>
+              </div>
+
+              <div className="summaryCard mint">
+                <div className="summaryLabel">Beste Session</div>
+                <div className="summaryValue">
+                  {displayEfficiency.best_session?.score != null ? `${num(displayEfficiency.best_session.score, 1)}/100` : "–"}
+                </div>
+                <div className="summarySub">
+                  {displayEfficiency.best_session?.date ? datumDE(displayEfficiency.best_session.date) : "Keine Daten"}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="summaryGrid">
+              <div className="emptyStateCard">Keine Effizienzdaten für {jahr} vorhanden.</div>
+            </div>
+          )}
+
+          <div className="metricNarrative">
+            Gewichtung: <b>Preis/kWh 55 %</b> • <b>Ø Ladeleistung 25 %</b> • <b>Zeit pro kWh 20 %</b>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  function renderSeasonPanel() {
+    return (
+      <section className="row">
+        <div className="card glassStrong analysisPanel">
+          <div className="panelHeader">
+            <div>
+              <div className="sectionKicker">Saisons</div>
+              <div className="ttTitleRow panelTitleRow">
+                <div className="sectionTitle">Saisonanalyse ({jahr})</div>
+                <Tooltip
+                  content="Die Saisonanalyse gruppiert alle Sessions nach Winter, Frühling, Sommer und Herbst."
+                  placement="top"
+                  openDelayMs={120}
+                  closeDelayMs={220}
+                >
+                  <button className="ttTrigger" type="button" aria-label="Erklärung: Saisonanalyse">
+                    i
+                  </button>
+                </Tooltip>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              className="pill pillWarm"
+              onClick={onDownloadSeasonCsv}
+              style={{ cursor: seasonsCsvUrl ? "pointer" : "not-allowed" }}
+              aria-label="Season CSV herunterladen"
+              title="Season CSV herunterladen"
+              disabled={!seasonsCsvUrl}
+            >
+              Season CSV ↓
+            </button>
+          </div>
+
+          <div className="detailCardGrid">
+            {seasonRows.length ? (
+              seasonRows.map((season) => (
+                <article key={season.key} className={`detailCard ${season.key}`}>
+                  <div className="detailCardTop">
+                    <div className="detailCardTitle">{season.label}</div>
+                    <div className="detailCardMeta">{Array.isArray(season.months) ? season.months.join(" • ") : ""}</div>
+                  </div>
+
+                  <div className="summaryValue detailScoreValue" style={{ color: scoreTone(season.efficiency_score) }}>
+                    {season.efficiency_score != null ? `${num(season.efficiency_score, 1)}/100` : "–"}
+                  </div>
+                  <div className="detailCardSub">Efficiency Score</div>
+
+                  <div className="metricMiniGrid">
+                    <div className="metricMiniItem">
+                      <div className="metricMiniLabel">Sessions</div>
+                      <div className="metricMiniValue">{num(season.count, 0)}</div>
+                    </div>
+                    <div className="metricMiniItem">
+                      <div className="metricMiniLabel">kWh</div>
+                      <div className="metricMiniValue">{num(season.energy_kwh, 1)}</div>
+                    </div>
+                    <div className="metricMiniItem">
+                      <div className="metricMiniLabel">Kosten</div>
+                      <div className="metricMiniValue">{euro(season.cost)}</div>
+                    </div>
+                    <div className="metricMiniItem">
+                      <div className="metricMiniLabel">Ø €/kWh</div>
+                      <div className="metricMiniValue">
+                        {season.avg_price_per_kwh != null ? `${num(season.avg_price_per_kwh, 3)} €/kWh` : "–"}
+                      </div>
+                    </div>
+                    <div className="metricMiniItem">
+                      <div className="metricMiniLabel">Ø Dauer</div>
+                      <div className="metricMiniValue">{minutesFromSeconds(season.avg_duration_seconds)}</div>
+                    </div>
+                    <div className="metricMiniItem">
+                      <div className="metricMiniLabel">Ø kW</div>
+                      <div className="metricMiniValue">
+                        {season.avg_power_kw != null ? `${num(season.avg_power_kw, 1)} kW` : "–"}
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              ))
+            ) : (
+              <div className="emptyStateCard">Noch keine Saisonanalyse für {jahr}.</div>
+            )}
+          </div>
+
+          {seasonRows.length ? (
+            <div className="summaryGrid">
+              <div className="summaryCard warm">
+                <div className="summaryLabel">Beste Saison</div>
+                <div className="summaryValue">{seasons?.highlights?.best_efficiency_season?.label || "–"}</div>
+                <div className="summarySub">
+                  {seasons?.highlights?.best_efficiency_season?.efficiency_score != null
+                    ? `${num(seasons.highlights.best_efficiency_season.efficiency_score, 1)}/100`
+                    : "Keine Daten"}
+                </div>
+              </div>
+
+              <div className="summaryCard frost">
+                <div className="summaryLabel">Günstigste Saison</div>
+                <div className="summaryValue">{seasons?.highlights?.cheapest_season?.label || "–"}</div>
+                <div className="summarySub">
+                  {seasons?.highlights?.cheapest_season?.avg_price_per_kwh != null
+                    ? `${num(seasons.highlights.cheapest_season.avg_price_per_kwh, 3)} €/kWh`
+                    : "Keine Daten"}
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </div>
+      </section>
+    );
+  }
+
+  function renderPricePanel() {
+    return (
+      <section className="row">
+        <div className="card glassStrong analysisPanel">
+          <div className="panelHeader">
+            <div>
+              <div className="sectionKicker">Preis</div>
+              <div className="ttTitleRow panelTitleRow">
+                <div className="sectionTitle">Preisentwicklung ({jahr})</div>
+                <Tooltip
+                  content="Effektiver durchschnittlicher Preis pro kWh pro Monat."
+                  placement="top"
+                  openDelayMs={120}
+                  closeDelayMs={220}
+                >
+                  <button className="ttTrigger" type="button" aria-label="Erklärung: Preisentwicklung">
+                    i
+                  </button>
+                </Tooltip>
+              </div>
+            </div>
+
+            <div className="pill ghostPill panelMetaPill">
+              {priceSummary.trend?.pct != null ? `${trendPctLabel(priceSummary.trend.pct)} vs. Vormonat` : "Monatliche €/kWh"}
+            </div>
+          </div>
+
+          <div className="summaryGrid">
+            {priceSummary.latest ? (
+              <>
+                <div className="summaryCard">
+                  <div className="summaryLabel">Letzter Monatswert</div>
+                  <div className="summaryValue">{num(priceSummary.latest.price_per_kwh, 3)} €/kWh</div>
+                  <div className="summarySub">{monthLabel(priceSummary.latest.month)}</div>
+                </div>
+
+                <div className="summaryCard mint">
+                  <div className="summaryLabel">Günstigster Monat</div>
+                  <div className="summaryValue" style={{ color: "rgba(120,210,160,0.92)" }}>
+                    {num(priceSummary.cheapest?.price_per_kwh, 3)} €/kWh
+                  </div>
+                  <div className="summarySub">
+                    {priceSummary.cheapest ? monthLabel(priceSummary.cheapest.month) : "–"}
+                  </div>
+                </div>
+
+                <div className="summaryCard danger">
+                  <div className="summaryLabel">Teuerster Monat</div>
+                  <div className="summaryValue" style={{ color: "rgba(255,132,132,0.92)" }}>
+                    {num(priceSummary.priciest?.price_per_kwh, 3)} €/kWh
+                  </div>
+                  <div className="summarySub">
+                    {priceSummary.priciest ? monthLabel(priceSummary.priciest.month) : "–"}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="emptyStateCard">Noch keine Preisdaten für {jahr}.</div>
+            )}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  function renderMonthlyPanel() {
+    return (
+      <section className="row">
+        <div className="card glassStrong analysisPanel">
+          <div className="panelHeader">
+            <div>
+              <div className="sectionKicker">Monate</div>
+              <div className="sectionTitle sectionTitleSpaced">Monatsauswertung ({jahr})</div>
+            </div>
+
+            <button
+              type="button"
+              className="pill pillWarm"
+              onClick={onDownloadMonthlyCsv}
+              style={{ cursor: monthlyCsvUrl ? "pointer" : "not-allowed" }}
+              aria-label="Monthly CSV herunterladen"
+              title="Monthly CSV herunterladen"
+              disabled={!monthlyCsvUrl}
+            >
+              Monthly CSV ↓
+            </button>
+          </div>
+
+          <div className="chartPanel">
+            {activeMonths.length ? (
+              <MonthlyChart months={monthlySorted} />
+            ) : (
+              <div className="emptyStateCard">Keine Monatswerte für {jahr} vorhanden.</div>
+            )}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  function renderOverviewFocus() {
+    if (overviewMode === "behavior") {
+      return <PowerCurveCard analysis={socWindowAnalysis} year={jahr} />;
+    }
+
+    if (overviewMode === "compare") {
+      return (
+        <YearComparisonPanel
+          key={`overview-comparison-${jahr}`}
+          availableYears={YEARS}
+          initialLeftYear={jahr}
+          initialRightYear={jahr === YEARS[0] ? YEARS[1] : YEARS[0]}
+        />
+      );
+    }
+
+    if (overviewMode === "forecast") {
+      return <ForecastCard months={monthlySorted} year={jahr} />;
+    }
+
+    return (
+      <section className="row">
+        <div className="card glassStrong analysisPanel premiumFeatureCard premiumFeatureChartPanel">
+          <div className="panelHeader">
+            <div>
+              <div className="sectionKicker">Kosten</div>
+              <div className="ttTitleRow panelTitleRow">
+                <div className="sectionTitle">Monatsverlauf ({jahr})</div>
+                <Tooltip
+                  content="Ein ruhiger Überblick über Kosten, Preisniveau und Monatsimpuls des gewählten Jahres."
+                  placement="top"
+                  openDelayMs={120}
+                  closeDelayMs={220}
+                >
+                  <button className="ttTrigger" type="button" aria-label="Erklärung: Monatsverlauf">
+                    i
+                  </button>
+                </Tooltip>
+              </div>
+            </div>
+
+            <div className="pill ghostPill panelMetaPill">
+              {priceSummary.latest ? `${num(priceSummary.latest.price_per_kwh, 3)} €/kWh aktuell` : "Noch keine Monatswerte"}
+            </div>
+          </div>
+
+          <div className="chartPanel premiumChartFeature">
+            {activeMonths.length ? (
+              <MonthlyChart months={monthlySorted} />
+            ) : (
+              <div className="emptyStateCard">Keine Monatswerte für {jahr} vorhanden.</div>
+            )}
+          </div>
+
+          <div className="premiumMiniGrid premiumFeatureStats">
+            <article className="premiumMiniCard premiumFeatureStatCard">
+              <div className="premiumMiniLabel">Letzter Monatswert</div>
+              <div className="premiumMiniValue">
+                {priceSummary.latest ? `${num(priceSummary.latest.price_per_kwh, 3)} €/kWh` : "–"}
+              </div>
+              <div className="premiumMiniSub">
+                {priceSummary.latest ? monthLabel(priceSummary.latest.month) : "Keine Daten"}
+              </div>
+            </article>
+
+            <article className="premiumMiniCard premiumFeatureStatCard">
+              <div className="premiumMiniLabel">Günstigster Monat</div>
+              <div className="premiumMiniValue">
+                {priceSummary.cheapest ? `${num(priceSummary.cheapest.price_per_kwh, 3)} €/kWh` : "–"}
+              </div>
+              <div className="premiumMiniSub">
+                {priceSummary.cheapest ? monthLabel(priceSummary.cheapest.month) : "Keine Daten"}
+              </div>
+            </article>
+
+            <article className="premiumMiniCard premiumFeatureStatCard">
+              <div className="premiumMiniLabel">Teuerster Monat</div>
+              <div className="premiumMiniValue">
+                {priceSummary.priciest ? `${num(priceSummary.priciest.price_per_kwh, 3)} €/kWh` : "–"}
+              </div>
+              <div className="premiumMiniSub">
+                {priceSummary.priciest ? monthLabel(priceSummary.priciest.month) : "Keine Daten"}
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  function renderAnalysisContent() {
+    if (analysisMode === "signals") {
+      return (
+        <>
+          <SmartInsightsCard
+            stats={displayStats}
+            monthly={monthly}
+            outliers={outliers}
+            socWindowAnalysis={socWindowAnalysis}
+            sessions={sessions}
+            year={jahr}
+          />
+          <OutlierAnalysis analysis={outliers} year={jahr} />
+        </>
+      );
+    }
+
+    if (analysisMode === "efficiency") {
+      return (
+        <>
+          {renderEfficiencyPanel()}
+          <MedianSnapshotPanel stats={displayStats} year={jahr} />
+          <SocWindowAnalysis analysis={socWindowAnalysis} year={jahr} />
+          <PowerCurveCard analysis={socWindowAnalysis} year={jahr} />
+        </>
+      );
+    }
+
+    if (analysisMode === "time") {
+      return (
+        <>
+          <MonthlyReportCard months={monthlySorted} sessions={sessions} year={jahr} />
+          <ForecastCard months={monthlySorted} year={jahr} />
+          {renderSeasonPanel()}
+          {renderPricePanel()}
+          {renderMonthlyPanel()}
+          <section className="row">
+            {sessions.length ? (
+              <Charts sessions={sessions} />
+            ) : (
+              <div className="card glassStrong">
+                <div className="emptyStateCard">Keine Verlaufswerte für {jahr} vorhanden.</div>
+              </div>
+            )}
+          </section>
+        </>
+      );
+    }
+
+    return (
+      <YearComparisonPanel
+        key={`analysis-comparison-${jahr}`}
+        availableYears={YEARS}
+        initialLeftYear={jahr}
+        initialRightYear={jahr === YEARS[0] ? YEARS[1] : YEARS[0]}
+      />
+    );
+  }
 
   const fabStyle = useMemo(
     () => ({
@@ -583,14 +1038,11 @@ export default function App() {
           + Ladevorgang
         </button>
 
-        <header className="topBar">
-          <div className="topLeft">
-            <div className="kicker">Private Charging Intelligence</div>
+        <header className="topBar topBarPremium">
+          <div className="topLeft premiumTopCopy">
+            <div className="kicker">Cupra Charging Intelligence</div>
             <h1 className="title">{dashboardTitle}</h1>
-            <div className="sub">
-              Modulares Analyse-Cockpit für Ladevorgänge, Kosten und Effizienz. Hero-Fahrzeug, Asset und Story können
-              später frei ausgetauscht werden.
-            </div>
+            <div className="sub">Ein ruhiges Charging-Cockpit mit Fokus auf Verlauf, Preisniveau und Ladequalität.</div>
 
             {demo ? (
               <div className="demoBanner" role="status" aria-live="polite">
@@ -600,518 +1052,339 @@ export default function App() {
                 </div>
               </div>
             ) : null}
+          </div>
 
-            <div className="filters">
+          <div className="premiumTopControls">
+            <div className="filters premiumYearRail">
               <div className="chipLabel">Jahr</div>
               <div className="chipRow">
-                <button type="button" className={jahr === 2026 ? "chip" : "chip ghost"} onClick={() => setJahr(2026)}>
-                  2026
-                </button>
-                <button type="button" className={jahr === 2027 ? "chip" : "chip ghost"} onClick={() => setJahr(2027)}>
-                  2027
-                </button>
-                <button type="button" className={jahr === 2028 ? "chip" : "chip ghost"} onClick={() => setJahr(2028)}>
-                  2028
-                </button>
+                {YEARS.map((itemYear) => (
+                  <button
+                    key={itemYear}
+                    type="button"
+                    className={jahr === itemYear ? "chip" : "chip ghost"}
+                    onClick={() => setJahr(itemYear)}
+                  >
+                    {itemYear}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="premiumHeaderMeta">
+              <div className="pill ghostPill">{loading ? "Synchronisiert…" : `${num(sessions.length, 0)} Sessions`}</div>
+              <div className="pill ghostPill">
+                {latestSession?.date ? `Zuletzt ${datumDE(latestSession.date)}` : `Jahr ${jahr}`}
               </div>
             </div>
           </div>
         </header>
 
-        <main className="layout">
+        <main className="layout premiumLayout">
           {err ? <div className="errorBox">{err}</div> : null}
 
-          <section className="row heroRowGrid">
+          <section className="premiumScreenBar">
+            <div className="toggle premiumScreenToggle" aria-label="Dashboard Bereiche">
+              <button
+                type="button"
+                className={activeScreen === "overview" ? "toggleBtn active" : "toggleBtn"}
+                onClick={() => setActiveScreen("overview")}
+              >
+                Übersicht
+              </button>
+              <button
+                type="button"
+                className={activeScreen === "analysis" ? "toggleBtn active" : "toggleBtn"}
+                onClick={() => setActiveScreen("analysis")}
+              >
+                Analyse
+              </button>
+              <button
+                type="button"
+                className={activeScreen === "verlauf" ? "toggleBtn active" : "toggleBtn"}
+                onClick={() => setActiveScreen("verlauf")}
+              >
+                Verlauf
+              </button>
+            </div>
+
+            <div className="premiumScreenMeta">
+              {activeScreen === "overview"
+                ? "Hero, Fokus-Chart und wenige starke Signale."
+                : activeScreen === "analysis"
+                  ? "Tiefe Auswertung ohne Kartenwand."
+                  : "Sessions pflegen, editieren und ergänzen."}
+            </div>
+          </section>
+
+          {noYearData ? (
+            <section className="row">
+              <div className="card glassStrong premiumEmptyNotice">
+                <div className="emptyStateCard">Für {jahr} sind keine Werte vorhanden.</div>
+              </div>
+            </section>
+          ) : null}
+
+          <section className="premiumHeroStage">
             <VehicleHero
               profile={vehicleProfile}
               latestDateLabel={latestSession?.date ? datumDE(latestSession.date) : null}
               year={jahr}
             />
 
-            <div className="kpiGrid">
-              <div className="card glass kpi accent">
-                <KpiTitle label="Gesamtkosten" tip={kpiTips.totalCost} />
-                <div className="kpiValue">{euro(stats?.total_cost)}</div>
-                <div className="kpiSub">Summe ({jahr})</div>
+            <div className="premiumHeroRail">
+              <div className="premiumMetricRail">
+                {heroMetrics.map((item) => (
+                  <article key={item.key} className="card glass premiumMetricCard">
+                    <KpiTitle label={item.label} tip={item.tip} />
+                    <div className="premiumMetricValue" style={item.tone ? { color: item.tone } : undefined}>
+                      {item.value}
+                    </div>
+                    <div className="premiumMetricSub">{item.sub}</div>
+                  </article>
+                ))}
               </div>
 
-              <div className="card glass kpi">
-                <KpiTitle label="Gesamtenergie" tip={kpiTips.totalEnergy} />
-                <div className="kpiValue">{num(stats?.total_energy_kwh, 1)} kWh</div>
-                <div className="kpiSub">geladene Energie</div>
-              </div>
-
-              <div className="card glass kpi">
-                <KpiTitle label="Ø pro Ladevorgang" tip={kpiTips.avgKwh} />
-                <div className="kpiValue">{num(stats?.avg_kwh_per_session, 1)} kWh</div>
-                <div className="kpiSub">Durchschnitt</div>
-              </div>
-
-              <div className="card glass kpi">
-                <KpiTitle label="Ø Ladedauer" tip={kpiTips.avgDur} />
-                <div className="kpiValue">{minutesFromSeconds(stats?.avg_duration_seconds)}</div>
-                <div className="kpiSub">pro Ladevorgang</div>
-              </div>
-
-              <div className="card glass kpi">
-                <KpiTitle label="Ø Preis pro Ladung" tip={kpiTips.avgPrice} />
-                <div className="kpiValue">{euro(stats?.avg_price_per_charge)}</div>
-                <div className="kpiSub">Durchschnitt</div>
-              </div>
-
-              <div className="card glass kpi">
-                <KpiTitle label="Ø Ladeleistung" tip={kpiTips.avgPower} />
-                <div className="kpiValue">{num(stats?.avg_power_kw, 1)} kW</div>
-                <div className="kpiSub">aus kWh & Dauer</div>
-              </div>
-
-              <div className="card glass kpi" style={{ borderColor: "rgba(216,140,78,0.38)" }}>
-                <KpiTitle label="Cost Efficiency" tip={kpiTips.efficiency} />
-                <div className="kpiValue" style={{ color: scoreTone(efficiency?.overall_score) }}>
-                  {num(efficiency?.overall_score, 1)}/100
+              <article className="card glassStrong premiumSpotlightCard">
+                <div className="premiumSpotlightEyebrow">{spotlightCard.eyebrow}</div>
+                <div className="premiumSpotlightTitle">{spotlightCard.title}</div>
+                <div className="premiumSpotlightValue">{spotlightCard.value}</div>
+                <div className="premiumSpotlightMeta">{spotlightCard.meta}</div>
+                <p className="premiumSpotlightText">{spotlightCard.body}</p>
+                <div className="premiumSpotlightFoot">
+                  <span>{displayStats ? `${num(displayStats.count, 0)} Sessions` : "Keine Sessions"}</span>
+                  <span>{displayStats?.avg_power_kw != null ? `${num(displayStats.avg_power_kw, 1)} kW Ø` : "Kein Leistungsschnitt"}</span>
                 </div>
-                <div className="kpiSub">{efficiency?.score_label || scoreLabel(efficiency?.overall_score)}</div>
-              </div>
-
-              <div className="card glass kpi">
-                <KpiTitle label="Ladevorgänge" tip={kpiTips.sessionCount} />
-                <div className="kpiValue">{num(stats?.count, 0)}</div>
-                <div className="kpiSub">erfasste Sessions</div>
-              </div>
+              </article>
             </div>
           </section>
 
-          <CategorySection
-            id="signals"
-            kicker="Kategorie 1"
-            title="Signale & Auffälligkeiten"
-            summary="Alles, was sofort Interpretation liefert: Highlights, Ausreißer und automatische Hinweise auf ungewöhnliche Sessions."
-            pills={categoryPills.signals}
-            open={categoryOpen.signals}
-            onToggle={toggleCategory}
-            tone="signals"
-            icon={<CategoryGlyph kind="signals" />}
-          >
-            <section className="row">
-              <div className="card glassStrong insightsCard">
-                <div className="sectionHeader">
-                  <div>
-                    <div className="sectionKicker">Insights</div>
-                    <div className="ttTitleRow" style={{ marginTop: 2 }}>
-                      <div className="sectionTitle">Auswertung ({jahr})</div>
-                      <Tooltip
-                        content="Insights sind Highlights aus Sessions, Monats- und Saisonanalyse, SoC-Fenstern, Effizienz und Ausreißer-Erkennung."
-                        placement="top"
-                        openDelayMs={120}
-                        closeDelayMs={220}
-                      >
-                        <button className="ttTrigger" type="button" aria-label="Erklärung: Insights">
-                          i
-                        </button>
-                      </Tooltip>
-                    </div>
-                  </div>
-
-                  <div className="pill ghostPill">{loading ? "Lädt…" : "Aktuell"}</div>
+          {activeScreen === "overview" ? (
+            <>
+              <section className="premiumModeBar">
+                <div className="premiumModeIntro">
+                  <div className="sectionKicker">Fokusfläche</div>
+                  <div className="premiumModeTitle">Eine dominante Fläche statt Kartenwand</div>
                 </div>
 
-                <div className="insightsGrid">
-                  {insights.length ? (
-                    insights.map((item) => (
-                      <Tooltip key={item.id} content={item.tip || ""} placement="top" openDelayMs={120} closeDelayMs={220}>
-                        <div className="insightTile" tabIndex={0}>
-                          <div className="insightLabel">{item.titel}</div>
-                          <div className="insightValue">{item.wert}</div>
-                          {item.sub ? <div className="insightSub">{item.sub}</div> : null}
-                          {Number.isFinite(item.trendPct) ? (
-                            <div className={`trendBadge ${trendClass(item.trendPct)}`}>
-                              <span className="trendArrow">{item.trendPct > 0 ? "↑" : item.trendPct < 0 ? "↓" : "→"}</span>
-                              {trendPctLabel(item.trendPct)}
-                            </div>
-                          ) : null}
-                        </div>
-                      </Tooltip>
-                    ))
-                  ) : (
-                    <div className="insightTile">
-                      <div className="insightLabel">Noch keine Insights</div>
-                      <div className="insightValue">–</div>
-                      <div className="insightSub">Importiere Ladevorgänge für {jahr}</div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </section>
-
-            <OutlierAnalysis analysis={outliers} year={jahr} />
-          </CategorySection>
-
-          <CategorySection
-            id="efficiency"
-            kicker="Kategorie 2"
-            title="Effizienz & Ladefenster"
-            summary="Score, Ladequalität und SoC-Fenster an einem Ort, damit Effizienzregeln und Ladeverhalten zusammen gelesen werden können."
-            pills={categoryPills.efficiency}
-            open={categoryOpen.efficiency}
-            onToggle={toggleCategory}
-            tone="efficiency"
-            icon={<CategoryGlyph kind="efficiency" />}
-          >
-            <section className="row">
-              <div className="card glassStrong analysisPanel">
-                <div className="panelHeader">
-                  <div>
-                    <div className="sectionKicker">Efficiency</div>
-                    <div className="ttTitleRow panelTitleRow">
-                      <div className="sectionTitle">Cost Efficiency Score ({jahr})</div>
-                      <Tooltip
-                        content="Der Cost Efficiency Score ist ein relativer Jahres-Score auf Basis von Preis pro kWh, Ladeleistung und Zeit pro kWh."
-                        placement="top"
-                        openDelayMs={120}
-                        closeDelayMs={220}
-                      >
-                        <button className="ttTrigger" type="button" aria-label="Erklärung: Cost Efficiency Score">
-                          i
-                        </button>
-                      </Tooltip>
-                    </div>
-                  </div>
-
-                  <div className="pill panelMetaPill pillWarm" style={{ color: scoreTone(efficiency?.overall_score) }}>
-                    {num(efficiency?.overall_score, 1)}/100 • {efficiency?.score_label || scoreLabel(efficiency?.overall_score)}
-                  </div>
-                </div>
-
-                <div className="summaryGrid">
-                  <div className="summaryCard warm heroMetric">
-                    <div className="summaryLabel">Gesamt-Score</div>
-                    <div className="summaryValue" style={{ color: scoreTone(efficiency?.overall_score) }}>
-                      {num(efficiency?.overall_score, 1)}/100
-                    </div>
-                    <div className="summarySub">{efficiency?.score_label || scoreLabel(efficiency?.overall_score)}</div>
-                  </div>
-
-                  <div className="summaryCard">
-                    <div className="summaryLabel">Ø Preis / kWh</div>
-                    <div className="summaryValue">
-                      {efficiency?.averages?.price_per_kwh != null ? `${num(efficiency.averages.price_per_kwh, 3)} €` : "–"}
-                    </div>
-                    <div className="summarySub">Mittelwert der bewerteten Sessions</div>
-                  </div>
-
-                  <div className="summaryCard frost">
-                    <div className="summaryLabel">Ø Ladeleistung</div>
-                    <div className="summaryValue">
-                      {efficiency?.averages?.power_kw != null ? `${num(efficiency.averages.power_kw, 1)} kW` : "–"}
-                    </div>
-                    <div className="summarySub">Berechnet aus Energie und Dauer</div>
-                  </div>
-
-                  <div className="summaryCard mint">
-                    <div className="summaryLabel">Beste Session</div>
-                    <div className="summaryValue">
-                      {efficiency?.best_session?.score != null ? `${num(efficiency.best_session.score, 1)}/100` : "–"}
-                    </div>
-                    <div className="summarySub">
-                      {efficiency?.best_session?.date ? datumDE(efficiency.best_session.date) : "Keine Daten"}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="metricNarrative">
-                  Gewichtung: <b>Preis/kWh 55 %</b> • <b>Ø Ladeleistung 25 %</b> • <b>Zeit pro kWh 20 %</b>
-                </div>
-              </div>
-            </section>
-
-            <SocWindowAnalysis analysis={socWindowAnalysis} year={jahr} />
-          </CategorySection>
-
-          <CategorySection
-            id="trends"
-            kicker="Kategorie 3"
-            title="Zeiträume & Trends"
-            summary="Monate, Saisons und Preisentwicklung in einer Gruppe. Hier liegt alles, was sich über Zeit verändert oder vergleichen lässt."
-            pills={categoryPills.trends}
-            open={categoryOpen.trends}
-            onToggle={toggleCategory}
-            tone="trends"
-            icon={<CategoryGlyph kind="trends" />}
-          >
-            <section className="row">
-              <div className="card glassStrong analysisPanel">
-                <div className="panelHeader">
-                  <div>
-                    <div className="sectionKicker">Saisons</div>
-                    <div className="ttTitleRow panelTitleRow">
-                      <div className="sectionTitle">Saisonanalyse ({jahr})</div>
-                      <Tooltip
-                        content="Die Saisonanalyse gruppiert alle Sessions nach Winter, Frühling, Sommer und Herbst."
-                        placement="top"
-                        openDelayMs={120}
-                        closeDelayMs={220}
-                      >
-                        <button className="ttTrigger" type="button" aria-label="Erklärung: Saisonanalyse">
-                          i
-                        </button>
-                      </Tooltip>
-                    </div>
-                  </div>
-
+                <div className="toggle premiumModeToggle" aria-label="Übersicht Fokus">
                   <button
                     type="button"
-                    className="pill pillWarm"
-                    onClick={onDownloadSeasonCsv}
-                    style={{ cursor: seasonsCsvUrl ? "pointer" : "not-allowed" }}
-                    aria-label="Season CSV herunterladen"
-                    title="Season CSV herunterladen"
-                    disabled={!seasonsCsvUrl}
+                    className={overviewMode === "cost" ? "toggleBtn active" : "toggleBtn"}
+                    onClick={() => setOverviewMode("cost")}
                   >
-                    Season CSV ↓
+                    Kosten
                   </button>
-                </div>
-
-                <div className="detailCardGrid">
-                  {seasonRows.length ? (
-                    seasonRows.map((season) => (
-                      <article key={season.key} className={`detailCard ${season.key}`}>
-                        <div className="detailCardTop">
-                          <div className="detailCardTitle">{season.label}</div>
-                          <div className="detailCardMeta">{Array.isArray(season.months) ? season.months.join(" • ") : ""}</div>
-                        </div>
-
-                        <div className="summaryValue detailScoreValue" style={{ color: scoreTone(season.efficiency_score) }}>
-                          {season.efficiency_score != null ? `${num(season.efficiency_score, 1)}/100` : "–"}
-                        </div>
-                        <div className="detailCardSub">Efficiency Score</div>
-
-                        <div className="metricMiniGrid">
-                          <div className="metricMiniItem">
-                            <div className="metricMiniLabel">Sessions</div>
-                            <div className="metricMiniValue">{num(season.count, 0)}</div>
-                          </div>
-                          <div className="metricMiniItem">
-                            <div className="metricMiniLabel">kWh</div>
-                            <div className="metricMiniValue">{num(season.energy_kwh, 1)}</div>
-                          </div>
-                          <div className="metricMiniItem">
-                            <div className="metricMiniLabel">Kosten</div>
-                            <div className="metricMiniValue">{euro(season.cost)}</div>
-                          </div>
-                          <div className="metricMiniItem">
-                            <div className="metricMiniLabel">Ø €/kWh</div>
-                            <div className="metricMiniValue">
-                              {season.avg_price_per_kwh != null ? `${num(season.avg_price_per_kwh, 3)} €` : "–"}
-                            </div>
-                          </div>
-                          <div className="metricMiniItem">
-                            <div className="metricMiniLabel">Ø Dauer</div>
-                            <div className="metricMiniValue">{minutesFromSeconds(season.avg_duration_seconds)}</div>
-                          </div>
-                          <div className="metricMiniItem">
-                            <div className="metricMiniLabel">Ø kW</div>
-                            <div className="metricMiniValue">
-                              {season.avg_power_kw != null ? `${num(season.avg_power_kw, 1)} kW` : "–"}
-                            </div>
-                          </div>
-                        </div>
-                      </article>
-                    ))
-                  ) : (
-                    <div className="emptyStateCard">Noch keine Saisonanalyse für {jahr}.</div>
-                  )}
-                </div>
-
-                <div className="summaryGrid">
-                  <div className="summaryCard warm">
-                    <div className="summaryLabel">Beste Saison</div>
-                    <div className="summaryValue">{seasons?.highlights?.best_efficiency_season?.label || "–"}</div>
-                    <div className="summarySub">
-                      {seasons?.highlights?.best_efficiency_season?.efficiency_score != null
-                        ? `${num(seasons.highlights.best_efficiency_season.efficiency_score, 1)}/100`
-                        : "Keine Daten"}
-                    </div>
-                  </div>
-
-                  <div className="summaryCard frost">
-                    <div className="summaryLabel">Günstigste Saison</div>
-                    <div className="summaryValue">{seasons?.highlights?.cheapest_season?.label || "–"}</div>
-                    <div className="summarySub">
-                      {seasons?.highlights?.cheapest_season?.avg_price_per_kwh != null
-                        ? `${num(seasons.highlights.cheapest_season.avg_price_per_kwh, 3)} €/kWh`
-                        : "Keine Daten"}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <section className="row">
-              <div className="card glassStrong analysisPanel">
-                <div className="panelHeader">
-                  <div>
-                    <div className="sectionKicker">Preis</div>
-                    <div className="ttTitleRow panelTitleRow">
-                      <div className="sectionTitle">Preisentwicklung ({jahr})</div>
-                      <Tooltip
-                        content="Effektiver durchschnittlicher Preis pro kWh pro Monat."
-                        placement="top"
-                        openDelayMs={120}
-                        closeDelayMs={220}
-                      >
-                        <button className="ttTrigger" type="button" aria-label="Erklärung: Preisentwicklung">
-                          i
-                        </button>
-                      </Tooltip>
-                    </div>
-                  </div>
-
-                  <div className="pill ghostPill panelMetaPill">
-                    {priceSummary.trend?.pct != null ? `${trendPctLabel(priceSummary.trend.pct)} vs. Vormonat` : "Monatliche €/kWh"}
-                  </div>
-                </div>
-
-                <div className="summaryGrid">
-                  {priceSummary.latest ? (
-                    <>
-                      <div className="summaryCard">
-                        <div className="summaryLabel">Letzter Monatswert</div>
-                        <div className="summaryValue">{num(priceSummary.latest.price_per_kwh, 3)} €/kWh</div>
-                        <div className="summarySub">{MONATE[(priceSummary.latest.month || 1) - 1] || "–"}</div>
-                      </div>
-
-                      <div className="summaryCard mint">
-                        <div className="summaryLabel">Günstigster Monat</div>
-                        <div className="summaryValue" style={{ color: "rgba(120,210,160,0.92)" }}>
-                          {num(priceSummary.cheapest?.price_per_kwh, 3)} €/kWh
-                        </div>
-                        <div className="summarySub">
-                          {priceSummary.cheapest ? MONATE[(priceSummary.cheapest.month || 1) - 1] || "–" : "–"}
-                        </div>
-                      </div>
-
-                      <div className="summaryCard danger">
-                        <div className="summaryLabel">Teuerster Monat</div>
-                        <div className="summaryValue" style={{ color: "rgba(255,132,132,0.92)" }}>
-                          {num(priceSummary.priciest?.price_per_kwh, 3)} €/kWh
-                        </div>
-                        <div className="summarySub">
-                          {priceSummary.priciest ? MONATE[(priceSummary.priciest.month || 1) - 1] || "–" : "–"}
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="emptyStateCard">Noch keine Preisdaten für {jahr}.</div>
-                  )}
-                </div>
-              </div>
-            </section>
-
-            <section className="row">
-              <div className="card glassStrong analysisPanel">
-                <div className="panelHeader">
-                  <div>
-                    <div className="sectionKicker">Monate</div>
-                    <div className="sectionTitle sectionTitleSpaced">Monatsauswertung ({jahr})</div>
-                  </div>
-
                   <button
                     type="button"
-                    className="pill pillWarm"
-                    onClick={onDownloadMonthlyCsv}
-                    style={{ cursor: monthlyCsvUrl ? "pointer" : "not-allowed" }}
-                    aria-label="Monthly CSV herunterladen"
-                    title="Monthly CSV herunterladen"
-                    disabled={!monthlyCsvUrl}
+                    className={overviewMode === "behavior" ? "toggleBtn active" : "toggleBtn"}
+                    onClick={() => setOverviewMode("behavior")}
                   >
-                    Monthly CSV ↓
+                    Ladeverhalten
+                  </button>
+                  <button
+                    type="button"
+                    className={overviewMode === "compare" ? "toggleBtn active" : "toggleBtn"}
+                    onClick={() => setOverviewMode("compare")}
+                  >
+                    Vergleich
+                  </button>
+                  <button
+                    type="button"
+                    className={overviewMode === "forecast" ? "toggleBtn active" : "toggleBtn"}
+                    onClick={() => setOverviewMode("forecast")}
+                  >
+                    Forecast
                   </button>
                 </div>
+              </section>
 
-                <div className="chartPanel">
-                  <MonthlyChart months={monthlySorted} />
+              {renderOverviewFocus()}
+
+              <div className="premiumSecondaryGrid">
+                <div className="premiumSecondarySlot">
+                  <MonthlyReportCard months={monthlySorted} sessions={sessions} year={jahr} />
+                </div>
+
+                <div className="premiumSecondarySlot premiumSecondarySpotlight">
+                  <section className="row">
+                    <div className="card glassStrong analysisPanel premiumSpotlightReportCard">
+                      <div className="panelHeader">
+                        <div>
+                          <div className="sectionKicker">Spotlight</div>
+                          <div className="sectionTitle sectionTitleSpaced">Jahresfokus ({jahr})</div>
+                        </div>
+                        <div className="pill ghostPill panelMetaPill">
+                          {loading ? "Aktualisiert…" : noYearData ? "Keine Werte" : "Kuratiert"}
+                        </div>
+                      </div>
+
+                      <div className="summaryGrid premiumSpotlightSummaryGrid">
+                        <article className="summaryCard warm premiumSpotlightSignalCard">
+                          <div className="summaryLabel">{spotlightCard.eyebrow}</div>
+                          <div className="summaryValue">{spotlightCard.value}</div>
+                          <div className="summarySub">{spotlightCard.title}</div>
+                          <div className="summarySub premiumSpotlightMetaLine">{spotlightCard.meta}</div>
+                        </article>
+
+                        <article className="summaryCard frost">
+                          <div className="summaryLabel">Letzte Session</div>
+                          <div className="summaryValue">{latestSession?.date ? datumDE(latestSession.date) : "–"}</div>
+                          <div className="summarySub">
+                            {latestSession ? `${num(latestSession.energy_kwh, 1)} kWh` : "Noch keine Session"}
+                          </div>
+                        </article>
+
+                        <article className="summaryCard mint">
+                          <div className="summaryLabel">Medianpreis</div>
+                          <div className="summaryValue">
+                            {displayStats?.medians?.price_per_kwh != null ? `${num(displayStats.medians.price_per_kwh, 3)} €/kWh` : "–"}
+                          </div>
+                          <div className="summarySub">Ruhiger Preisanker des Jahres</div>
+                        </article>
+
+                        <article className="summaryCard premiumSpotlightImpulseCard">
+                          <div className="summaryLabel">Monatsimpuls</div>
+                          <div className="summaryValue">{spotlightImpulseValue}</div>
+                          <div className="summarySub">Kosten vs. Vormonat</div>
+                        </article>
+                      </div>
+
+                      <div className="metricNarrative">
+                        <b>{spotlightCard.title}</b> steht aktuell für <b>{spotlightCard.value}</b>. {spotlightCard.body}
+                      </div>
+                    </div>
+                  </section>
                 </div>
               </div>
-            </section>
+            </>
+          ) : null}
 
-            <section className="row">
-              <Charts sessions={sessions} />
-            </section>
-          </CategorySection>
+          {activeScreen === "analysis" ? (
+            <>
+              <section className="premiumModeBar">
+                <div className="premiumModeIntro">
+                  <div className="sectionKicker">Analyse</div>
+                  <div className="premiumModeTitle">Tiefgang nur dann, wenn du ihn wirklich brauchst</div>
+                </div>
 
-          <CategorySection
-            id="data"
-            kicker="Kategorie 4"
-            title="Sessions & Pflege"
-            summary="Die operativen Datenblöcke: letzte Ladevorgänge, Rohdaten und das Formular zur Erfassung neuer Sessions."
-            pills={categoryPills.data}
-            open={categoryOpen.data}
-            onToggle={toggleCategory}
-            tone="data"
-            icon={<CategoryGlyph kind="data" />}
-          >
-            <section className="row">
-              <SessionsCard sessions={sessions} year={jahr} onDeleted={refresh} />
-            </section>
+                <div className="toggle premiumModeToggle" aria-label="Analyse Fokus">
+                  <button
+                    type="button"
+                    className={analysisMode === "compare" ? "toggleBtn active" : "toggleBtn"}
+                    onClick={() => setAnalysisMode("compare")}
+                  >
+                    Vergleich
+                  </button>
+                  <button
+                    type="button"
+                    className={analysisMode === "efficiency" ? "toggleBtn active" : "toggleBtn"}
+                    onClick={() => setAnalysisMode("efficiency")}
+                  >
+                    Effizienz
+                  </button>
+                  <button
+                    type="button"
+                    className={analysisMode === "signals" ? "toggleBtn active" : "toggleBtn"}
+                    onClick={() => setAnalysisMode("signals")}
+                  >
+                    Signale
+                  </button>
+                  <button
+                    type="button"
+                    className={analysisMode === "time" ? "toggleBtn active" : "toggleBtn"}
+                    onClick={() => setAnalysisMode("time")}
+                  >
+                    Zeiträume
+                  </button>
+                </div>
+              </section>
 
-            <section className="row" ref={addSectionRef} style={{ marginTop: 18 }}>
-              <div className={`card glassStrong addComposer ${addOpen ? "open" : "closed"}`}>
-                <div className="addComposerGlow" aria-hidden="true" />
+              {renderAnalysisContent()}
+            </>
+          ) : null}
 
-                <div className="addComposerInner">
-                  <div className="panelHeader">
-                    <div>
-                      <div className="sectionKicker">Action</div>
-                      <div className="sectionTitle sectionTitleSpaced">Ladevorgang hinzufügen</div>
-                    </div>
-
-                    <div className="panelActions">
-                      {!addOpen ? (
-                        <button type="button" className="pill pillWarm" onClick={openAdd} aria-expanded={addOpen} style={{ cursor: "pointer" }}>
-                          Öffnen ↓
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          className="pill ghostPill"
-                          onClick={closeAdd}
-                          aria-expanded={addOpen}
-                          style={{ cursor: "pointer" }}
-                        >
-                          Einklappen
-                        </button>
-                      )}
-                    </div>
+          {activeScreen === "verlauf" ? (
+            <>
+              <section className="row">
+                <div className="card glassStrong premiumDataIntro">
+                  <div className="premiumDataIntroEyebrow">Verlauf</div>
+                  <div className="premiumDataIntroTitle">Sessions pflegen ohne visuelle Unruhe</div>
+                  <div className="premiumDataIntroText">
+                    Tabelle, Inline-Edit und Composer sind hier bewusst separat gebündelt. So bleibt die Übersicht oben ruhig
+                    und die operative Pflege unten schnell.
                   </div>
-
-                  {!addOpen ? (
-                    <div className="addComposerClosed">
-                      <div className="addComposerLead">
-                        Du willst eine neue Session erfassen? Öffne den Composer unten oder nutze den schwebenden
-                        <b> + Ladevorgang</b>-Button.
-                      </div>
-                      <div className="addComposerMiniGrid">
-                        <div className="summaryCard warm">
-                          <div className="summaryLabel">Direkt live</div>
-                          <div className="summaryValue">DB</div>
-                          <div className="summarySub">fließt sofort in KPI, Saisons und Trends ein</div>
-                        </div>
-                        <div className="summaryCard">
-                          <div className="summaryLabel">Ohne Umweg</div>
-                          <div className="summaryValue">1 Schritt</div>
-                          <div className="summarySub">keine Excel-Pflege, keine spätere Nacharbeit</div>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div ref={addPanelRef} tabIndex={-1} className="addComposerFrame">
-                      <AddSessionCard onCreated={refresh} />
-                    </div>
-                  )}
                 </div>
-              </div>
-            </section>
-          </CategorySection>
+              </section>
+
+              <section className="row">
+                <SessionsCard
+                  sessions={sessions}
+                  year={jahr}
+                  onChanged={refresh}
+                  sessionScoresById={sessionScoresById}
+                  sessionOutliersById={sessionOutliersById}
+                />
+              </section>
+
+              <section className="row" ref={addSectionRef} style={{ marginTop: 18 }}>
+                <div className={`card glassStrong addComposer ${addOpen ? "open" : "closed"}`}>
+                  <div className="addComposerGlow" aria-hidden="true" />
+
+                  <div className="addComposerInner">
+                    <div className="panelHeader">
+                      <div>
+                        <div className="sectionKicker">Action</div>
+                        <div className="sectionTitle sectionTitleSpaced">Ladevorgang hinzufügen</div>
+                      </div>
+
+                      <div className="panelActions">
+                        {!addOpen ? (
+                          <button type="button" className="pill pillWarm" onClick={openAdd} aria-expanded={addOpen} style={{ cursor: "pointer" }}>
+                            Öffnen ↓
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            className="pill ghostPill"
+                            onClick={closeAdd}
+                            aria-expanded={addOpen}
+                            style={{ cursor: "pointer" }}
+                          >
+                            Einklappen
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {!addOpen ? (
+                      <div className="addComposerClosed">
+                        <div className="addComposerLead">
+                          Neue Session direkt im Verlauf ergänzen. So bleibt die Übersicht oberhalb ruhig und die Pflege darunter fokussiert.
+                        </div>
+                        <div className="addComposerMiniGrid">
+                          <div className="summaryCard warm addComposerStatCard">
+                            <div className="summaryLabel">Live Sync</div>
+                            <div className="summaryValue">Sofort</div>
+                            <div className="summarySub">fließt direkt in Vergleich, Forecast und Score ein</div>
+                          </div>
+                          <div className="summaryCard addComposerStatCard">
+                            <div className="summaryLabel">Pflegezone</div>
+                            <div className="summaryValue">Nur Verlauf</div>
+                            <div className="summarySub">Sessions pflegen, ohne die Analysefläche zu überladen</div>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div ref={addPanelRef} tabIndex={-1} className="addComposerFrame">
+                        <AddSessionCard onCreated={refresh} demo={demo} />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </section>
+            </>
+          ) : null}
         </main>
 
         <footer className="footer">

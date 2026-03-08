@@ -14,7 +14,9 @@ function hhmmToSeconds(hhmm){
   return hh*3600 + mm*60;
 }
 
-export default function AddSessionCard({ onCreated }) {
+const CONNECTOR_OPTIONS = ["CCS - DC", "CCS AC"];
+
+export default function AddSessionCard({ onCreated, demo = false }) {
   const [date, setDate] = React.useState(() => {
     const d = new Date();
     return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
@@ -24,7 +26,7 @@ export default function AddSessionCard({ onCreated }) {
   const [socStart, setSocStart] = React.useState(14);
   const [socEnd, setSocEnd] = React.useState(80);
   const [energyKwh, setEnergyKwh] = React.useState("0.0");
-  const [pricePerKwh, setPricePerKwh] = React.useState("0.47");
+  const [pricePerKwh, setPricePerKwh] = React.useState("0.59");
   const [durationHHMM, setDurationHHMM] = React.useState("00:30");
   const [note, setNote] = React.useState("");
 
@@ -87,7 +89,7 @@ export default function AddSessionCard({ onCreated }) {
           <div className="sectionKicker">Eingabe</div>
           <div className="sectionTitle">Ladevorgang hinzufügen</div>
         </div>
-        <div className="pill ghostPill">Manuell • Sofort in DB</div>
+        <div className="pill ghostPill">{demo ? "Manuell • Nur Demo" : "Manuell • Sofort in DB"}</div>
       </div>
 
       <div className="formPreviewGrid">
@@ -130,7 +132,13 @@ export default function AddSessionCard({ onCreated }) {
 
         <label className="field">
           <span>Anschluss</span>
-          <input className="input" value={connector} onChange={(e)=>setConnector(e.target.value)} placeholder="CCS - DC" />
+          <select className="input" value={connector} onChange={(e)=>setConnector(e.target.value)}>
+            {CONNECTOR_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
         </label>
 
         <label className="field">
@@ -154,7 +162,7 @@ export default function AddSessionCard({ onCreated }) {
 
         <label className="field">
           <span>Kosten pro kWh (€)</span>
-          <input className="input" value={pricePerKwh} onChange={(e)=>setPricePerKwh(e.target.value)} placeholder="0.47" />
+          <input className="input" value={pricePerKwh} onChange={(e)=>setPricePerKwh(e.target.value)} placeholder="0.59" />
         </label>
 
         <label className="field">
@@ -174,7 +182,9 @@ export default function AddSessionCard({ onCreated }) {
 
         <div className="field fieldWide formActionRow">
           <div className="formHint">
-            Wird direkt in PostgreSQL gespeichert und in den Analysen für das gewählte Jahr berücksichtigt.
+            {demo
+              ? "Wird nur lokal in der Demo gehalten und wirkt sofort auf die Demo-Analysen."
+              : "Wird direkt in PostgreSQL gespeichert und in den Analysen für das gewählte Jahr berücksichtigt."}
           </div>
           <button className="btnPrimary" type="submit" disabled={busy}>
             {busy ? "Speichern…" : "Speichern"}
