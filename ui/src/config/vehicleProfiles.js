@@ -1,3 +1,5 @@
+import { readQueryParam } from "../platform/runtime.js";
+
 const PROFILE_QUERY_PARAM = "vehicle";
 const DEFAULT_PROFILE_ID = "cupra-born";
 const ENV_PROFILE_ID = (import.meta.env.VITE_VEHICLE_PROFILE || "").trim();
@@ -33,11 +35,8 @@ export const VEHICLE_PROFILES = {
 };
 
 function getRequestedProfileId() {
-  if (typeof window !== "undefined") {
-    const params = new URLSearchParams(window.location.search);
-    const queryValue = (params.get(PROFILE_QUERY_PARAM) || "").trim();
-    if (queryValue) return queryValue;
-  }
+  const queryValue = (readQueryParam(PROFILE_QUERY_PARAM) || "").trim();
+  if (queryValue) return queryValue;
 
   if (ENV_PROFILE_ID) return ENV_PROFILE_ID;
   return DEFAULT_PROFILE_ID;

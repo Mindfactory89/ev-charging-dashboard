@@ -4,22 +4,61 @@
  * API: http://<host>:18800
  */
 
-const qs = new URLSearchParams(window.location.search);
-const demoByQuery = qs.get("demo") === "1";
+import { getLocation, isNativeShell, readQueryParam } from "../platform/runtime.js";
+
+const demoByQuery = readQueryParam("demo") === "1";
 const ENV_DEMO_HOST_PREFIX = String(import.meta.env.VITE_DEMO_HOST_PREFIX || "")
   .trim()
   .toLowerCase();
 const demoByHost =
-  !!ENV_DEMO_HOST_PREFIX && window.location.hostname.toLowerCase().startsWith(ENV_DEMO_HOST_PREFIX);
+  !!ENV_DEMO_HOST_PREFIX && String(getLocation()?.hostname || "").toLowerCase().startsWith(ENV_DEMO_HOST_PREFIX);
 export const isDemoMode = demoByQuery || demoByHost;
 
 const ENV_API_BASE = (import.meta.env.VITE_API_BASE || "").trim();
+const ENV_MOBILE_API_BASE = (import.meta.env.VITE_MOBILE_API_BASE || "").trim();
+
+function normalizeBaseUrl(value) {
+  return String(value || "").trim().replace(/\/+$/, "");
+}
 
 export function getApiBase() {
-  if (ENV_API_BASE) return ENV_API_BASE.replace(/\/+$/, "");
-  return `${window.location.protocol}//${window.location.hostname}:18800`;
+  const explicitBase = normalizeBaseUrl(ENV_MOBILE_API_BASE || ENV_API_BASE);
+  if (explicitBase) return explicitBase;
+
+  const location = getLocation();
+  const protocol = String(location?.protocol || "");
+  const hostname = String(location?.hostname || "").trim();
+
+  if (!hostname || isNativeShell()) return "";
+  if (protocol !== "http:" && protocol !== "https:") return "";
+
+  return `${protocol}//${hostname}:18800`;
 }
-export const API_BASE = getApiBase();
+
+export function getApiBaseError() {
+  if (getApiBase()) return "";
+
+  if (isNativeShell()) {
+    return "Mobile Build ohne API-Basis. Setze VITE_MOBILE_API_BASE oder VITE_API_BASE auf deinen HTTPS-Endpunkt.";
+  }
+
+  return "API-Basis konnte nicht automatisch ermittelt werden.";
+}
+
+function requireApiBase() {
+  const base = getApiBase();
+  if (base) return base;
+  throw new Error(getApiBaseError());
+}
+
+function buildApiUrl(path) {
+  return `${requireApiBase()}${path}`;
+}
+
+function buildOptionalApiUrl(path) {
+  const base = getApiBase();
+  return base ? `${base}${path}` : null;
+}
 
 async function asJson(r) {
   const data = await r.json().catch(() => ({}));
@@ -1292,37 +1331,37 @@ function normalizePayloadToSession(payload) {
 
 export async function getStats(year = 2026) {
   if (isDemoMode) return computeStatsFromSessions(getDemoYearRows(year), year);
-  const r = await fetch(`${API_BASE}/api/stats?year=${encodeURIComponent(year)}`);
+  const r = await fetch(buildApiUrl(`/api/stats?year=${encodeURIComponent(year)}`));
   return asJson(r);
 }
 
 export async function getSessions(year = 2026) {
   if (isDemoMode) return { ok: true, rows: filterByYear(getDemoYearRows(year), year) };
-  const r = await fetch(`${API_BASE}/api/sessions?year=${encodeURIComponent(year)}`);
+  const r = await fetch(buildApiUrl(`/api/sessions?year=${encodeURIComponent(year)}`));
   return asJson(r);
 }
 
 export async function getMonthly(year = 2026) {
   if (isDemoMode) return computeMonthlyFromSessions(getDemoYearRows(year), year);
-  const r = await fetch(`${API_BASE}/api/analytics/monthly?year=${encodeURIComponent(year)}`);
+  const r = await fetch(buildApiUrl(`/api/analytics/monthly?year=${encodeURIComponent(year)}`));
   return asJson(r);
 }
 
 export async function getSeasons(year = 2026) {
   if (isDemoMode) return computeSeasonAnalytics(getDemoYearRows(year), year);
-  const r = await fetch(`${API_BASE}/api/analytics/seasons?year=${encodeURIComponent(year)}`);
+  const r = await fetch(buildApiUrl(`/api/analytics/seasons?year=${encodeURIComponent(year)}`));
   return asJson(r);
 }
 
 export async function getEfficiency(year = 2026) {
   if (isDemoMode) return computeEfficiencyFromSessions(getDemoYearRows(year), year);
-  const r = await fetch(`${API_BASE}/api/analytics/efficiency?year=${encodeURIComponent(year)}`);
+  const r = await fetch(buildApiUrl(`/api/analytics/efficiency?year=${encodeURIComponent(year)}`));
   return asJson(r);
 }
 
 export async function getOutliers(year = 2026) {
   if (isDemoMode) return computeOutlierAnalytics(getDemoYearRows(year), year);
-  const r = await fetch(`${API_BASE}/api/analytics/outliers?year=${encodeURIComponent(year)}`);
+  const r = await fetch(buildApiUrl(`/api/analytics/outliers?year=${encodeURIComponent(year)}`));
   return asJson(r);
 }
 
@@ -1340,7 +1379,7 @@ export async function createSession(payload) {
     return { ok: true, demo: true, row };
   }
 
-  const r = await fetch(`${API_BASE}/api/sessions`, {
+  const r = await fetch(buildApiUrl("/api/sessions"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -1378,7 +1417,7 @@ export async function updateSession(id, payload) {
     return { ok: true, demo: true, updated };
   }
 
-  const r = await fetch(`${API_BASE}/api/sessions/${encodeURIComponent(id)}`, {
+  const r = await fetch(buildApiUrl(`/api/sessions/${encodeURIComponent(id)}`), {
     method: "PATCH",
     headers: { "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify(payload),
@@ -1393,17 +1432,17 @@ export async function restoreSession(payload) {
 
 export function getMonthlyCsvUrl(year = 2026) {
   if (isDemoMode) return null;
-  return `${API_BASE}/api/export/monthly.csv?year=${encodeURIComponent(year)}`;
+  return buildOptionalApiUrl(`/api/export/monthly.csv?year=${encodeURIComponent(year)}`);
 }
 
 export function getSessionsCsvUrl(year = 2026) {
   if (isDemoMode) return null;
-  return `${API_BASE}/api/export/sessions.csv?year=${encodeURIComponent(year)}`;
+  return buildOptionalApiUrl(`/api/export/sessions.csv?year=${encodeURIComponent(year)}`);
 }
 
 export function getSeasonsCsvUrl(year = 2026) {
   if (isDemoMode) return null;
-  return `${API_BASE}/api/export/seasons.csv?year=${encodeURIComponent(year)}`;
+  return buildOptionalApiUrl(`/api/export/seasons.csv?year=${encodeURIComponent(year)}`);
 }
 
 export const ladeAuswertung = (year) => getStats(year);
@@ -1433,7 +1472,7 @@ export async function deleteSession(id) {
     throw new Error("Session not found");
   }
 
-  const r = await fetch(`${API_BASE}/api/sessions/${encodeURIComponent(id)}`, {
+  const r = await fetch(buildApiUrl(`/api/sessions/${encodeURIComponent(id)}`), {
     method: "DELETE",
     headers: { Accept: "application/json" },
   });

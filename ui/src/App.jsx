@@ -27,6 +27,8 @@ import ForecastCard from "./ui/ForecastCard.jsx";
 import SmartInsightsCard from "./ui/SmartInsightsCard.jsx";
 import { monthLabel } from "./ui/monthLabels.js";
 import { resolveVehicleProfile } from "./config/vehicleProfiles.js";
+import { downloadFileFromUrl } from "./platform/download.js";
+import { showAlert } from "./platform/runtime.js";
 
 const YEARS = [2026, 2027, 2028];
 
@@ -460,13 +462,23 @@ export default function App() {
 
   const onDownloadMonthlyCsv = useCallback(() => {
     if (!monthlyCsvUrl) return;
-    window.open(monthlyCsvUrl, "_blank", "noopener,noreferrer");
-  }, [monthlyCsvUrl]);
+    downloadFileFromUrl(monthlyCsvUrl, {
+      fileName: `charging-months-${jahr}.csv`,
+      title: `Monatsreport ${jahr}`,
+    }).catch((error) => {
+      showAlert(String(error?.message || error));
+    });
+  }, [jahr, monthlyCsvUrl]);
 
   const onDownloadSeasonCsv = useCallback(() => {
     if (!seasonsCsvUrl) return;
-    window.open(seasonsCsvUrl, "_blank", "noopener,noreferrer");
-  }, [seasonsCsvUrl]);
+    downloadFileFromUrl(seasonsCsvUrl, {
+      fileName: `charging-seasons-${jahr}.csv`,
+      title: `Saisonauswertung ${jahr}`,
+    }).catch((error) => {
+      showAlert(String(error?.message || error));
+    });
+  }, [jahr, seasonsCsvUrl]);
 
   const primaryInsight = insights[0] || null;
   const latestSessionPrice = useMemo(() => sessionPricePerKwh(latestSession), [latestSession]);

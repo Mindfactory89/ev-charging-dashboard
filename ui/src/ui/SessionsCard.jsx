@@ -1,6 +1,8 @@
 import React from "react";
 import { deleteSession, getSessionsCsvUrl, restoreSession, updateSession } from "./api.js";
 import Tooltip from "./Tooltip.jsx";
+import { downloadFileFromUrl } from "../platform/download.js";
+import { confirmAction, reloadCurrentPage, showAlert } from "../platform/runtime.js";
 
 const DEFAULT_CONNECTORS = ["CCS - DC", "CCS AC"];
 
@@ -185,7 +187,7 @@ export default function SessionsCard({
 
   async function refreshData() {
     if (typeof onChanged === "function") await onChanged();
-    else window.location.reload();
+    else reloadCurrentPage();
   }
 
   function beginEdit(row) {
@@ -203,7 +205,7 @@ export default function SessionsCard({
   }
 
   async function onDeleteRow(row) {
-    const ok = window.confirm(`Ladevorgang vom ${datumDE(row?.date)} wirklich löschen?`);
+    const ok = confirmAction(`Ladevorgang vom ${datumDE(row?.date)} wirklich löschen?`);
     if (!ok) return;
 
     try {
@@ -216,7 +218,7 @@ export default function SessionsCard({
       cancelEdit();
       await refreshData();
     } catch (e) {
-      alert(String(e?.message || e));
+      showAlert(String(e?.message || e));
     } finally {
       setBusyId(null);
     }
@@ -233,7 +235,7 @@ export default function SessionsCard({
       setFlashState({ id: restoredRow.id, tone: "restored" });
       await refreshData();
     } catch (e) {
-      alert(String(e?.message || e));
+      showAlert(String(e?.message || e));
     } finally {
       setBusyId(null);
     }
@@ -246,13 +248,13 @@ export default function SessionsCard({
     const socStart = Number(draft?.soc_start);
     const socEnd = Number(draft?.soc_end);
 
-    if (!draft?.date) return alert("Bitte Datum auswählen.");
-    if (!Number.isFinite(energy) || energy <= 0) return alert("Energie (kWh) muss > 0 sein.");
-    if (!Number.isFinite(price) || price <= 0) return alert("Preis pro kWh muss > 0 sein.");
-    if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) return alert("Dauer bitte als HH:MM angeben.");
-    if (!Number.isInteger(socStart) || socStart < 0 || socStart > 100) return alert("SoC Start muss 0–100 sein.");
-    if (!Number.isInteger(socEnd) || socEnd < 0 || socEnd > 100) return alert("SoC Ende muss 0–100 sein.");
-    if (socEnd < socStart) return alert("SoC Ende darf nicht kleiner als SoC Start sein.");
+    if (!draft?.date) return showAlert("Bitte Datum auswählen.");
+    if (!Number.isFinite(energy) || energy <= 0) return showAlert("Energie (kWh) muss > 0 sein.");
+    if (!Number.isFinite(price) || price <= 0) return showAlert("Preis pro kWh muss > 0 sein.");
+    if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) return showAlert("Dauer bitte als HH:MM angeben.");
+    if (!Number.isInteger(socStart) || socStart < 0 || socStart > 100) return showAlert("SoC Start muss 0–100 sein.");
+    if (!Number.isInteger(socEnd) || socEnd < 0 || socEnd > 100) return showAlert("SoC Ende muss 0–100 sein.");
+    if (socEnd < socStart) return showAlert("SoC Ende darf nicht kleiner als SoC Start sein.");
 
     try {
       setBusyId(`save-${row.id}`);
@@ -270,7 +272,7 @@ export default function SessionsCard({
       cancelEdit();
       await refreshData();
     } catch (e) {
-      alert(String(e?.message || e));
+      showAlert(String(e?.message || e));
     } finally {
       setBusyId(null);
     }
@@ -290,7 +292,12 @@ export default function SessionsCard({
             type="button"
             onClick={() => {
               if (!sessionsCsvUrl) return;
-              window.open(sessionsCsvUrl, "_blank", "noopener,noreferrer");
+              downloadFileFromUrl(sessionsCsvUrl, {
+                fileName: `charging-sessions-${year || "all"}.csv`,
+                title: `Session Export ${year || "alle Jahre"}`,
+              }).catch((error) => {
+                showAlert(String(error?.message || error));
+              });
             }}
             title="CSV exportieren"
             disabled={!sessionsCsvUrl}

@@ -1,4 +1,5 @@
 import React from "react";
+import { createPlatformImage } from "../platform/runtime.js";
 
 function SpecIcon({ kind }) {
   if (kind === "trim") {
@@ -52,7 +53,12 @@ export default function VehicleHero({ profile, latestDateLabel, year }) {
     }
 
     let active = true;
-    const img = new window.Image();
+    const img = createPlatformImage();
+
+    if (!img) {
+      setHeroStatus("error");
+      return undefined;
+    }
 
     setHeroStatus("loading");
 

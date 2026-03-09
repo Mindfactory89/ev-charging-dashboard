@@ -186,6 +186,49 @@ cd ui
 npm run build
 ```
 
+## Mobile / Android / iOS
+
+Das UI ist so vorbereitet, dass es in einem nativen Container ueber Capacitor laufen kann.
+
+Wichtig fuer Mobile:
+
+- native Builds koennen die API nicht ueber `window.location` erkennen
+- setze deshalb fuer Android/iOS `VITE_MOBILE_API_BASE` oder mindestens `VITE_API_BASE`
+- nutze dafuer einen festen HTTPS-Endpunkt deiner API
+
+Einmalig im UI-Projekt:
+
+```bash
+cd ui
+npm install
+npm run mobile:add:android
+npm run mobile:add:ios
+```
+
+Web-Build in die nativen Projekte synchronisieren:
+
+```bash
+cd ui
+VITE_MOBILE_API_BASE=https://api.example.com npm run mobile:sync
+```
+
+Native Projekte oeffnen:
+
+```bash
+cd ui
+npm run mobile:open:android
+npm run mobile:open:ios
+```
+
+Hinweise:
+
+- `ui/capacitor.config.ts` ist bereits vorhanden
+- Android und iOS Projekte liegen nach dem Setup in `ui/android` und `ui/ios`
+- CSV-Exporte werden auf mobilen Geraeten ueber Share/Download-Fallback behandelt
+- fuer iOS brauchst du die volle Xcode-App und nicht nur Command Line Tools
+- das erzeugte iOS-Projekt ist auf Deployment Target `15.0` gesetzt
+- fuer einen echten Store-Release solltest du die API vor oeffentlichem Zugriff absichern
+
 Hinweis:
 
 - In diesem Repo sind aktuell keine `lint`- oder `test`-Scripts hinterlegt.
@@ -208,6 +251,7 @@ Wichtige Variablen:
 - `UI_PORT`
 - `UI_PORT_LOCAL`
 - `VITE_API_BASE`
+- `VITE_MOBILE_API_BASE`
 - `VITE_VEHICLE_PROFILE`
 - `VITE_DEMO_HOST_PREFIX`
 - `SSH_DEPLOY_HOST`
@@ -217,6 +261,7 @@ Wichtige Variablen:
 Hinweise:
 
 - `VITE_API_BASE` kann leer bleiben. Dann nutzt die UI automatisch `protocol://hostname:18800`.
+- `VITE_MOBILE_API_BASE` ist fuer native Android/iOS-Builds gedacht und sollte auf deine feste HTTPS-API zeigen.
 - `VITE_DEMO_HOST_PREFIX` ist optional, z. B. `demo.`
 - `docker-compose.yml` erwartet fuer die privaten Tailscale-Bindings eine explizit gesetzte `TAILSCALE_IP`
 
