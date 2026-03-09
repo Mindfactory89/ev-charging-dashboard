@@ -2991,6 +2991,7 @@ body::before{
 }
 
 .comparisonSelectField{
+  flex: 1 1 148px;
   min-width: 140px;
 }
 
@@ -4848,7 +4849,7 @@ body::before{
 .comparisonSpreadRow{
   margin-top: 16px;
   display: grid;
-  grid-template-columns: minmax(0, 1.14fr) minmax(0, 0.86fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
 }
 
@@ -5122,5 +5123,357 @@ body.touch-shell .tableWrap{
     padding-right: calc(14px + var(--safe-right));
     padding-bottom: calc(18px + var(--safe-bottom));
     padding-left: calc(14px + var(--safe-left));
+  }
+}
+
+.glassLite{
+  background:
+    radial-gradient(260px 120px at 0% 0%, rgba(255,255,255,0.045), transparent 62%),
+    linear-gradient(180deg, rgba(255,255,255,0.028), rgba(8,9,12,0.58));
+}
+
+.compactSummaryGrid{
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.mobilityPanel .summaryCard{
+  min-height: 146px;
+}
+
+.mobilityLabelValue.tone-mint{
+  color: rgba(132,218,174,0.96);
+}
+
+.mobilityLabelValue.tone-warm{
+  color: rgba(244,204,142,0.96);
+}
+
+.mobilityLabelValue.tone-danger{
+  color: rgba(255,154,154,0.96);
+}
+
+.efficiencyTipsGrid{
+  margin-top: 18px;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.efficiencyTipCard{
+  padding: 16px 18px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.07);
+  background:
+    radial-gradient(260px 120px at 0% 0%, rgba(255,255,255,0.04), transparent 62%),
+    linear-gradient(180deg, rgba(255,255,255,0.02), rgba(8,9,12,0.62));
+}
+
+.mixSegmentStack{
+  margin-top: 22px;
+  display: grid;
+  gap: 14px;
+}
+
+.mixSegmentRow{
+  padding: 18px;
+  border-radius: 24px;
+  border: 1px solid rgba(255,255,255,0.075);
+  background:
+    radial-gradient(380px 160px at 0% 0%, rgba(255,255,255,0.035), transparent 62%),
+    linear-gradient(180deg, rgba(255,255,255,0.03), rgba(8,9,12,0.70));
+}
+
+.mixSegmentRow.tone-warm{
+  border-color: rgba(205,132,64,0.14);
+}
+
+.mixSegmentRow.tone-frost{
+  border-color: rgba(126,192,255,0.14);
+}
+
+.mixSegmentRow.tone-mint{
+  border-color: rgba(132,218,174,0.16);
+}
+
+.mixSegmentTop,
+.mixSegmentStats,
+.rangeMeta,
+.sessionDrawerMeta,
+.sessionDrawerActions,
+.sessionDrawerReason,
+.sessionDrawerLines div,
+.whatIfControls{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mixSegmentTop{
+  align-items: flex-start;
+}
+
+.mixSegmentLabel{
+  font-size: 15px;
+  font-weight: 650;
+  color: rgba(255,255,255,0.92);
+}
+
+.mixSegmentSub,
+.mixSegmentStats,
+.sessionDrawerMeta,
+.rangeMeta,
+.sessionDrawerLines span{
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: rgba(255,255,255,0.56);
+}
+
+.mixSegmentMeta{
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.74);
+}
+
+.mixMeter{
+  margin-top: 12px;
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.05);
+}
+
+.mixMeterFill{
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, rgba(205,132,64,0.88), rgba(126,192,255,0.72));
+}
+
+.mixSegmentStats{
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.heatmapShell{
+  margin-top: 22px;
+  border-radius: 28px;
+  border: 1px solid rgba(255,255,255,0.07);
+  background:
+    radial-gradient(860px 220px at 0% 0%, rgba(255,255,255,0.028), transparent 58%),
+    linear-gradient(180deg, rgba(255,255,255,0.02), rgba(7,8,10,0.70));
+  padding: 16px;
+}
+
+.heatmapGrid{
+  display: grid;
+  grid-template-columns: minmax(90px, 1.2fr) repeat(7, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.heatmapHeader{
+  margin-bottom: 10px;
+}
+
+.heatmapWeekdayCell,
+.heatmapMonthCell{
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.42);
+}
+
+.heatmapMonthCell{
+  display: flex;
+  align-items: center;
+  min-height: 42px;
+}
+
+.heatmapRow + .heatmapRow{
+  margin-top: 10px;
+}
+
+.heatmapCell{
+  min-height: 42px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.06);
+  background:
+    radial-gradient(180px 100px at 0% 0%, rgba(255,255,255,calc(var(--heat-intensity) * 0.12)), transparent 60%),
+    rgba(205,132,64, calc(var(--heat-intensity) * 0.26));
+  color: rgba(255,255,255,0.82);
+  font-size: 12px;
+  font-weight: 640;
+}
+
+.heatmapCell.idle{
+  background: rgba(255,255,255,0.02);
+  color: rgba(255,255,255,0.24);
+}
+
+.whatIfControls{
+  margin-top: 22px;
+  align-items: end;
+  flex-wrap: wrap;
+}
+
+.inputRange{
+  padding-inline: 0;
+  accent-color: rgba(205,132,64,0.92);
+}
+
+.rangeMeta{
+  margin-top: 8px;
+  font-size: 11px;
+  color: rgba(255,255,255,0.46);
+}
+
+.sessionsPanel .rowDetailBtn,
+.rowDetailBtn{
+  height: 30px;
+  padding: 0 11px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.022);
+  color: rgba(255,255,255,0.70);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.sessionsPanel .rowDetailBtn:hover,
+.rowDetailBtn:hover{
+  border-color: rgba(205,132,64,0.20);
+  background: rgba(205,132,64,0.07);
+  color: rgba(248,220,195,0.94);
+}
+
+.sessionDrawerOverlay{
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  justify-content: flex-end;
+  background: rgba(4,5,8,0.42);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.sessionDrawer{
+  width: min(520px, 100%);
+  height: 100%;
+  overflow: auto;
+  padding: 24px 22px calc(22px + var(--safe-bottom));
+  border-left: 1px solid rgba(255,255,255,0.08);
+  background:
+    radial-gradient(780px 260px at 0% 0%, rgba(205,132,64,0.10), transparent 60%),
+    radial-gradient(700px 240px at 100% 0%, rgba(126,192,255,0.08), transparent 62%),
+    linear-gradient(180deg, rgba(17,18,24,0.96), rgba(8,9,12,0.98));
+  box-shadow: -24px 0 72px rgba(0,0,0,0.32);
+}
+
+.sessionDrawerHeader{
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.sessionDrawerTitle{
+  margin-top: 6px;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  color: rgba(255,255,255,0.96);
+}
+
+.sessionDrawerMeta{
+  margin-top: 10px;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.sessionDrawerInfoGrid{
+  margin-top: 22px;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.sessionDrawerBlock{
+  padding: 18px;
+  border-radius: 22px;
+  border: 1px solid rgba(255,255,255,0.07);
+  background:
+    radial-gradient(280px 110px at 0% 0%, rgba(255,255,255,0.04), transparent 62%),
+    linear-gradient(180deg, rgba(255,255,255,0.03), rgba(8,9,12,0.66));
+}
+
+.sessionDrawerLines{
+  margin-top: 14px;
+  display: grid;
+  gap: 12px;
+}
+
+.sessionDrawerLines strong,
+.sessionDrawerReason strong{
+  font-size: 13px;
+  color: rgba(255,255,255,0.86);
+}
+
+.sessionDrawerReasonList{
+  margin-top: 18px;
+  display: grid;
+  gap: 10px;
+}
+
+.sessionDrawerReason{
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.025);
+}
+
+.sessionDrawerActions{
+  margin-top: 22px;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 900px){
+  .heatmapGrid{
+    grid-template-columns: minmax(74px, 1fr) repeat(7, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .sessionDrawerInfoGrid{
+    grid-template-columns: 1fr;
+  }
+
+  .whatIfControls,
+  .mixSegmentTop,
+  .mixSegmentStats{
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 760px){
+  .heatmapShell{
+    padding: 12px;
+    overflow: auto;
+  }
+
+  .heatmapGrid{
+    min-width: 620px;
+  }
+
+  .sessionDrawer{
+    width: 100%;
+    padding-inline: 18px;
+  }
+
+  .sessionDrawerTitle{
+    font-size: 24px;
   }
 }

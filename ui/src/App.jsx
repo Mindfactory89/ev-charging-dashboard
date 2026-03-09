@@ -25,7 +25,12 @@ import PowerCurveCard from "./ui/PowerCurveCard.jsx";
 import MonthlyReportCard from "./ui/MonthlyReportCard.jsx";
 import ForecastCard from "./ui/ForecastCard.jsx";
 import SmartInsightsCard from "./ui/SmartInsightsCard.jsx";
+import ChargingMixCard from "./ui/ChargingMixCard.jsx";
+import WeekdayHeatmapCard from "./ui/WeekdayHeatmapCard.jsx";
+import MobilityCostCard from "./ui/MobilityCostCard.jsx";
+import WhatIfCard from "./ui/WhatIfCard.jsx";
 import { monthLabel } from "./ui/monthLabels.js";
+import { getWeekdayUsage } from "./ui/loadRhythm.js";
 import { resolveVehicleProfile } from "./config/vehicleProfiles.js";
 import { downloadFileFromUrl } from "./platform/download.js";
 import { showAlert } from "./platform/runtime.js";
@@ -482,6 +487,11 @@ export default function App() {
 
   const primaryInsight = insights[0] || null;
   const latestSessionPrice = useMemo(() => sessionPricePerKwh(latestSession), [latestSession]);
+  const yearWeekdayFact = useMemo(() => getWeekdayUsage(sessions, { year: jahr }).top, [sessions, jahr]);
+  const focusMonthWeekdayFact = useMemo(
+    () => (currentPrev.current?.month ? getWeekdayUsage(sessions, { year: jahr, month: currentPrev.current.month }).top : null),
+    [currentPrev.current, sessions, jahr]
+  );
 
   const heroMetrics = useMemo(
     () => [
@@ -1006,6 +1016,17 @@ export default function App() {
       );
     }
 
+    if (analysisMode === "mobility") {
+      return (
+        <>
+          <ChargingMixCard sessions={sessions} year={jahr} />
+          <MobilityCostCard sessions={sessions} year={jahr} />
+          <WeekdayHeatmapCard sessions={sessions} year={jahr} />
+          <WhatIfCard sessions={sessions} year={jahr} />
+        </>
+      );
+    }
+
     return (
       <YearComparisonPanel
         key={`analysis-comparison-${jahr}`}
@@ -1165,7 +1186,7 @@ export default function App() {
                 <p className="premiumSpotlightText">{spotlightCard.body}</p>
                 <div className="premiumSpotlightFoot">
                   <span>{displayStats ? `${num(displayStats.count, 0)} Sessions` : "Keine Sessions"}</span>
-                  <span>{displayStats?.avg_power_kw != null ? `${num(displayStats.avg_power_kw, 1)} kW Ø` : "Kein Leistungsschnitt"}</span>
+                  <span>{yearWeekdayFact?.label ? `${yearWeekdayFact.label} häufigster Tag` : displayStats?.avg_power_kw != null ? `${num(displayStats.avg_power_kw, 1)} kW Ø` : "Kein Leistungsschnitt"}</span>
                 </div>
               </article>
             </div>
@@ -1255,15 +1276,28 @@ export default function App() {
                           <div className="summarySub">Ruhiger Preisanker des Jahres</div>
                         </article>
 
+                        <article className="summaryCard">
+                          <div className="summaryLabel">Top-Ladetag</div>
+                          <div className="summaryValue">{yearWeekdayFact?.label || "–"}</div>
+                          <div className="summarySub">
+                            {yearWeekdayFact ? `${num(yearWeekdayFact.count, 0)} Sessions • ${num(yearWeekdayFact.share, 0)} % Anteil` : "Noch kein Jahresrhythmus"}
+                          </div>
+                        </article>
+
                         <article className="summaryCard premiumSpotlightImpulseCard">
                           <div className="summaryLabel">Monatsimpuls</div>
                           <div className="summaryValue">{spotlightImpulseValue}</div>
-                          <div className="summarySub">Kosten vs. Vormonat</div>
+                          <div className="summarySub">
+                            {focusMonthWeekdayFact?.label
+                              ? `${focusMonthWeekdayFact.label} prägt ${currentPrev.current ? monthLabel(currentPrev.current.month) : "den Fokusmonat"}`
+                              : "Kosten vs. Vormonat"}
+                          </div>
                         </article>
                       </div>
 
                       <div className="metricNarrative">
-                        <b>{spotlightCard.title}</b> steht aktuell für <b>{spotlightCard.value}</b>. {spotlightCard.body}
+                        <b>{spotlightCard.title}</b> steht aktuell für <b>{spotlightCard.value}</b>. {spotlightCard.body}{" "}
+                        {yearWeekdayFact ? `${yearWeekdayFact.label} ist aktuell dein dominantester Ladetag im Jahr.` : ""}
                       </div>
                     </div>
                   </section>
@@ -1301,6 +1335,13 @@ export default function App() {
                     onClick={() => setAnalysisMode("signals")}
                   >
                     Signale
+                  </button>
+                  <button
+                    type="button"
+                    className={analysisMode === "mobility" ? "toggleBtn active" : "toggleBtn"}
+                    onClick={() => setAnalysisMode("mobility")}
+                  >
+                    Mobilität
                   </button>
                   <button
                     type="button"
@@ -1389,7 +1430,7 @@ export default function App() {
                       </div>
                     ) : (
                       <div ref={addPanelRef} tabIndex={-1} className="addComposerFrame">
-                        <AddSessionCard onCreated={refresh} demo={demo} />
+                        <AddSessionCard onCreated={refresh} demo={demo} sessions={sessions} />
                       </div>
                     )}
                   </div>

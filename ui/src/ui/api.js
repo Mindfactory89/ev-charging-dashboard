@@ -7,11 +7,15 @@
 import { getLocation, isNativeShell, readQueryParam } from "../platform/runtime.js";
 
 const demoByQuery = readQueryParam("demo") === "1";
-const ENV_DEMO_HOST_PREFIX = String(import.meta.env.VITE_DEMO_HOST_PREFIX || "")
-  .trim()
-  .toLowerCase();
-const demoByHost =
-  !!ENV_DEMO_HOST_PREFIX && String(getLocation()?.hostname || "").toLowerCase().startsWith(ENV_DEMO_HOST_PREFIX);
+const ENV_DEMO_HOST_PREFIXES = String(import.meta.env.VITE_DEMO_HOST_PREFIX || "")
+  .split(",")
+  .map((value) => value.trim().toLowerCase())
+  .filter(Boolean);
+const demoByHost = (() => {
+  const hostname = String(getLocation()?.hostname || "").trim().toLowerCase();
+  if (!hostname || !ENV_DEMO_HOST_PREFIXES.length) return false;
+  return ENV_DEMO_HOST_PREFIXES.some((prefix) => hostname === prefix || hostname.startsWith(prefix));
+})();
 export const isDemoMode = demoByQuery || demoByHost;
 
 const ENV_API_BASE = (import.meta.env.VITE_API_BASE || "").trim();
@@ -66,9 +70,11 @@ async function asJson(r) {
   return data;
 }
 
-const DEMO_MAX_ROWS = 20;
-const DEMO_MIN_SEED_ROWS = 10;
-const DEMO_MAX_SEED_ROWS = 15;
+const DEMO_SEEDED_YEARS = [2026, 2027];
+const DEMO_MIN_SEED_ROWS_PER_YEAR = 15;
+const DEMO_MAX_SEED_ROWS_PER_YEAR = 20;
+const DEMO_MAX_USER_ROWS = 8;
+const DEMO_MAX_ROWS = DEMO_SEEDED_YEARS.length * DEMO_MAX_SEED_ROWS_PER_YEAR + DEMO_MAX_USER_ROWS;
 
 function rand(min, max) {
   return Math.random() * (max - min) + min;
@@ -437,6 +443,114 @@ const DEMO_SESSION_TEMPLATES = [
     socEndMax: 81,
     note: "Ladestopp vor spätem Heimweg",
   },
+  {
+    month: 1,
+    provider: "Wallbox Zuhause",
+    location: "Garage Zuhause",
+    connector: "Wallbox AC",
+    energyMin: 18,
+    energyMax: 28,
+    priceMin: 0.32,
+    priceMax: 0.39,
+    priceAnchors: [0.329, 0.349, 0.379],
+    durationMin: 150,
+    durationMax: 250,
+    socStartMin: 22,
+    socStartMax: 46,
+    socEndMin: 74,
+    socEndMax: 88,
+    note: "Abendladung zuhause vor dem nächsten Arbeitstag",
+  },
+  {
+    month: 4,
+    provider: "Wallbox Zuhause",
+    location: "Carport Zuhause",
+    connector: "Wallbox AC",
+    energyMin: 14,
+    energyMax: 24,
+    priceMin: 0.31,
+    priceMax: 0.38,
+    priceAnchors: [0.319, 0.339, 0.369],
+    durationMin: 120,
+    durationMax: 210,
+    socStartMin: 36,
+    socStartMax: 58,
+    socEndMin: 72,
+    socEndMax: 86,
+    note: "Zwischenladung zuhause nach Pendelstrecke",
+  },
+  {
+    month: 6,
+    provider: "Wallbox Zuhause",
+    location: "Garage Zuhause",
+    connector: "Wallbox AC",
+    energyMin: 20,
+    energyMax: 34,
+    priceMin: 0.32,
+    priceMax: 0.40,
+    priceAnchors: [0.329, 0.349, 0.389],
+    durationMin: 170,
+    durationMax: 300,
+    socStartMin: 18,
+    socStartMax: 40,
+    socEndMin: 78,
+    socEndMax: 92,
+    note: "Nachladung zuhause vor Wochenendfahrt",
+  },
+  {
+    month: 8,
+    provider: "Wallbox Zuhause",
+    location: "Garage Zuhause",
+    connector: "Wallbox AC",
+    energyMin: 15,
+    energyMax: 26,
+    priceMin: 0.31,
+    priceMax: 0.38,
+    priceAnchors: [0.319, 0.339, 0.369],
+    durationMin: 130,
+    durationMax: 230,
+    socStartMin: 34,
+    socStartMax: 60,
+    socEndMin: 74,
+    socEndMax: 88,
+    note: "Ruhige Heimladung nach Alltagsfahrt",
+  },
+  {
+    month: 10,
+    provider: "Wallbox Zuhause",
+    location: "Carport Zuhause",
+    connector: "Wallbox AC",
+    energyMin: 17,
+    energyMax: 30,
+    priceMin: 0.32,
+    priceMax: 0.39,
+    priceAnchors: [0.329, 0.349, 0.379],
+    durationMin: 150,
+    durationMax: 280,
+    socStartMin: 28,
+    socStartMax: 52,
+    socEndMin: 76,
+    socEndMax: 90,
+    note: "Home-Charging vor längerer Strecke am Folgetag",
+  },
+  {
+    month: 12,
+    provider: "Wallbox Zuhause",
+    location: "Garage Zuhause",
+    connector: "Wallbox AC",
+    energyMin: 22,
+    energyMax: 36,
+    priceMin: 0.33,
+    priceMax: 0.40,
+    priceAnchors: [0.339, 0.359, 0.389],
+    durationMin: 180,
+    durationMax: 330,
+    socStartMin: 16,
+    socStartMax: 38,
+    socEndMin: 80,
+    socEndMax: 94,
+    note: "Übernachtladung zuhause bei winterlicher Nutzung",
+  },
 ];
 
 function jitter(value, delta, digits = 1) {
@@ -456,6 +570,73 @@ function shuffle(list) {
   return copy;
 }
 
+function templateKind(template) {
+  if (
+    String(template?.provider || "").toLowerCase().includes("wallbox") ||
+    String(template?.connector || "").toLowerCase().includes("wallbox")
+  ) {
+    return "wallbox";
+  }
+  return template?.connector === "CCS AC" ? "ac" : "dc";
+}
+
+function seasonalConsumptionPer100Km(month, kind = "dc") {
+  const baseBySeason =
+    month === 12 || month <= 2 ? 18.6
+    : month >= 6 && month <= 8 ? 15.8
+    : 16.9;
+
+  if (kind === "wallbox") return round(baseBySeason - 0.2, 1);
+  if (kind === "ac") return round(baseBySeason + 0.1, 1);
+  return round(baseBySeason + 0.4, 1);
+}
+
+function estimateDistanceKm(energyKwh, month, kind = "dc") {
+  const energy = Number(energyKwh);
+  const consumption = seasonalConsumptionPer100Km(month, kind);
+  if (!Number.isFinite(energy) || energy <= 0 || !Number.isFinite(consumption) || consumption <= 0) return null;
+  return Math.max(18, Math.round((energy / consumption) * 100));
+}
+
+function applySequentialOdometer(rows, year) {
+  let cursorKm = randi(11800 + Math.max(0, year - 2026) * 14500, 16400 + Math.max(0, year - 2026) * 14500);
+
+  return rows.map((row) => {
+    const kind = templateKind(row);
+    const month = parseDateParts(row?.date)?.month ?? 1;
+    const distanceKm = estimateDistanceKm(row?.energy_kwh, month, kind);
+    if (!Number.isFinite(distanceKm) || distanceKm <= 0) return row;
+
+    const odoStart = cursorKm + randi(6, 42);
+    const odoEnd = odoStart + distanceKm;
+    cursorKm = odoEnd;
+    return {
+      ...row,
+      odo_start_km: odoStart,
+      odo_end_km: odoEnd,
+    };
+  });
+}
+
+function ensureDemoOdometer(row, year, existingRows = []) {
+  if (Number.isFinite(Number(row?.odo_start_km)) && Number.isFinite(Number(row?.odo_end_km))) return row;
+
+  const latestCursor = existingRows.reduce((maxValue, existing) => {
+    const candidate = Math.max(Number(existing?.odo_end_km || 0), Number(existing?.odo_start_km || 0));
+    return Number.isFinite(candidate) && candidate > maxValue ? candidate : maxValue;
+  }, randi(11800 + Math.max(0, year - 2026) * 14500, 16400 + Math.max(0, year - 2026) * 14500));
+  const month = parseDateParts(row?.date)?.month ?? 1;
+  const distanceKm = estimateDistanceKm(row?.energy_kwh, month, templateKind(row));
+  if (!Number.isFinite(distanceKm) || distanceKm <= 0) return row;
+
+  const odoStart = latestCursor + randi(6, 32);
+  return {
+    ...row,
+    odo_start_km: odoStart,
+    odo_end_km: odoStart + distanceKm,
+  };
+}
+
 function buildDemoSessionFromTemplate(template, year, idx) {
   const baseEnergy = round(rand(template.energyMin, template.energyMax), 1);
   const pricePerKwh =
@@ -465,7 +646,7 @@ function buildDemoSessionFromTemplate(template, year, idx) {
   const durationMinutes = randi(template.durationMin, template.durationMax);
   const socStart = randi(template.socStartMin, template.socStartMax);
   const socEnd = Math.max(socStart + 8, randi(template.socEndMin, template.socEndMax));
-  const seasonalJitter = template.connector === "CCS AC" ? 0.4 : 0.8;
+  const seasonalJitter = templateKind(template) === "dc" ? 0.8 : 0.4;
   const energy = round(clamp(jitter(baseEnergy, seasonalJitter, 1), template.energyMin, template.energyMax), 1);
 
   return {
@@ -484,28 +665,54 @@ function buildDemoSessionFromTemplate(template, year, idx) {
   };
 }
 
-function seedDemoSessions(year = 2026, maxRows = DEMO_MAX_SEED_ROWS) {
-  const cappedMax = clamp(maxRows, 0, DEMO_MAX_SEED_ROWS);
-  const count =
-    cappedMax <= 0 ? 0 : cappedMax < DEMO_MIN_SEED_ROWS ? cappedMax : randi(DEMO_MIN_SEED_ROWS, cappedMax);
-  const selectedTemplates = shuffle(DEMO_SESSION_TEMPLATES).slice(0, count);
+function seedDemoSessions(year = 2026, targetCount = 0) {
+  const count = clamp(targetCount, 0, DEMO_SESSION_TEMPLATES.length);
+  if (count <= 0) return [];
+
+  const wallboxTemplates = shuffle(DEMO_SESSION_TEMPLATES.filter((template) => templateKind(template) === "wallbox"));
+  const acTemplates = shuffle(DEMO_SESSION_TEMPLATES.filter((template) => templateKind(template) === "ac"));
+  const dcTemplates = shuffle(DEMO_SESSION_TEMPLATES.filter((template) => templateKind(template) === "dc"));
+
+  const desiredWallbox = Math.min(wallboxTemplates.length, count >= 9 ? 3 : 2);
+  const desiredAc = Math.min(acTemplates.length, count >= 8 ? 2 : 1);
+  const desiredDc = Math.max(0, count - desiredWallbox - desiredAc);
+
+  const selectedTemplates = [
+    ...wallboxTemplates.slice(0, desiredWallbox),
+    ...acTemplates.slice(0, desiredAc),
+    ...dcTemplates.slice(0, desiredDc),
+  ].slice(0, count);
+
   const rows = selectedTemplates.map((template, idx) => buildDemoSessionFromTemplate(template, year, idx));
   rows.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  return rows;
+  return applySequentialOdometer(rows, year);
 }
 
 const DEMO_DEFAULT_YEAR = 2026;
 const DEMO_BY_YEAR = Object.create(null);
+let DEMO_SEED_INITIALIZED = false;
 
 function getDemoTotalRowCount() {
+  ensureDemoSeeded();
   return Object.values(DEMO_BY_YEAR).reduce((sum, rows) => sum + (Array.isArray(rows) ? rows.length : 0), 0);
 }
 
+function ensureDemoSeeded() {
+  if (DEMO_SEED_INITIALIZED) return;
+
+  DEMO_SEEDED_YEARS.forEach((year) => {
+    const targetCount = randi(DEMO_MIN_SEED_ROWS_PER_YEAR, DEMO_MAX_SEED_ROWS_PER_YEAR);
+    DEMO_BY_YEAR[year] = seedDemoSessions(year, targetCount);
+  });
+
+  DEMO_SEED_INITIALIZED = true;
+}
+
 function getDemoYearRows(year) {
+  ensureDemoSeeded();
   const y = Number(year) || DEMO_DEFAULT_YEAR;
   if (!Object.prototype.hasOwnProperty.call(DEMO_BY_YEAR, y)) {
-    const remainingBudget = Math.max(0, DEMO_MAX_ROWS - getDemoTotalRowCount());
-    DEMO_BY_YEAR[y] = y === DEMO_DEFAULT_YEAR ? seedDemoSessions(y, remainingBudget) : [];
+    DEMO_BY_YEAR[y] = [];
   }
   return DEMO_BY_YEAR[y];
 }
@@ -1313,6 +1520,11 @@ function normalizePayloadToSession(payload) {
   }
   if (!Number.isFinite(durSec) || durSec <= 0) durSec = randi(20, 80) * 60;
 
+  const odoStartRaw = payload?.odo_start_km ?? payload?.odoStartKm ?? payload?.km_start;
+  const odoEndRaw = payload?.odo_end_km ?? payload?.odoEndKm ?? payload?.km_end ?? payload?.odometer_km ?? payload?.odometerKm;
+  const odoStart = Number.isFinite(Number(odoStartRaw)) ? Math.max(0, Math.round(Number(odoStartRaw))) : null;
+  const odoEnd = Number.isFinite(Number(odoEndRaw)) ? Math.max(0, Math.round(Number(odoEndRaw))) : null;
+
   return {
     id: payload?.id || `demo-user-${safeUUID()}`,
     date,
@@ -1326,6 +1538,8 @@ function normalizePayloadToSession(payload) {
     soc_start: payload?.soc_start ?? payload?.socStart ?? 10,
     soc_end: payload?.soc_end ?? payload?.socEnd ?? 80,
     note: payload?.note ? String(payload.note) : null,
+    odo_start_km: odoStart,
+    odo_end_km: odoEnd != null && odoStart != null && odoEnd < odoStart ? odoStart : odoEnd,
   };
 }
 
@@ -1374,8 +1588,8 @@ export async function createSession(payload) {
       throw new Error(`Demo-Limit erreicht (${DEMO_MAX_ROWS} Einträge insgesamt). Reload = neue Demo-Daten.`);
     }
 
-    const row = normalizePayloadToSession(payload || {});
-    DEMO_BY_YEAR[year] = [...rows, row];
+    const row = ensureDemoOdometer(normalizePayloadToSession(payload || {}), year, rows);
+    DEMO_BY_YEAR[year] = [...rows, row].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     return { ok: true, demo: true, row };
   }
 
@@ -1407,8 +1621,13 @@ export async function updateSession(id, payload) {
       throw new Error("Session not found");
     }
 
-    const updated = normalizePayloadToSession({ ...existing, ...(payload || {}), id: existing.id });
-    const targetYear = parseDateParts(updated.date)?.year ?? currentYear;
+    const candidate = normalizePayloadToSession({ ...existing, ...(payload || {}), id: existing.id });
+    const targetYear = parseDateParts(candidate.date)?.year ?? currentYear;
+    const updated = ensureDemoOdometer(
+      candidate,
+      targetYear,
+      (DEMO_BY_YEAR[targetYear] || []).filter((session) => String(session.id) !== String(id))
+    );
 
     DEMO_BY_YEAR[currentYear] = (DEMO_BY_YEAR[currentYear] || []).filter((session) => String(session.id) !== String(id));
     DEMO_BY_YEAR[targetYear] = [...getDemoYearRows(targetYear).filter((session) => String(session.id) !== String(id)), updated]

@@ -39,8 +39,8 @@ Das ist fuer:
 Das Dashboard ist in drei Bereiche gegliedert:
 
 - `Uebersicht`: Hero, KPI-Rail, Monatsverlauf, Monatsbericht, Spotlight, Forecast
-- `Analyse`: Jahresvergleich, Ladeleistungskurve nach SoC-Bereich, Smart Insights, Median-/Effizienzsicht, Ausreisser
-- `Verlauf`: Sessions pflegen, inline bearbeiten, loeschen, undoen und neue Sessions erfassen
+- `Analyse`: Jahresvergleich, Monatsfokus, Ladeleistungskurve nach SoC-Bereich, Smart Insights, Median-/Effizienzsicht, Mobilitaetsanalyse, Ausreisser
+- `Verlauf`: Sessions pflegen, Detail-Drawer oeffnen, inline bearbeiten, loeschen, undoen und neue Sessions erfassen
 
 ## Screenshots
 
@@ -69,14 +69,19 @@ Sobald die Dateien im Repo liegen, rendert GitHub diese Bilder automatisch:
 - sauberer Leerzustand fuer Jahre ohne Daten
 - Monatsanalyse mit Kosten, Energie, Sessions und Preisniveau
 - Jahresvergleich zwischen zwei Jahren mit Monatsreihen
+- Monatsvergleich mit selektierbarem `Monatsfokus` im Diagramm
 - Forecast / Jahreshochrechnung
 - persoenlicher Monatsbericht mit Vergleich zum vorherigen aktiven Monat
-- Smart Insights
+- Smart Insights inkl. `Top-Ladetag` fuer Jahr und Fokusmonat
 - SoC-Band-Analyse und Ladeleistungskurve
 - Medianwerte zusaetzlich zu Durchschnittswerten
 - Cost Efficiency Score
 - Ausreisseranalyse
-- Session-Tabelle mit Inline-Edit
+- Fahrprofil & Effizienz auf Basis eines einzelnen Kilometerstands pro Ladevorgang
+- Effizienzlabels `Green Energy`, `Sparsam` und `Nicht so sparsam`
+- Fahrtipps auf Basis von Verbrauch, Kurzstrecke, Winterbetrieb, DC-Anteil und SoC-Verhalten
+- Home vs. Public Intelligence, Wochentag-Heatmap und What-if-Rechner
+- Session-Tabelle mit Inline-Edit und Session-Detail-Drawer
 - Undo nach Loeschen
 - CSV-Exporte fuer Sessions, Monate und Saisons
 - Demo-Modus im Frontend
@@ -93,10 +98,10 @@ Verhalten im Demo-Modus:
 - Demo-Daten werden nur im Frontend gehalten
 - es gibt keine Speicherung in API oder DB
 - beim Reload entstehen neue Demo-Daten
-- pro Reload werden `10-15` realistische Sessions erzeugt
-- insgesamt sind maximal `20` Demo-Sessions erlaubt
-- standardmaessig wird nur `2026` mit Demo-Daten befuellt
-- `2027` und `2028` bleiben leer, bis dort manuell Sessions erfasst werden
+- fuer `2026` und `2027` werden pro Jahr jeweils `15-20` realistische Sessions erzeugt
+- Wallbox, Public AC und Public DC werden mit plausiblen Preisen, kWh-Werten und Fahrdistanzen gemischt
+- insgesamt gilt weiterhin ein hartes Demo-Limit fuer manuell hinzugefuegte Eintraege
+- `2028` bleibt leer, bis dort manuell Sessions erfasst werden
 
 ## Stack
 
@@ -111,8 +116,14 @@ Verhalten im Demo-Modus:
 - `ui/src/App.jsx`: Hauptansicht und Informationsarchitektur
 - `ui/src/ui/api.js`: API-Client und Demo-Datenlogik
 - `ui/src/ui/SessionsCard.jsx`: Verlauf, Inline-Edit, Undo
+- `ui/src/ui/SessionDetailDrawer.jsx`: ruhige Session-Detailansicht
 - `ui/src/ui/MonthlyChart.jsx`: Monatsverlauf
 - `ui/src/ui/YearComparisonPanel.jsx`: Jahresvergleich
+- `ui/src/ui/MobilityCostCard.jsx`: Fahrprofil, Effizienz und Fahrtipps
+- `ui/src/ui/ChargingMixCard.jsx`: Home vs. Public Intelligence
+- `ui/src/ui/WeekdayHeatmapCard.jsx`: Wochentag-/Monats-Heatmap
+- `ui/src/ui/WhatIfCard.jsx`: Szenarien und Einsparhebel
+- `ui/src/ui/sessionIntelligence.js`: Distanz-, Verbrauchs- und Mobilitaetslogik
 - `ui/src/ui/PowerCurveCard.jsx`: Ladeleistungskurve nach SoC-Bereich
 - `ui/src/ui/MonthlyReportCard.jsx`: persoenlicher Monatsbericht
 - `ui/src/ui/ForecastCard.jsx`: Jahreshochrechnung
@@ -147,6 +158,7 @@ Danach:
 
 - UI: `http://localhost:8080`
 - API: `http://localhost:18800`
+- Kilometer-Logik: Pro Session wird nur der aktuelle Kilometerstand nach der Ladung erfasst; die Distanz ergibt sich automatisch aus der Differenz zum vorherigen Eintrag.
 
 Stoppen:
 
@@ -365,3 +377,12 @@ Andere Nutzer bekommen nicht:
 - deinen Server
 
 Jeder betreibt das Dashboard mit seiner eigenen Datenbank und seinen eigenen Sessions.
+
+## Wichtiger Hinweis zu Kilometerstaenden
+
+Das Dashboard ist auf folgende Logik ausgelegt:
+
+- pro Ladevorgang wird nur der aktuelle Kilometerstand nach dem Laden gespeichert
+- die Fahrdistanz ergibt sich aus der Differenz zum vorherigen bekannten Kilometerstand
+- der erste eingetragene Kilometerstand dient nur als Referenz und erzeugt noch keine Fahrdistanz
+- `kWh / 100 km`, `EUR / 100 km`, Fahrprofil und Fahrtipps bauen auf diesen Differenzen auf

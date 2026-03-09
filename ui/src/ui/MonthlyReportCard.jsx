@@ -1,6 +1,7 @@
 import React from "react";
 import Tooltip from "./Tooltip.jsx";
 import { monthLabel } from "./monthLabels.js";
+import { getWeekdayUsage } from "./loadRhythm.js";
 
 function num(n, digits = 1) {
   const value = Number(n);
@@ -53,6 +54,11 @@ export default function MonthlyReportCard({ months, sessions = [], year = 2026 }
   const current = activeMonths[activeMonths.length - 1] || null;
   const previous = activeMonths.length > 1 ? activeMonths[activeMonths.length - 2] : null;
   const currentMedian = current ? monthMedians(sessions, current.month) : { cost: null, price: null };
+  const currentWeekday = React.useMemo(
+    () => (current ? getWeekdayUsage(sessions, { year, month: current.month }).top : null),
+    [current, sessions, year]
+  );
+  const yearWeekday = React.useMemo(() => getWeekdayUsage(sessions, { year }).top, [sessions, year]);
 
   function delta(currentValue, previousValue, digits = 1, suffix = "") {
     const left = Number(currentValue);
@@ -118,6 +124,22 @@ export default function MonthlyReportCard({ months, sessions = [], year = 2026 }
                 <div className="summaryValue">{currentMedian.price != null ? `${num(currentMedian.price, 3)} €/kWh` : "–"}</div>
                 <div className="summarySub">Typisches Preisniveau im Fokusmonat</div>
               </div>
+
+              <div className="summaryCard frost">
+                <div className="summaryLabel">Top-Ladetag Monat</div>
+                <div className="summaryValue">{currentWeekday?.label || "–"}</div>
+                <div className="summarySub">
+                  {currentWeekday ? `${num(currentWeekday.count, 0)} Sessions • ${num(currentWeekday.share, 0)} % Anteil` : "Noch kein klarer Rhythmus"}
+                </div>
+              </div>
+
+              <div className="summaryCard mint">
+                <div className="summaryLabel">Top-Ladetag Jahr</div>
+                <div className="summaryValue">{yearWeekday?.label || "–"}</div>
+                <div className="summarySub">
+                  {yearWeekday ? `${num(yearWeekday.count, 0)} Sessions • wiederkehrendster Wochentag` : "Noch kein Jahresrhythmus"}
+                </div>
+              </div>
             </>
           ) : (
             <div className="emptyStateCard">Noch kein Monatsbericht für {year} vorhanden.</div>
@@ -128,6 +150,7 @@ export default function MonthlyReportCard({ months, sessions = [], year = 2026 }
           <div className="metricNarrative">
             <b>{monthLabel(current.month)}</b> war dein zuletzt aktiver Monat mit{" "}
             <b>{num(current.count, 0)} Sessions</b> und <b>{euro(current.cost)}</b> Gesamtkosten.{" "}
+            {currentWeekday ? `${currentWeekday.label} war dabei dein prägendster Ladetag im Fokusmonat. ` : ""}
             {previous
               ? `Gegenüber ${monthLabel(previous.month)} hat sich vor allem die Kombination aus Kosten, Energiemenge und Preisniveau verändert.`
               : "Sobald ein zweiter aktiver Monat vorliegt, wird hier automatisch der direkte Vormonatsvergleich ergänzt."}

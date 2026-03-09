@@ -1,10 +1,12 @@
 import React from "react";
 import { deleteSession, getSessionsCsvUrl, restoreSession, updateSession } from "./api.js";
 import Tooltip from "./Tooltip.jsx";
+import SessionDetailDrawer from "./SessionDetailDrawer.jsx";
+import { deriveMobilityForSession, getSessionOdometerKm } from "./sessionIntelligence.js";
 import { downloadFileFromUrl } from "../platform/download.js";
 import { confirmAction, reloadCurrentPage, showAlert } from "../platform/runtime.js";
 
-const DEFAULT_CONNECTORS = ["CCS - DC", "CCS AC"];
+const DEFAULT_CONNECTORS = ["CCS - DC", "CCS AC", "Wallbox AC"];
 
 function euro(n) {
   if (n == null || Number.isNaN(Number(n))) return "–";
@@ -47,6 +49,33 @@ function parseDecimalInput(value) {
   return Number(normalized);
 }
 
+function parseIntegerInput(value) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return null;
+  if (!/^\d+$/.test(raw)) return Number.NaN;
+  return Number(raw);
+}
+
+function resolveDecimalInput(value, fallback = null) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return fallback;
+  return parseDecimalInput(raw);
+}
+
+function resolveDurationInput(value, fallback = null) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return fallback;
+  return hhmmToSeconds(raw);
+}
+
+function resolveBoundedIntegerInput(value, fallback = null) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return fallback;
+  const parsed = Number.parseInt(raw, 10);
+  if (!Number.isInteger(parsed)) return Number.NaN;
+  return parsed;
+}
+
 function effectivePricePerKwh(row) {
   const direct = Number(row?.price_per_kwh);
   if (Number.isFinite(direct) && direct > 0) return direct;
@@ -78,6 +107,7 @@ function sessionScoreLabel(score) {
 function buildEditDraft(row) {
   const pricePerKwh = effectivePricePerKwh(row);
   const duration = secsToHHMM(row?.duration_seconds);
+  const odometerKm = getSessionOdometerKm(row);
   return {
     date: row?.date ? new Date(row.date).toISOString().slice(0, 10) : "",
     connector: row?.connector || DEFAULT_CONNECTORS[0],
@@ -86,6 +116,7 @@ function buildEditDraft(row) {
     energy_kwh: row?.energy_kwh != null ? String(row.energy_kwh) : "",
     price_per_kwh: pricePerKwh != null ? String(Number(pricePerKwh).toFixed(3)) : "",
     duration_hhmm: duration === "–" ? "" : duration,
+    odometer_km: odometerKm != null ? String(odometerKm) : "",
     note: row?.note || "",
   };
 }
@@ -99,6 +130,7 @@ function normalizeDraftForCompare(draft) {
     energy_kwh: Number.isFinite(parseDecimalInput(draft?.energy_kwh)) ? Number(parseDecimalInput(draft?.energy_kwh).toFixed(3)) : null,
     price_per_kwh: Number.isFinite(parseDecimalInput(draft?.price_per_kwh)) ? Number(parseDecimalInput(draft?.price_per_kwh).toFixed(3)) : null,
     duration_seconds: hhmmToSeconds(draft?.duration_hhmm),
+    odometer_km: parseIntegerInput(draft?.odometer_km),
     note: String(draft?.note || "").trim(),
   };
 }
@@ -110,20 +142,42 @@ function draftHasChanges(row, draft) {
   return JSON.stringify(current) !== JSON.stringify(baseline);
 }
 
-function buildDraftPreview(draft) {
-  const energy = parseDecimalInput(draft?.energy_kwh);
-  const price = parseDecimalInput(draft?.price_per_kwh);
-  const durationSeconds = hhmmToSeconds(draft?.duration_hhmm);
-  const socStart = Number.parseInt(String(draft?.soc_start || ""), 10);
-  const socEnd = Number.parseInt(String(draft?.soc_end || ""), 10);
+function buildDraftPreview(draft, sessions = [], sessionId = null, baseRow = null) {
+  const fallbackPrice = effectivePricePerKwh(baseRow);
+  const energy = resolveDecimalInput(draft?.energy_kwh, Number(baseRow?.energy_kwh));
+  const price = resolveDecimalInput(draft?.price_per_kwh, fallbackPrice);
+  const durationSeconds = resolveDurationInput(draft?.duration_hhmm, Number(baseRow?.duration_seconds));
+  const socStart = resolveBoundedIntegerInput(draft?.soc_start, Number(baseRow?.soc_start));
+  const socEnd = resolveBoundedIntegerInput(draft?.soc_end, Number(baseRow?.soc_end));
+  const odometerKm = parseIntegerInput(draft?.odometer_km);
   const socDelta = Number.isInteger(socStart) && Number.isInteger(socEnd) ? socEnd - socStart : null;
   const totalCost = Number.isFinite(energy) && energy > 0 && Number.isFinite(price) && price > 0 ? energy * price : null;
   const avgPowerKw =
     Number.isFinite(energy) && energy > 0 && Number.isFinite(durationSeconds) && durationSeconds > 0
       ? energy / (durationSeconds / 3600)
       : null;
+  const odometerValid = odometerKm == null || Number.isInteger(odometerKm);
+  const candidate = odometerValid
+    ? deriveMobilityForSession(sessions, {
+        id: sessionId || "__draft__",
+        date: draft?.date || (baseRow?.date ? new Date(baseRow.date).toISOString().slice(0, 10) : new Date().toISOString()),
+        energy_kwh: energy,
+        total_cost: totalCost,
+        duration_seconds: durationSeconds,
+        price_per_kwh: price,
+        soc_start: socStart,
+        soc_end: socEnd,
+        odo_end_km: odometerKm,
+      })
+    : null;
+  const distanceKm = candidate?.distanceKm ?? null;
+  const costPer100Km = candidate?.costPer100Km ?? null;
+  const sequenceValid =
+    odometerKm == null ||
+    ((candidate?.previousOdometerKm == null || odometerKm >= candidate.previousOdometerKm) &&
+      (candidate?.nextOdometerKm == null || odometerKm <= candidate.nextOdometerKm));
   const canSave =
-    !!draft?.date &&
+    !!(draft?.date || baseRow?.date) &&
     Number.isFinite(energy) &&
     energy > 0 &&
     Number.isFinite(price) &&
@@ -136,13 +190,24 @@ function buildDraftPreview(draft) {
     Number.isInteger(socEnd) &&
     socEnd >= 0 &&
     socEnd <= 100 &&
-    socEnd >= socStart;
+    socEnd >= socStart &&
+    odometerValid &&
+    sequenceValid;
 
   return {
     totalCost,
     avgPowerKw,
     durationSeconds,
+    odometerKm,
+    previousOdometerKm: candidate?.previousOdometerKm ?? null,
+    nextOdometerKm: candidate?.nextOdometerKm ?? null,
+    distanceKm,
+    costPer100Km,
     socDelta,
+    energy,
+    price,
+    socStart,
+    socEnd,
     canSave,
   };
 }
@@ -161,6 +226,7 @@ export default function SessionsCard({
   const [busyId, setBusyId] = React.useState(null);
   const [undoState, setUndoState] = React.useState(null);
   const [flashState, setFlashState] = React.useState(null);
+  const [detailSessionId, setDetailSessionId] = React.useState(null);
   const latestDate = sessions.reduce((latest, row) => {
     const ts = row?.date ? new Date(row.date).getTime() : NaN;
     if (!Number.isFinite(ts)) return latest;
@@ -171,6 +237,10 @@ export default function SessionsCard({
   const connectorOptions = React.useMemo(
     () => Array.from(new Set([...DEFAULT_CONNECTORS, ...sessions.map((session) => session.connector).filter(Boolean)])),
     [sessions]
+  );
+  const detailSession = React.useMemo(
+    () => sessions.find((session) => String(session.id) === String(detailSessionId)) || null,
+    [detailSessionId, sessions]
   );
 
   React.useEffect(() => {
@@ -198,6 +268,14 @@ export default function SessionsCard({
   function cancelEdit() {
     setEditingId(null);
     setDraft(null);
+  }
+
+  function openDetails(row) {
+    setDetailSessionId(row.id);
+  }
+
+  function closeDetails() {
+    setDetailSessionId(null);
   }
 
   function updateDraft(field, value) {
@@ -242,16 +320,40 @@ export default function SessionsCard({
   }
 
   async function onSaveEdit(row) {
-    const energy = parseDecimalInput(draft?.energy_kwh);
-    const price = parseDecimalInput(draft?.price_per_kwh);
-    const durationSeconds = hhmmToSeconds(draft?.duration_hhmm);
-    const socStart = Number(draft?.soc_start);
-    const socEnd = Number(draft?.soc_end);
+    const draftPreview = buildDraftPreview(draft, sessions, row.id, row);
+    const energy = draftPreview.energy;
+    const price = draftPreview.price;
+    const durationSeconds = draftPreview.durationSeconds;
+    const socStart = draftPreview.socStart;
+    const socEnd = draftPreview.socEnd;
+    const odometer = parseIntegerInput(draft?.odometer_km);
+    const mobilityCandidate =
+      odometer == null || Number.isNaN(odometer)
+        ? null
+        : deriveMobilityForSession(sessions, {
+            ...row,
+            id: row.id,
+            date: draft?.date || new Date(row.date).toISOString().slice(0, 10),
+            energy_kwh: energy,
+            total_cost: Number.isFinite(energy) && energy > 0 && Number.isFinite(price) && price > 0 ? energy * price : row.total_cost,
+            duration_seconds: durationSeconds,
+            price_per_kwh: price,
+            soc_start: socStart,
+            soc_end: socEnd,
+            odo_end_km: odometer,
+          });
 
-    if (!draft?.date) return showAlert("Bitte Datum auswählen.");
+    if (!(draft?.date || row?.date)) return showAlert("Bitte Datum auswählen.");
     if (!Number.isFinite(energy) || energy <= 0) return showAlert("Energie (kWh) muss > 0 sein.");
     if (!Number.isFinite(price) || price <= 0) return showAlert("Preis pro kWh muss > 0 sein.");
     if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) return showAlert("Dauer bitte als HH:MM angeben.");
+    if (Number.isNaN(odometer)) return showAlert("Kilometerstand muss eine positive Ganzzahl sein.");
+    if (mobilityCandidate?.previousOdometerKm != null && odometer != null && odometer < mobilityCandidate.previousOdometerKm) {
+      return showAlert(`Kilometerstand muss mindestens ${mobilityCandidate.previousOdometerKm} km betragen, damit die Historie konsistent bleibt.`);
+    }
+    if (mobilityCandidate?.nextOdometerKm != null && odometer != null && odometer > mobilityCandidate.nextOdometerKm) {
+      return showAlert(`Kilometerstand darf höchstens ${mobilityCandidate.nextOdometerKm} km betragen, damit spätere Sessions konsistent bleiben.`);
+    }
     if (!Number.isInteger(socStart) || socStart < 0 || socStart > 100) return showAlert("SoC Start muss 0–100 sein.");
     if (!Number.isInteger(socEnd) || socEnd < 0 || socEnd > 100) return showAlert("SoC Ende muss 0–100 sein.");
     if (socEnd < socStart) return showAlert("SoC Ende darf nicht kleiner als SoC Start sein.");
@@ -259,13 +361,14 @@ export default function SessionsCard({
     try {
       setBusyId(`save-${row.id}`);
       await updateSession(row.id, {
-        date: draft.date,
-        connector: draft.connector,
+        date: draft?.date || new Date(row.date).toISOString().slice(0, 10),
+        connector: draft?.connector || row.connector,
         soc_start: socStart,
         soc_end: socEnd,
         energy_kwh: energy,
         price_per_kwh: price,
         duration_seconds: durationSeconds,
+        odometer_km: odometer,
         note: draft?.note || null,
       });
       setFlashState({ id: row.id, tone: "saved" });
@@ -342,7 +445,7 @@ export default function SessionsCard({
               const deleteBusy = busyId === `delete-${session.id}`;
               const isFlashing = flashState?.id === session.id ? flashState.tone : null;
               const hasPendingChanges = isEditing ? draftHasChanges(session, draft) : false;
-              const draftPreview = isEditing ? buildDraftPreview(draft) : null;
+              const draftPreview = isEditing ? buildDraftPreview(draft, sessions, session.id, session) : null;
               const saveDisabled = saveBusy || !hasPendingChanges || !draftPreview?.canSave;
 
               return (
@@ -421,6 +524,14 @@ export default function SessionsCard({
                       <div className="rowActions">
                         <button
                           type="button"
+                          className="rowDetailBtn"
+                          onClick={() => openDetails(session)}
+                          disabled={saveBusy || deleteBusy}
+                        >
+                          Details
+                        </button>
+                        <button
+                          type="button"
                           className="rowEditBtn"
                           onClick={() => (isEditing ? cancelEdit() : beginEdit(session))}
                           disabled={saveBusy || deleteBusy}
@@ -485,6 +596,11 @@ export default function SessionsCard({
                           <input className="input" value={draft?.duration_hhmm || ""} onChange={(event) => updateDraft("duration_hhmm", event.target.value)} />
                         </label>
 
+                        <label className="field">
+                          <span>Kilometerstand</span>
+                          <input className="input" type="number" min="0" value={draft?.odometer_km || ""} onChange={(event) => updateDraft("odometer_km", event.target.value)} />
+                        </label>
+
                         <label className="field fieldWide">
                           <span>Notiz</span>
                           <input className="input" value={draft?.note || ""} onChange={(event) => updateDraft("note", event.target.value)} />
@@ -512,6 +628,14 @@ export default function SessionsCard({
                             <div className="editPreviewLabel">Dauer</div>
                             <div className="editPreviewValue">{draftPreview?.durationSeconds ? secsToHHMM(draftPreview.durationSeconds) : "–"}</div>
                           </div>
+                          <div className="editPreviewMetric">
+                            <div className="editPreviewLabel">Distanz</div>
+                            <div className="editPreviewValue">{draftPreview?.distanceKm != null ? `${num(draftPreview.distanceKm, 0)} km` : "–"}</div>
+                          </div>
+                          <div className="editPreviewMetric">
+                            <div className="editPreviewLabel">€/100 km</div>
+                            <div className="editPreviewValue">{draftPreview?.costPer100Km != null ? `${num(draftPreview.costPer100Km, 2)} €` : "–"}</div>
+                          </div>
                         </div>
                       </div>
 
@@ -520,7 +644,11 @@ export default function SessionsCard({
                           {hasPendingChanges
                             ? draftPreview?.canSave
                               ? "Preview aktualisiert. Speichern zieht Score, Reports, Vergleich und Forecast sofort nach."
-                              : "Bitte Eingaben prüfen. Für das Speichern werden gültige Werte in allen Pflichtfeldern benötigt."
+                              : draftPreview?.previousOdometerKm != null && draftPreview?.odometerKm != null && draftPreview.odometerKm < draftPreview.previousOdometerKm
+                                ? `Kilometerstand muss mindestens ${draftPreview.previousOdometerKm} km betragen.`
+                                : draftPreview?.nextOdometerKm != null && draftPreview?.odometerKm != null && draftPreview.odometerKm > draftPreview.nextOdometerKm
+                                  ? `Kilometerstand darf höchstens ${draftPreview.nextOdometerKm} km betragen.`
+                                : "Bitte Eingaben prüfen. Für das Speichern werden gültige Werte in allen Pflichtfeldern benötigt."
                             : "Noch keine Änderung an dieser Session."}
                         </div>
                         <button type="button" className="pill pillWarm" onClick={() => onSaveEdit(session)} disabled={saveDisabled}>
@@ -535,6 +663,18 @@ export default function SessionsCard({
           )}
         </div>
       </div>
+
+      <SessionDetailDrawer
+        session={detailSession}
+        sessions={sessions}
+        score={detailSession ? sessionScoresById[String(detailSession.id)] || null : null}
+        outlier={detailSession ? sessionOutliersById[String(detailSession.id)] || null : null}
+        onClose={closeDetails}
+        onEdit={(row) => {
+          closeDetails();
+          beginEdit(row);
+        }}
+      />
     </div>
   );
 }

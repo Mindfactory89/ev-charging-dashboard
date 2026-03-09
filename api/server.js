@@ -565,7 +565,7 @@ function parseSessionMutation(body) {
   }
 
   const odo_start_km = parseOptionalNonNegativeInteger(b.odo_start_km);
-  const odo_end_km = parseOptionalNonNegativeInteger(b.odo_end_km);
+  const odo_end_km = parseOptionalNonNegativeInteger(b.odo_end_km ?? b.odometer_km);
   if (Number.isNaN(odo_start_km) || Number.isNaN(odo_end_km)) {
     return { error: 'Kilometerstände müssen positive Ganzzahlen sein.' };
   }
@@ -619,21 +619,36 @@ fastify.post('/api/sessions', async (req, reply) => {
 
 fastify.patch('/api/sessions/:id', async (req, reply) => {
   const id = String(req.params.id);
-  const parsed = parseSessionMutation(req.body);
-  if (parsed.error) {
-    return reply.code(400).send({ ok: false, error: parsed.error });
-  }
 
   try {
+    const existing = await prisma.chargingSession.findUnique({ where: { id } });
+    if (!existing) {
+      return reply.code(404).send({ ok: false, error: 'not found' });
+    }
+
+    const parsed = parseSessionMutation({
+      date: existing.date ? new Date(existing.date).toISOString().slice(0, 10) : null,
+      connector: existing.connector,
+      soc_start: existing.soc_start,
+      soc_end: existing.soc_end,
+      energy_kwh: existing.energy_kwh,
+      price_per_kwh: existing.price_per_kwh,
+      duration_seconds: existing.duration_seconds,
+      note: existing.note,
+      odo_start_km: existing.odo_start_km,
+      odo_end_km: existing.odo_end_km,
+      ...req.body,
+    });
+    if (parsed.error) {
+      return reply.code(400).send({ ok: false, error: parsed.error });
+    }
+
     const updated = await prisma.chargingSession.update({
       where: { id },
       data: parsed.data,
     });
     return { ok: true, updated };
   } catch (err) {
-    if (err?.code === 'P2025') {
-      return reply.code(404).send({ ok: false, error: 'not found' });
-    }
     req.log.error(err);
     return reply.code(500).send({ ok: false, error: 'update failed' });
   }

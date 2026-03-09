@@ -1,5 +1,6 @@
 import React from "react";
 import { createSession } from "./api.js";
+import { deriveMobilityForSession } from "./sessionIntelligence.js";
 
 function pad2(n){ return String(n).padStart(2,"0"); }
 
@@ -14,9 +15,9 @@ function hhmmToSeconds(hhmm){
   return hh*3600 + mm*60;
 }
 
-const CONNECTOR_OPTIONS = ["CCS - DC", "CCS AC"];
+const CONNECTOR_OPTIONS = ["CCS - DC", "CCS AC", "Wallbox AC"];
 
-export default function AddSessionCard({ onCreated, demo = false }) {
+export default function AddSessionCard({ onCreated, demo = false, sessions = [] }) {
   const [date, setDate] = React.useState(() => {
     const d = new Date();
     return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
@@ -28,6 +29,7 @@ export default function AddSessionCard({ onCreated, demo = false }) {
   const [energyKwh, setEnergyKwh] = React.useState("0.0");
   const [pricePerKwh, setPricePerKwh] = React.useState("0.59");
   const [durationHHMM, setDurationHHMM] = React.useState("00:30");
+  const [odometerKm, setOdometerKm] = React.useState("");
   const [note, setNote] = React.useState("");
 
   const [busy, setBusy] = React.useState(false);
@@ -37,12 +39,33 @@ export default function AddSessionCard({ onCreated, demo = false }) {
   const parsedEnergy = Number(String(energyKwh).replace(",", "."));
   const parsedPrice = Number(String(pricePerKwh).replace(",", "."));
   const parsedDuration = hhmmToSeconds(durationHHMM);
+  const parsedOdometer = odometerKm === "" ? null : Number(odometerKm);
   const previewCost = Number.isFinite(parsedEnergy) && Number.isFinite(parsedPrice) ? parsedEnergy * parsedPrice : null;
   const previewPower =
     Number.isFinite(parsedEnergy) && Number.isFinite(parsedDuration) && parsedDuration > 0
       ? parsedEnergy / (parsedDuration / 3600)
       : null;
   const previewSocDelta = Math.max(0, Number(socEnd) - Number(socStart));
+  const mobilityPreview = React.useMemo(() => {
+    if (!Number.isFinite(parsedOdometer)) return null;
+    return deriveMobilityForSession(sessions, {
+      id: "__add-preview__",
+      date,
+      energy_kwh: parsedEnergy,
+      total_cost: previewCost,
+      duration_seconds: parsedDuration,
+      price_per_kwh: parsedPrice,
+      soc_start: Number(socStart),
+      soc_end: Number(socEnd),
+      odo_end_km: parsedOdometer,
+    });
+  }, [date, parsedDuration, parsedEnergy, parsedOdometer, parsedPrice, previewCost, sessions, socEnd, socStart]);
+  const latestKnownOdometer = mobilityPreview?.previousOdometerKm ?? null;
+  const previewDistanceKm = mobilityPreview?.distanceKm ?? null;
+  const previewCostPer100Km =
+    Number.isFinite(previewCost) && Number.isFinite(previewDistanceKm) && previewDistanceKm > 0
+      ? (previewCost / previewDistanceKm) * 100
+      : null;
 
   async function submit(e){
     e.preventDefault();
@@ -51,11 +74,19 @@ export default function AddSessionCard({ onCreated, demo = false }) {
     const energy = Number(String(energyKwh).replace(",", "."));
     const price = Number(String(pricePerKwh).replace(",", "."));
     const dur = hhmmToSeconds(durationHHMM);
+    const odometer = odometerKm === "" ? null : Number(odometerKm);
 
     if(!date) return setMsg("Bitte Datum auswählen.");
     if(!Number.isFinite(energy) || energy <= 0) return setMsg("Energie (kWh) muss > 0 sein.");
     if(!Number.isFinite(price) || price <= 0) return setMsg("Kosten pro kWh muss > 0 sein.");
     if(dur == null || dur <= 0) return setMsg("Dauer bitte als HH:MM eingeben (z.B. 00:30 oder 01:43).");
+    if(odometer != null && (!Number.isFinite(odometer) || odometer < 0)) return setMsg("Kilometerstand muss eine positive Ganzzahl sein.");
+    if(odometer != null && mobilityPreview?.previousOdometerKm != null && odometer < mobilityPreview.previousOdometerKm) {
+      return setMsg(`Kilometerstand darf nicht kleiner als ${mobilityPreview.previousOdometerKm} km sein.`);
+    }
+    if(odometer != null && mobilityPreview?.nextOdometerKm != null && odometer > mobilityPreview.nextOdometerKm) {
+      return setMsg(`Kilometerstand darf nicht größer als ${mobilityPreview.nextOdometerKm} km sein.`);
+    }
     if(Number(socStart) < 0 || Number(socStart) > 100) return setMsg("SoC Start muss 0–100 sein.");
     if(Number(socEnd) < 0 || Number(socEnd) > 100) return setMsg("SoC Ende muss 0–100 sein.");
     if(Number(socEnd) < Number(socStart)) return setMsg("SoC Ende darf nicht kleiner als SoC Start sein.");
@@ -70,6 +101,7 @@ export default function AddSessionCard({ onCreated, demo = false }) {
         energy_kwh: energy,
         price_per_kwh: price,
         duration_seconds: dur,
+        odometer_km: odometer != null ? Math.round(odometer) : null,
         note: note || null,
       });
       setMsg("Ladevorgang gespeichert.");
@@ -118,9 +150,15 @@ export default function AddSessionCard({ onCreated, demo = false }) {
         </div>
 
         <div className="formPreviewCard cool">
-          <div className="formPreviewLabel">Profil</div>
-          <div className="formPreviewValue">{connector || "–"}</div>
-          <div className="formPreviewSub">{date || "Kein Datum"}</div>
+          <div className="formPreviewLabel">Mobilität</div>
+          <div className="formPreviewValue">{previewCostPer100Km != null ? `${previewCostPer100Km.toLocaleString("de-DE", { maximumFractionDigits: 2 })} €/100 km` : connector || "–"}</div>
+          <div className="formPreviewSub">
+            {previewDistanceKm != null
+              ? `${previewDistanceKm} km seit letzter Session`
+              : latestKnownOdometer != null
+                ? `vorher ${latestKnownOdometer} km`
+                : date || "Kein Datum"}
+          </div>
         </div>
       </div>
 
@@ -170,6 +208,11 @@ export default function AddSessionCard({ onCreated, demo = false }) {
           <input className="input" value={durationHHMM} onChange={(e)=>setDurationHHMM(e.target.value)} placeholder="00:30" />
         </label>
 
+        <label className="field">
+          <span>Aktueller Kilometerstand nach der Ladung</span>
+          <input className="input" type="number" min="0" value={odometerKm} onChange={(e)=>setOdometerKm(e.target.value)} placeholder="18390" />
+        </label>
+
         <label className="field fieldWide">
           <span>Notiz (optional)</span>
           <textarea
@@ -183,8 +226,9 @@ export default function AddSessionCard({ onCreated, demo = false }) {
         <div className="field fieldWide formActionRow">
           <div className="formHint">
             {demo
-              ? "Wird nur lokal in der Demo gehalten und wirkt sofort auf die Demo-Analysen."
-              : "Wird direkt in PostgreSQL gespeichert und in den Analysen für das gewählte Jahr berücksichtigt."}
+              ? "Wird nur lokal in der Demo gehalten. Der aktuelle KM-Stand wird als neuer Endstand gespeichert; die Distanz ergibt sich aus der Differenz zum vorherigen Eintrag."
+              : "Wird direkt in PostgreSQL gespeichert. Der aktuelle KM-Stand wird als neuer Endstand gespeichert; die Distanz ergibt sich aus der Differenz zum vorherigen Eintrag."}
+            {latestKnownOdometer != null ? ` Letzter bekannter Kilometerstand: ${latestKnownOdometer} km.` : " Der erste eingetragene KM-Stand dient nur als Referenz und erzeugt noch keine Fahrdistanz."}
           </div>
           <button className="btnPrimary" type="submit" disabled={busy}>
             {busy ? "Speichern…" : "Speichern"}

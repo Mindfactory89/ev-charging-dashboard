@@ -1,5 +1,6 @@
 import React from "react";
 import Tooltip from "./Tooltip.jsx";
+import { getWeekdayUsage } from "./loadRhythm.js";
 
 function num(n, digits = 1) {
   const value = Number(n);
@@ -14,6 +15,8 @@ function smartInsights({ stats, monthly, outliers, socWindowAnalysis, sessions =
     : [];
   const latestMonth = activeMonths[activeMonths.length - 1] || null;
   const previousMonth = activeMonths.length > 1 ? activeMonths[activeMonths.length - 2] : null;
+  const weekdayFact = getWeekdayUsage(sessions).top;
+  const latestMonthWeekdayFact = latestMonth ? getWeekdayUsage(sessions, { month: latestMonth.month }).top : null;
 
   if (latestMonth && previousMonth && latestMonth.price_per_kwh != null && previousMonth.price_per_kwh != null) {
     const trend = previousMonth.price_per_kwh > 0 ? ((latestMonth.price_per_kwh - previousMonth.price_per_kwh) / previousMonth.price_per_kwh) * 100 : 0;
@@ -25,6 +28,24 @@ function smartInsights({ stats, monthly, outliers, socWindowAnalysis, sessions =
         text: `Das effektive Preisniveau hat sich gegenüber dem letzten aktiven Monat deutlich bewegt. Das ist ein Signal für Tarif-, Standort- oder Session-Mix-Effekte.`,
       });
     }
+  }
+
+  if (weekdayFact?.label && weekdayFact.count > 0) {
+    items.push({
+      id: "weekday-peak",
+      title: "Top-Ladetag",
+      value: weekdayFact.label,
+      text: `${weekdayFact.label} war mit ${num(weekdayFact.count, 0)} Sessions dein meistgenutzter Ladetag im Jahr${weekdayFact.share ? ` (${num(weekdayFact.share, 0)} %)` : ""}.`,
+    });
+  }
+
+  if (latestMonth?.month && latestMonthWeekdayFact?.label) {
+    items.push({
+      id: "focus-month-weekday",
+      title: "Fokusmonat-Rhythmus",
+      value: latestMonthWeekdayFact.label,
+      text: `Im Fokusmonat war ${latestMonthWeekdayFact.label} mit ${num(latestMonthWeekdayFact.count, 0)} Sessions dein häufigster Ladetag${latestMonthWeekdayFact.share ? ` (${num(latestMonthWeekdayFact.share, 0)} % Anteil)` : ""}.`,
+    });
   }
 
   if (stats?.avg_power_kw != null && stats?.medians?.power_kw != null) {
@@ -85,7 +106,7 @@ function smartInsights({ stats, monthly, outliers, socWindowAnalysis, sessions =
     }
   }
 
-  return items.slice(0, 4);
+  return items.slice(0, 5);
 }
 
 export default function SmartInsightsCard({ stats, monthly, outliers, socWindowAnalysis, sessions = [], year = 2026 }) {
