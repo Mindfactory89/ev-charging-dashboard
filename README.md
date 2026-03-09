@@ -1,38 +1,15 @@
 # Mobility Dashboard
 
-Privates E-Mobility-Dashboard fuer Ladeverlaeufe, Kostenanalyse und Jahresauswertungen eines Cupra Born.
+Premium EV charging dashboard for charging history, cost analytics, forecasts, year comparison and mobility intelligence.
 
-Das Projekt ist jetzt so vorbereitet, dass es als oeffentliches GitHub-Repo genutzt werden kann:
+Ich habe dieses Dashboard in Eigenregie entwickelt, weil mich die Daten rund um Laden, Kosten, Verbrauch und Fahrprofil meines E-Autos interessiert haben. Gleichzeitig ist es mein persoenliches Lernprojekt und mein Einstieg in die praktische Softwareentwicklung.
 
-- keine privaten `.env`-Dateien im Repo
-- keine festen SSH- oder Server-Zugaenge im Code
-- generische Beispiel-Konfigurationen
-- einfache `docker-compose`-Variante fuer Einsteiger
+Das Ergebnis ist ein ruhiges, datenfokussiertes Dashboard mit Premium-Anspruch: klare Analysen, lokale Datenhaltung und ein Interface, das sich eher wie ein Produkt als wie ein Roh-Tool anfuehlen soll.
 
-## Fuer wen ist was gedacht?
+## Betriebsmodi
 
-Es gibt zwei Wege:
-
-### 1. Einsteiger
-
-Nutze `docker-compose.beginner.yml`.
-
-Das ist der einfachste Start:
-
-- keine Tailscale-Kenntnisse noetig
-- keine VPS-Kenntnisse noetig
-- alles lokal mit eigener Datenbank
-- eigene Sessions, eigene Daten
-
-### 2. Fortgeschrittene / privater VPS
-
-Nutze `docker-compose.yml` mit `.env`.
-
-Das ist fuer:
-
-- Tailscale
-- Reverse Proxy / Caddy / private Infrastruktur
-- eigenes Deploy ueber SSH + `rsync`
+- `docker-compose.beginner.yml`: lokaler Schnellstart mit eigener PostgreSQL-Datenbank
+- `docker-compose.yml`: privater Betrieb auf eigenem VPS oder in eigener Infrastruktur
 
 ## Produktbild
 
@@ -63,7 +40,7 @@ Sobald die Dateien im Repo liegen, rendert GitHub diese Bilder automatisch:
 ### Verlauf
 ![Dashboard History](docs/images/history.png)
 
-## Kernfunktionen
+## Highlights
 
 - Jahresauswertung pro Jahr
 - sauberer Leerzustand fuer Jahre ohne Daten
@@ -108,36 +85,6 @@ Verhalten im Demo-Modus:
 - `ui/`: React + Vite + Recharts
 - `api/`: Fastify + Prisma
 - `db`: PostgreSQL via Docker Compose
-
-## Projektstruktur
-
-- `api/server.js`: produktiver Backend-Einstieg
-- `api/prisma/schema.prisma`: Datenmodell
-- `ui/src/App.jsx`: Hauptansicht und Informationsarchitektur
-- `ui/src/ui/api.js`: API-Client und Demo-Datenlogik
-- `ui/src/ui/SessionsCard.jsx`: Verlauf, Inline-Edit, Undo
-- `ui/src/ui/SessionDetailDrawer.jsx`: ruhige Session-Detailansicht
-- `ui/src/ui/MonthlyChart.jsx`: Monatsverlauf
-- `ui/src/ui/YearComparisonPanel.jsx`: Jahresvergleich
-- `ui/src/ui/MobilityCostCard.jsx`: Fahrprofil, Effizienz und Fahrtipps
-- `ui/src/ui/ChargingMixCard.jsx`: Home vs. Public Intelligence
-- `ui/src/ui/WeekdayHeatmapCard.jsx`: Wochentag-/Monats-Heatmap
-- `ui/src/ui/WhatIfCard.jsx`: Szenarien und Einsparhebel
-- `ui/src/ui/sessionIntelligence.js`: Distanz-, Verbrauchs- und Mobilitaetslogik
-- `ui/src/ui/PowerCurveCard.jsx`: Ladeleistungskurve nach SoC-Bereich
-- `ui/src/ui/MonthlyReportCard.jsx`: persoenlicher Monatsbericht
-- `ui/src/ui/ForecastCard.jsx`: Jahreshochrechnung
-- `ui/src/ui/SmartInsightsCard.jsx`: Smart Insights
-- `ui/src/ui/VehicleHero.jsx`: Fahrzeug-Hero
-- `docker-compose.beginner.yml`: einfacher lokaler Start
-- `docker-compose.yml`: fortgeschrittener privater/Tailscale-Betrieb
-- `.env.example`: Beispiel fuer Konfiguration
-- `scripts/deploy-to-vps.sh`: Upload + Remote-Rebuild
-- `scripts/sync-from-vps.sh`: Snapshot vom VPS ziehen
-- `LICENSE`: MIT Lizenz
-- `CONTRIBUTING.md`: Hinweise fuer Mitwirkende
-- `SECURITY.md`: Security-Hinweise
-- `GITHUB_PUBLIC_RELEASE.md`: Vorschlaege fuer Repo-Name, Topics und ersten Release
 
 ## Schnellstart fuer Einsteiger
 
@@ -232,18 +179,11 @@ npm run mobile:open:android
 npm run mobile:open:ios
 ```
 
-Hinweise:
+Kurz dazu:
 
-- `ui/capacitor.config.ts` ist bereits vorhanden
 - Android und iOS Projekte liegen nach dem Setup in `ui/android` und `ui/ios`
 - CSV-Exporte werden auf mobilen Geraeten ueber Share/Download-Fallback behandelt
 - fuer iOS brauchst du die volle Xcode-App und nicht nur Command Line Tools
-- das erzeugte iOS-Projekt ist auf Deployment Target `15.0` gesetzt
-- fuer einen echten Store-Release solltest du die API vor oeffentlichem Zugriff absichern
-
-Hinweis:
-
-- In diesem Repo sind aktuell keine `lint`- oder `test`-Scripts hinterlegt.
 
 ## Fortgeschrittene Konfiguration ueber `.env`
 
@@ -277,7 +217,7 @@ Hinweise:
 - `VITE_DEMO_HOST_PREFIX` ist optional, z. B. `demo.`
 - `docker-compose.yml` erwartet fuer die privaten Tailscale-Bindings eine explizit gesetzte `TAILSCALE_IP`
 
-## Betrieb mit `docker-compose.yml`
+## Privater Betrieb mit `docker-compose.yml`
 
 Build und Start:
 
@@ -312,8 +252,6 @@ Healthchecks:
 
 ## Deploy auf einen eigenen VPS
 
-Das Deploy-Script ist jetzt generisch. Es enthaelt keine persoenlichen Host- oder User-Defaults mehr.
-
 Standardbeispiel:
 
 ```bash
@@ -338,45 +276,13 @@ Nur Upload ohne Remote-Rebuild:
 HOST=your.server.ip USER_NAME=deploy RUN_REMOTE_DEPLOY=0 ./scripts/deploy-to-vps.sh
 ```
 
-Das Script:
-
-- synchronisiert den lokalen Repo-Stand per `rsync`
-- laesst `.env`, `node_modules`, Logs und Build-Artefakte unberuehrt
-- fuehrt danach auf dem VPS `docker compose up -d --build ${SERVICES}` aus
-
-## Snapshot vom VPS ziehen
-
-```bash
-HOST=your.server.ip USER_NAME=deploy ./scripts/sync-from-vps.sh
-```
-
-## Hinweise fuer ein oeffentliches GitHub-Repo
-
-Wenn du dieses Repo oeffentlich machst:
-
-- committe niemals `.env`
-- committe niemals DB-Dumps oder Exportdateien mit echten Daten
-- committe niemals SSH-Keys
-- nutze nur `.env.example` als Vorlage
-- wenn frueher echte Secrets in einem privaten Repo lagen, solltest du sie rotieren, bevor du oeffentlich gehst
-
 ## Daten und Sicherheit
 
-Andere Nutzer bekommen durch das Repo:
+Das Projekt ist `self-hosted` und fuer den Betrieb mit eigener Datenbank gedacht.
 
-- deinen Code
-- deine generischen Compose-Dateien
-- deine Beispiel-Konfiguration
-
-Andere Nutzer bekommen nicht:
-
-- deine echten Sessions
-- deine PostgreSQL-Daten
-- deine `.env`
-- deinen SSH-Zugriff
-- deinen Server
-
-Jeder betreibt das Dashboard mit seiner eigenen Datenbank und seinen eigenen Sessions.
+- Produktivdaten bleiben in deiner eigenen PostgreSQL-Instanz
+- Zugangsdaten und private Umgebungsdateien gehoeren nicht ins Repository
+- fuer oeffentliche Releases sollte nur `.env.example` verwendet werden
 
 ## Wichtiger Hinweis zu Kilometerstaenden
 
