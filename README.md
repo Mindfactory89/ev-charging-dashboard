@@ -21,16 +21,6 @@ Das Dashboard ist in drei Bereiche gegliedert:
 
 ## Screenshots
 
-Lege deine Screenshots in `docs/images/` mit diesen Dateinamen ab:
-
-- `overview.png`
-- `analysis.png`
-- `history.png`
-- optional `comparison.png`
-- optional `forecast.png`
-
-Sobald die Dateien im Repo liegen, rendert GitHub diese Bilder automatisch:
-
 ### Uebersicht
 ![Dashboard Overview](docs/images/overview.png)
 
@@ -146,7 +136,7 @@ npm run build
 ```
 
 ## Mobile / Android / iOS
-
+(Hier experimentiere ich grade etwas - es könnte also fehlerhaft sein!)
 Das UI ist so vorbereitet, dass es in einem nativen Container ueber Capacitor laufen kann.
 
 Wichtig fuer Mobile:
