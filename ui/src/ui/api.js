@@ -64,6 +64,14 @@ function buildOptionalApiUrl(path) {
   return base ? `${base}${path}` : null;
 }
 
+async function fetchApiJson(path) {
+  const response = await fetch(buildApiUrl(path), {
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+  });
+  return asJson(response);
+}
+
 async function asJson(r) {
   const data = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(data?.error || `${r.status} ${r.statusText}`);
@@ -71,10 +79,11 @@ async function asJson(r) {
 }
 
 const DEMO_SEEDED_YEARS = [2026, 2027];
-const DEMO_MIN_SEED_ROWS_PER_YEAR = 15;
-const DEMO_MAX_SEED_ROWS_PER_YEAR = 20;
+const DEMO_MIN_SEED_ROWS_PER_YEAR = 30;
+const DEMO_MAX_SEED_ROWS_PER_YEAR = 50;
 const DEMO_MAX_USER_ROWS = 8;
 const DEMO_MAX_ROWS = DEMO_SEEDED_YEARS.length * DEMO_MAX_SEED_ROWS_PER_YEAR + DEMO_MAX_USER_ROWS;
+const DEMO_REFERENCE_BATTERY_KWH = 79;
 
 function rand(min, max) {
   return Math.random() * (max - min) + min;
@@ -162,9 +171,9 @@ const DEMO_SESSION_TEMPLATES = [
     connector: "CCS - DC",
     energyMin: 32,
     energyMax: 46,
-    priceMin: 0.65,
-    priceMax: 0.69,
-    priceAnchors: [0.66, 0.69],
+    priceMin: 0.59,
+    priceMax: 0.67,
+    priceAnchors: [0.59, 0.63, 0.66],
     durationMin: 26,
     durationMax: 34,
     socStartMin: 10,
@@ -180,9 +189,9 @@ const DEMO_SESSION_TEMPLATES = [
     connector: "CCS AC",
     energyMin: 7,
     energyMax: 13,
-    priceMin: 0.54,
-    priceMax: 0.59,
-    priceAnchors: [0.54, 0.59],
+    priceMin: 0.49,
+    priceMax: 0.56,
+    priceAnchors: [0.49, 0.52, 0.55],
     durationMin: 85,
     durationMax: 135,
     socStartMin: 54,
@@ -198,9 +207,9 @@ const DEMO_SESSION_TEMPLATES = [
     connector: "CCS - DC",
     energyMin: 26,
     energyMax: 38,
-    priceMin: 0.56,
-    priceMax: 0.62,
-    priceAnchors: [0.56, 0.59],
+    priceMin: 0.55,
+    priceMax: 0.61,
+    priceAnchors: [0.56, 0.59, 0.61],
     durationMin: 21,
     durationMax: 29,
     socStartMin: 18,
@@ -216,9 +225,9 @@ const DEMO_SESSION_TEMPLATES = [
     connector: "CCS - DC",
     energyMin: 36,
     energyMax: 50,
-    priceMin: 0.65,
-    priceMax: 0.69,
-    priceAnchors: [0.66, 0.69],
+    priceMin: 0.59,
+    priceMax: 0.67,
+    priceAnchors: [0.59, 0.63, 0.66],
     durationMin: 28,
     durationMax: 37,
     socStartMin: 8,
@@ -234,9 +243,9 @@ const DEMO_SESSION_TEMPLATES = [
     connector: "CCS AC",
     energyMin: 8,
     energyMax: 14,
-    priceMin: 0.49,
-    priceMax: 0.56,
-    priceAnchors: [0.49, 0.55],
+    priceMin: 0.46,
+    priceMax: 0.54,
+    priceAnchors: [0.47, 0.51, 0.54],
     durationMin: 95,
     durationMax: 155,
     socStartMin: 42,
@@ -252,9 +261,9 @@ const DEMO_SESSION_TEMPLATES = [
     connector: "CCS - DC",
     energyMin: 20,
     energyMax: 32,
-    priceMin: 0.49,
-    priceMax: 0.59,
-    priceAnchors: [0.49, 0.55, 0.59],
+    priceMin: 0.47,
+    priceMax: 0.54,
+    priceAnchors: [0.47, 0.49, 0.52],
     durationMin: 16,
     durationMax: 25,
     socStartMin: 20,
@@ -270,9 +279,9 @@ const DEMO_SESSION_TEMPLATES = [
     connector: "CCS - DC",
     energyMin: 36,
     energyMax: 50,
-    priceMin: 0.69,
-    priceMax: 0.79,
-    priceAnchors: [0.69, 0.79],
+    priceMin: 0.61,
+    priceMax: 0.68,
+    priceAnchors: [0.62, 0.65, 0.67],
     durationMin: 29,
     durationMax: 38,
     socStartMin: 6,
@@ -288,9 +297,9 @@ const DEMO_SESSION_TEMPLATES = [
     connector: "CCS AC",
     energyMin: 6,
     energyMax: 11,
-    priceMin: 0.49,
-    priceMax: 0.55,
-    priceAnchors: [0.49, 0.55],
+    priceMin: 0.47,
+    priceMax: 0.54,
+    priceAnchors: [0.48, 0.52, 0.54],
     durationMin: 90,
     durationMax: 140,
     socStartMin: 60,
@@ -306,9 +315,9 @@ const DEMO_SESSION_TEMPLATES = [
     connector: "CCS - DC",
     energyMin: 20,
     energyMax: 31,
-    priceMin: 0.56,
-    priceMax: 0.62,
-    priceAnchors: [0.56, 0.59],
+    priceMin: 0.55,
+    priceMax: 0.61,
+    priceAnchors: [0.56, 0.59, 0.61],
     durationMin: 18,
     durationMax: 26,
     socStartMin: 24,
@@ -324,9 +333,9 @@ const DEMO_SESSION_TEMPLATES = [
     connector: "CCS - DC",
     energyMin: 30,
     energyMax: 44,
-    priceMin: 0.65,
-    priceMax: 0.69,
-    priceAnchors: [0.66, 0.69],
+    priceMin: 0.59,
+    priceMax: 0.67,
+    priceAnchors: [0.59, 0.63, 0.66],
     durationMin: 24,
     durationMax: 33,
     socStartMin: 12,
@@ -342,9 +351,9 @@ const DEMO_SESSION_TEMPLATES = [
     connector: "CCS - DC",
     energyMin: 26,
     energyMax: 39,
-    priceMin: 0.56,
-    priceMax: 0.63,
-    priceAnchors: [0.56, 0.59],
+    priceMin: 0.55,
+    priceMax: 0.62,
+    priceAnchors: [0.56, 0.59, 0.61],
     durationMin: 23,
     durationMax: 32,
     socStartMin: 18,
@@ -360,9 +369,9 @@ const DEMO_SESSION_TEMPLATES = [
     connector: "CCS AC",
     energyMin: 7,
     energyMax: 13,
-    priceMin: 0.49,
-    priceMax: 0.55,
-    priceAnchors: [0.49, 0.55],
+    priceMin: 0.46,
+    priceMax: 0.54,
+    priceAnchors: [0.47, 0.51, 0.54],
     durationMin: 95,
     durationMax: 150,
     socStartMin: 50,
@@ -378,9 +387,9 @@ const DEMO_SESSION_TEMPLATES = [
     connector: "CCS - DC",
     energyMin: 18,
     energyMax: 29,
-    priceMin: 0.52,
-    priceMax: 0.59,
-    priceAnchors: [0.55, 0.59],
+    priceMin: 0.51,
+    priceMax: 0.58,
+    priceAnchors: [0.52, 0.55, 0.58],
     durationMin: 15,
     durationMax: 22,
     socStartMin: 28,
@@ -396,9 +405,9 @@ const DEMO_SESSION_TEMPLATES = [
     connector: "CCS - DC",
     energyMin: 16,
     energyMax: 25,
-    priceMin: 0.64,
-    priceMax: 0.73,
-    priceAnchors: [0.69, 0.73],
+    priceMin: 0.59,
+    priceMax: 0.69,
+    priceAnchors: [0.60, 0.64, 0.67],
     durationMin: 14,
     durationMax: 21,
     socStartMin: 38,
@@ -414,9 +423,9 @@ const DEMO_SESSION_TEMPLATES = [
     connector: "CCS AC",
     energyMin: 7,
     energyMax: 12,
-    priceMin: 0.49,
-    priceMax: 0.56,
-    priceAnchors: [0.49, 0.55],
+    priceMin: 0.47,
+    priceMax: 0.55,
+    priceAnchors: [0.48, 0.52, 0.55],
     durationMin: 90,
     durationMax: 145,
     socStartMin: 58,
@@ -432,9 +441,9 @@ const DEMO_SESSION_TEMPLATES = [
     connector: "CCS - DC",
     energyMin: 22,
     energyMax: 34,
-    priceMin: 0.69,
-    priceMax: 0.75,
-    priceAnchors: [0.69, 0.73],
+    priceMin: 0.60,
+    priceMax: 0.68,
+    priceAnchors: [0.61, 0.64, 0.67],
     durationMin: 20,
     durationMax: 29,
     socStartMin: 20,
@@ -450,9 +459,9 @@ const DEMO_SESSION_TEMPLATES = [
     connector: "Wallbox AC",
     energyMin: 18,
     energyMax: 28,
-    priceMin: 0.32,
-    priceMax: 0.39,
-    priceAnchors: [0.329, 0.349, 0.379],
+    priceMin: 0.29,
+    priceMax: 0.35,
+    priceAnchors: [0.299, 0.319, 0.339],
     durationMin: 150,
     durationMax: 250,
     socStartMin: 22,
@@ -468,9 +477,9 @@ const DEMO_SESSION_TEMPLATES = [
     connector: "Wallbox AC",
     energyMin: 14,
     energyMax: 24,
-    priceMin: 0.31,
-    priceMax: 0.38,
-    priceAnchors: [0.319, 0.339, 0.369],
+    priceMin: 0.29,
+    priceMax: 0.35,
+    priceAnchors: [0.299, 0.319, 0.339],
     durationMin: 120,
     durationMax: 210,
     socStartMin: 36,
@@ -486,9 +495,9 @@ const DEMO_SESSION_TEMPLATES = [
     connector: "Wallbox AC",
     energyMin: 20,
     energyMax: 34,
-    priceMin: 0.32,
-    priceMax: 0.40,
-    priceAnchors: [0.329, 0.349, 0.389],
+    priceMin: 0.29,
+    priceMax: 0.36,
+    priceAnchors: [0.299, 0.319, 0.349],
     durationMin: 170,
     durationMax: 300,
     socStartMin: 18,
@@ -504,9 +513,9 @@ const DEMO_SESSION_TEMPLATES = [
     connector: "Wallbox AC",
     energyMin: 15,
     energyMax: 26,
-    priceMin: 0.31,
-    priceMax: 0.38,
-    priceAnchors: [0.319, 0.339, 0.369],
+    priceMin: 0.29,
+    priceMax: 0.35,
+    priceAnchors: [0.299, 0.319, 0.339],
     durationMin: 130,
     durationMax: 230,
     socStartMin: 34,
@@ -522,9 +531,9 @@ const DEMO_SESSION_TEMPLATES = [
     connector: "Wallbox AC",
     energyMin: 17,
     energyMax: 30,
-    priceMin: 0.32,
-    priceMax: 0.39,
-    priceAnchors: [0.329, 0.349, 0.379],
+    priceMin: 0.29,
+    priceMax: 0.35,
+    priceAnchors: [0.299, 0.319, 0.339],
     durationMin: 150,
     durationMax: 280,
     socStartMin: 28,
@@ -540,9 +549,9 @@ const DEMO_SESSION_TEMPLATES = [
     connector: "Wallbox AC",
     energyMin: 22,
     energyMax: 36,
-    priceMin: 0.33,
-    priceMax: 0.40,
-    priceAnchors: [0.339, 0.359, 0.389],
+    priceMin: 0.30,
+    priceMax: 0.36,
+    priceAnchors: [0.309, 0.329, 0.349],
     durationMin: 180,
     durationMax: 330,
     socStartMin: 16,
@@ -580,22 +589,184 @@ function templateKind(template) {
   return template?.connector === "CCS AC" ? "ac" : "dc";
 }
 
+// Demo anchors:
+// - Verivox, published 2026-02-02: public charging averages in 2025 were 0.52 EUR/kWh (AC) and 0.60 EUR/kWh (DC).
+// - Verivox/BMWK compact-EV baseline: 15.9 kWh/100 km.
+// - ADAC Ecotest examples from 2025 put real-world compact EVs with charging losses roughly in the 16.5-19.5 kWh/100 km range.
 function seasonalConsumptionPer100Km(month, kind = "dc") {
-  const baseBySeason =
-    month === 12 || month <= 2 ? 18.6
-    : month >= 6 && month <= 8 ? 15.8
-    : 16.9;
+  const seasonKey =
+    month === 12 || month <= 2 ? "winter"
+    : month >= 6 && month <= 8 ? "summer"
+    : "shoulder";
 
-  if (kind === "wallbox") return round(baseBySeason - 0.2, 1);
-  if (kind === "ac") return round(baseBySeason + 0.1, 1);
-  return round(baseBySeason + 0.4, 1);
+  const consumptionBySeason = {
+    winter: { wallbox: 18.8, ac: 19.4, dc: 20.2 },
+    shoulder: { wallbox: 17.2, ac: 17.8, dc: 18.6 },
+    summer: { wallbox: 15.8, ac: 16.4, dc: 17.2 },
+  };
+
+  return round(consumptionBySeason[seasonKey]?.[kind] ?? consumptionBySeason.shoulder.dc, 1);
+}
+
+function seasonalPriceDelta(month, kind = "dc") {
+  if (kind === "wallbox") {
+    if (month === 12 || month <= 2) return 0.02;
+    if (month >= 6 && month <= 8) return -0.005;
+    return 0.008;
+  }
+
+  if (kind === "ac") {
+    if (month === 12 || month <= 2) return 0.025;
+    if (month >= 6 && month <= 8) return 0.012;
+    return 0.018;
+  }
+
+  if (month === 12 || month <= 2) return 0.045;
+  if (month >= 6 && month <= 8) return 0.028;
+  return 0.035;
+}
+
+function providerPriceBias(provider, kind = "dc") {
+  const normalized = String(provider || "").toLowerCase();
+
+  if (normalized.includes("ionity")) return 0.035;
+  if (normalized.includes("fastned")) return 0.028;
+  if (normalized.includes("allego")) return 0.03;
+  if (normalized.includes("aral")) return 0.02;
+  if (normalized.includes("tesla")) return 0.005;
+  if (normalized.includes("enbw")) return 0.012;
+  if (normalized.includes("tanke")) return kind === "ac" ? -0.004 : 0.008;
+  if (normalized.includes("aldi")) return -0.03;
+  if (normalized.includes("wallbox")) return -0.012;
+  if (normalized.includes("stadtwerke")) return kind === "ac" ? -0.015 : -0.006;
+  if (normalized.includes("ewe")) return kind === "ac" ? -0.01 : 0.004;
+
+  return 0;
+}
+
+function priceBoundsForKind(kind = "dc") {
+  if (kind === "wallbox") return { min: 0.26, max: 0.41 };
+  if (kind === "ac") return { min: 0.41, max: 0.64 };
+  return { min: 0.45, max: 0.79 };
+}
+
+function buildDemoPricePerKwh(template) {
+  const kind = templateKind(template);
+  const bounds = priceBoundsForKind(kind);
+  const basePrice =
+    Array.isArray(template.priceAnchors) && template.priceAnchors.length && Math.random() < 0.46
+      ? Number(template.priceAnchors[randi(0, template.priceAnchors.length - 1)].toFixed(3))
+      : round(rand(template.priceMin, template.priceMax), 3);
+
+  const sessionVariance =
+    kind === "wallbox"
+      ? rand(-0.018, 0.02)
+      : kind === "ac"
+        ? rand(-0.03, 0.055)
+        : rand(-0.045, 0.085);
+
+  const effectiveMin =
+    kind === "wallbox"
+      ? Math.max(bounds.min, template.priceMin - 0.025)
+      : kind === "ac"
+        ? Math.max(bounds.min, template.priceMin - 0.035)
+        : Math.max(bounds.min, template.priceMin - 0.05);
+
+  const effectiveMax =
+    kind === "wallbox"
+      ? Math.min(bounds.max, template.priceMax + 0.03)
+      : kind === "ac"
+        ? Math.min(bounds.max, template.priceMax + 0.06)
+        : Math.min(bounds.max, template.priceMax + 0.09);
+
+  const finalPrice =
+    basePrice +
+    seasonalPriceDelta(template.month, kind) +
+    providerPriceBias(template.provider, kind) +
+    sessionVariance;
+
+  return round(clamp(finalPrice, effectiveMin, effectiveMax), 3);
+}
+
+function chargingLossFactor(month, kind = "dc") {
+  const winter = month === 12 || month <= 2;
+  const summer = month >= 6 && month <= 8;
+
+  if (kind === "wallbox") return winter ? 1.12 : summer ? 1.08 : 1.1;
+  if (kind === "ac") return winter ? 1.1 : summer ? 1.06 : 1.08;
+  return winter ? 1.06 : summer ? 1.03 : 1.04;
+}
+
+function targetAveragePowerKw(template, energyKwh, socStart, socEnd) {
+  const kind = templateKind(template);
+  const provider = String(template?.provider || "").toLowerCase();
+  const socDelta = Math.max(0, Number(socEnd) - Number(socStart));
+  const highSocPenalty = Number(socEnd) >= 85 ? 0.84 : Number(socEnd) >= 80 ? 0.9 : 1;
+  const deepWindowBoost = socDelta >= 55 ? 1.06 : socDelta >= 40 ? 1.02 : 0.98;
+
+  let power =
+    kind === "wallbox"
+      ? rand(7.0, 10.9)
+      : kind === "ac"
+        ? rand(7.4, 12.4)
+        : rand(48, 88);
+
+  if (kind === "dc") {
+    if (provider.includes("ionity")) power += 8;
+    if (provider.includes("fastned")) power += 7;
+    if (provider.includes("tesla")) power += 9;
+    if (provider.includes("aral")) power += 4;
+    if (provider.includes("enbw")) power += 3;
+    if (provider.includes("allego")) power -= 6;
+    if (provider.includes("aldi")) power -= 12;
+    if (Number(energyKwh) >= 58) power *= 0.92;
+  } else if (kind === "ac") {
+    if (provider.includes("stadtwerke")) power -= 0.4;
+    if (provider.includes("ewe")) power += 0.3;
+  }
+
+  power *= highSocPenalty;
+  power *= deepWindowBoost;
+
+  if (kind === "wallbox") return round(clamp(power, 6.6, 11.2), 1);
+  if (kind === "ac") return round(clamp(power, 7.0, 13.2), 1);
+  return round(clamp(power, 34, 110), 1);
+}
+
+function buildDemoEnergyKwh(template, socStart, socEnd) {
+  const kind = templateKind(template);
+  const socDelta = Math.max(8, Number(socEnd) - Number(socStart));
+  const batteryWindowKwh = (DEMO_REFERENCE_BATTERY_KWH * socDelta) / 100;
+  const losses = chargingLossFactor(template.month, kind);
+  const jitterFactor =
+    kind === "wallbox"
+      ? rand(0.98, 1.05)
+      : kind === "ac"
+        ? rand(0.97, 1.04)
+        : rand(0.98, 1.06);
+
+  const floor =
+    kind === "wallbox"
+      ? Math.max(14, template.energyMin * 1.08)
+      : kind === "ac"
+        ? Math.max(10, template.energyMin * 1.05)
+        : Math.max(16, template.energyMin * 1.02);
+  const ceiling =
+    kind === "wallbox"
+      ? 64
+      : kind === "ac"
+        ? 38
+        : 72;
+
+  const energy = batteryWindowKwh * losses * jitterFactor;
+  return round(clamp(energy, floor, ceiling), 1);
 }
 
 function estimateDistanceKm(energyKwh, month, kind = "dc") {
   const energy = Number(energyKwh);
   const consumption = seasonalConsumptionPer100Km(month, kind);
   if (!Number.isFinite(energy) || energy <= 0 || !Number.isFinite(consumption) || consumption <= 0) return null;
-  return Math.max(18, Math.round((energy / consumption) * 100));
+  return Math.max(12, Math.round((energy / consumption) * 100));
 }
 
 function applySequentialOdometer(rows, year) {
@@ -638,20 +809,16 @@ function ensureDemoOdometer(row, year, existingRows = []) {
 }
 
 function buildDemoSessionFromTemplate(template, year, idx) {
-  const baseEnergy = round(rand(template.energyMin, template.energyMax), 1);
-  const pricePerKwh =
-    Array.isArray(template.priceAnchors) && template.priceAnchors.length && Math.random() < 0.58
-      ? Number(template.priceAnchors[randi(0, template.priceAnchors.length - 1)].toFixed(3))
-      : round(rand(template.priceMin, template.priceMax), 3);
-  const durationMinutes = randi(template.durationMin, template.durationMax);
   const socStart = randi(template.socStartMin, template.socStartMax);
   const socEnd = Math.max(socStart + 8, randi(template.socEndMin, template.socEndMax));
-  const seasonalJitter = templateKind(template) === "dc" ? 0.8 : 0.4;
-  const energy = round(clamp(jitter(baseEnergy, seasonalJitter, 1), template.energyMin, template.energyMax), 1);
+  const energy = buildDemoEnergyKwh(template, socStart, socEnd);
+  const pricePerKwh = buildDemoPricePerKwh(template);
+  const avgPowerKw = targetAveragePowerKw(template, energy, socStart, socEnd);
+  const durationMinutes = Math.max(10, Math.round((energy / avgPowerKw) * 60));
 
   return {
     id: `demo-seed-${year}-${String(idx + 1).padStart(2, "0")}`,
-    date: isoDate(year, template.month, pickRandomDay(template.month)),
+    date: null,
     energy_kwh: energy,
     total_cost: Number((energy * pricePerKwh).toFixed(2)),
     duration_seconds: durationMinutes * 60,
@@ -665,25 +832,72 @@ function buildDemoSessionFromTemplate(template, year, idx) {
   };
 }
 
+function pickUniqueDemoDate(year, month, usedDates) {
+  if (!usedDates) {
+    return isoDate(year, month, pickRandomDay(month));
+  }
+
+  for (let attempt = 0; attempt < 56; attempt += 1) {
+    const candidate = isoDate(year, month, pickRandomDay(month));
+    if (!usedDates.has(candidate)) {
+      usedDates.add(candidate);
+      return candidate;
+    }
+  }
+
+  for (let day = 1; day <= 28; day += 1) {
+    const candidate = isoDate(year, month, day);
+    if (!usedDates.has(candidate)) {
+      usedDates.add(candidate);
+      return candidate;
+    }
+  }
+
+  return isoDate(year, month, pickRandomDay(month));
+}
+
+function pickTemplatesRepeated(pool, amount) {
+  if (!Array.isArray(pool) || pool.length === 0 || amount <= 0) return [];
+
+  const picks = [];
+  let bag = shuffle(pool);
+  let cursor = 0;
+
+  while (picks.length < amount) {
+    if (cursor >= bag.length) {
+      bag = shuffle(pool);
+      cursor = 0;
+    }
+    picks.push(bag[cursor]);
+    cursor += 1;
+  }
+
+  return picks;
+}
+
 function seedDemoSessions(year = 2026, targetCount = 0) {
-  const count = clamp(targetCount, 0, DEMO_SESSION_TEMPLATES.length);
+  const count = clamp(targetCount, 0, DEMO_MAX_SEED_ROWS_PER_YEAR);
   if (count <= 0) return [];
 
-  const wallboxTemplates = shuffle(DEMO_SESSION_TEMPLATES.filter((template) => templateKind(template) === "wallbox"));
-  const acTemplates = shuffle(DEMO_SESSION_TEMPLATES.filter((template) => templateKind(template) === "ac"));
-  const dcTemplates = shuffle(DEMO_SESSION_TEMPLATES.filter((template) => templateKind(template) === "dc"));
+  const wallboxTemplates = DEMO_SESSION_TEMPLATES.filter((template) => templateKind(template) === "wallbox");
+  const acTemplates = DEMO_SESSION_TEMPLATES.filter((template) => templateKind(template) === "ac");
+  const dcTemplates = DEMO_SESSION_TEMPLATES.filter((template) => templateKind(template) === "dc");
 
-  const desiredWallbox = Math.min(wallboxTemplates.length, count >= 9 ? 3 : 2);
-  const desiredAc = Math.min(acTemplates.length, count >= 8 ? 2 : 1);
+  const desiredWallbox = Math.max(10, Math.min(count - 10, Math.round(count * 0.38) + randi(-2, 2)));
+  const desiredAc = Math.max(6, Math.min(count - desiredWallbox - 4, Math.round(count * 0.22) + randi(-1, 2)));
   const desiredDc = Math.max(0, count - desiredWallbox - desiredAc);
 
-  const selectedTemplates = [
-    ...wallboxTemplates.slice(0, desiredWallbox),
-    ...acTemplates.slice(0, desiredAc),
-    ...dcTemplates.slice(0, desiredDc),
-  ].slice(0, count);
+  const selectedTemplates = shuffle([
+    ...pickTemplatesRepeated(wallboxTemplates, desiredWallbox),
+    ...pickTemplatesRepeated(acTemplates, desiredAc),
+    ...pickTemplatesRepeated(dcTemplates, desiredDc),
+  ]).slice(0, count);
 
-  const rows = selectedTemplates.map((template, idx) => buildDemoSessionFromTemplate(template, year, idx));
+  const usedDates = new Set();
+  const rows = selectedTemplates.map((template, idx) => ({
+    ...buildDemoSessionFromTemplate(template, year, idx),
+    date: pickUniqueDemoDate(year, template.month, usedDates),
+  }));
   rows.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   return applySequentialOdometer(rows, year);
 }
@@ -723,6 +937,10 @@ function filterByYear(rows, year) {
     const parts = parseDateParts(s?.date);
     return parts?.valid && parts.year === y;
   });
+}
+
+function sortSessionsDesc(rows) {
+  return [...(rows || [])].sort((left, right) => new Date(right?.date || 0).getTime() - new Date(left?.date || 0).getTime());
 }
 
 function buildDerived(row) {
@@ -1545,38 +1763,32 @@ function normalizePayloadToSession(payload) {
 
 export async function getStats(year = 2026) {
   if (isDemoMode) return computeStatsFromSessions(getDemoYearRows(year), year);
-  const r = await fetch(buildApiUrl(`/api/stats?year=${encodeURIComponent(year)}`));
-  return asJson(r);
+  return fetchApiJson(`/api/stats?year=${encodeURIComponent(year)}`);
 }
 
 export async function getSessions(year = 2026) {
-  if (isDemoMode) return { ok: true, rows: filterByYear(getDemoYearRows(year), year) };
-  const r = await fetch(buildApiUrl(`/api/sessions?year=${encodeURIComponent(year)}`));
-  return asJson(r);
+  if (isDemoMode) return { ok: true, rows: sortSessionsDesc(filterByYear(getDemoYearRows(year), year)) };
+  return fetchApiJson(`/api/sessions?year=${encodeURIComponent(year)}`);
 }
 
 export async function getMonthly(year = 2026) {
   if (isDemoMode) return computeMonthlyFromSessions(getDemoYearRows(year), year);
-  const r = await fetch(buildApiUrl(`/api/analytics/monthly?year=${encodeURIComponent(year)}`));
-  return asJson(r);
+  return fetchApiJson(`/api/analytics/monthly?year=${encodeURIComponent(year)}`);
 }
 
 export async function getSeasons(year = 2026) {
   if (isDemoMode) return computeSeasonAnalytics(getDemoYearRows(year), year);
-  const r = await fetch(buildApiUrl(`/api/analytics/seasons?year=${encodeURIComponent(year)}`));
-  return asJson(r);
+  return fetchApiJson(`/api/analytics/seasons?year=${encodeURIComponent(year)}`);
 }
 
 export async function getEfficiency(year = 2026) {
   if (isDemoMode) return computeEfficiencyFromSessions(getDemoYearRows(year), year);
-  const r = await fetch(buildApiUrl(`/api/analytics/efficiency?year=${encodeURIComponent(year)}`));
-  return asJson(r);
+  return fetchApiJson(`/api/analytics/efficiency?year=${encodeURIComponent(year)}`);
 }
 
 export async function getOutliers(year = 2026) {
   if (isDemoMode) return computeOutlierAnalytics(getDemoYearRows(year), year);
-  const r = await fetch(buildApiUrl(`/api/analytics/outliers?year=${encodeURIComponent(year)}`));
-  return asJson(r);
+  return fetchApiJson(`/api/analytics/outliers?year=${encodeURIComponent(year)}`);
 }
 
 export async function createSession(payload) {

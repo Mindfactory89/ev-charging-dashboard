@@ -272,7 +272,7 @@ Higher-risk deploy examples:
 
 ## Rollback Strategy
 
-There is no fully automated rollback flow in this repository right now.
+There is no zero-risk one-click rollback flow in this repository right now, but the repo now supports versioned VPS backups.
 
 Current practical rollback options:
 
@@ -282,8 +282,8 @@ Current practical rollback options:
 
 or, for urgent cases:
 
-1. check out the last known good commit locally
-2. deploy that exact tree to the VPS
+1. create or identify a versioned backup under `/srv/mobility-dashboard-backups/<timestamp>`
+2. restore that backup tree and, if needed, the matching database dump
 3. then clean up Git history properly afterward
 
 Important:
@@ -291,6 +291,12 @@ Important:
 - do not panic-edit directly on the server unless absolutely necessary
 - prefer keeping GitHub as the source of truth
 - if the VPS state becomes confusing, use `scripts/sync-from-vps.sh` and compare it locally
+- `scripts/backup-vps.sh` creates a timestamped file tree backup and a Postgres dump by default
+- `scripts/backup-local.sh` is the VPS-local backup entry point for cron/system automation
+- `scripts/deploy-to-vps.sh` creates that VPS backup automatically before sync unless `CREATE_REMOTE_BACKUP=0`
+- `scripts/restore-vps-backup.sh` can restore a selected timestamped backup and optionally the DB dump
+- `scripts/install-vps-backup-cron.sh` installs a daily cron-based backup job on the VPS
+- `scripts/install-vps-backup-login-info.sh` adds an SSH login summary for the latest backup and download commands
 
 ## Documentation Structure
 

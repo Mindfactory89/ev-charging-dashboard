@@ -30,6 +30,9 @@ Die App-Oberflaeche selbst wird noch Schritt fuer Schritt weiter uebersetzt 🌍
 Wenn du dir das Projekt erst einmal nur anschauen willst, ohne etwas zu installieren, findest du die Demo hier 🙂
 
 - [edashboard.bjornlabs.app](https://edashboard.bjornlabs.app/)
+- Die Demo laeuft komplett clientseitig und speichert keine Aenderungen dauerhaft
+- Pro Demo-Jahr wird ein realistisch wirkender Datensatz mit etwa `30` bis `50` Ladesessions erzeugt
+- Preise, Energie und Verbrauch sind absichtlich naeher an echten AC/DC-Mustern, Saisoneffekten und einem `79 kWh`-Referenzakku modelliert
 
 ### Funktionen
 
@@ -37,7 +40,9 @@ Wenn du dir das Projekt erst einmal nur anschauen willst, ohne etwas zu installi
 - Smart Insights, SoC-Analyse und Ausreisser-Erkennung
 - Session-Verwaltung mit Inline-Edit, Detail-Drawer, Undo und CSV-Export
 - Demo-Modus zum Testen ohne laufende API oder Datenbank
+- Realistischere Demo-Daten mit mehr Sessions, variierenden AC/DC-Preisen und EV-typischen Ladefenstern
 - Visuelle Fahrzeugprofile fuer CUPRA Born, CUPRA Tavascan, CUPRA Raval und Generic EV
+- Versionierter VPS-Backup-Workflow mit automatischen Pre-Deploy-Snapshots, taeglichen Backups und Restore-Helfern
 
 ### Screenshots 📸
 
@@ -204,6 +209,43 @@ Fuer einen einfachen VPS-Workflow bringt das Repo einen kleinen Sync-und-Deploy-
 ```bash
 HOST=your.server.ip USER_NAME=deploy ./scripts/deploy-to-vps.sh
 ```
+
+Ein versioniertes VPS-Backup kannst du auch manuell anlegen:
+
+```bash
+HOST=your.server.ip USER_NAME=deploy ./scripts/backup-vps.sh
+```
+
+`deploy-to-vps.sh` legt dieses Backup jetzt standardmaessig vor dem Sync an, solange du nicht explizit `CREATE_REMOTE_BACKUP=0` setzt.
+
+Einen taeglichen VPS-Backup-Job per Cron kannst du so installieren:
+
+```bash
+HOST=your.server.ip USER_NAME=deploy ./scripts/install-vps-backup-cron.sh
+```
+
+Standard: taeglich um `03:20` Serverzeit, mit `RETENTION=5`.
+
+Ein ausgewaehltes VPS-Backup kannst du so wiederherstellen:
+
+```bash
+HOST=your.server.ip USER_NAME=deploy ./scripts/restore-vps-backup.sh 20260311-201308
+```
+
+Der Restore-Helfer kann den Dateistand und auf Wunsch auch den passenden PostgreSQL-Dump zurueckspielen.
+
+Einen SSH-Login-Hinweis, der das letzte Backup, dessen Alter, das naechste Backup-Fenster und optionale Download-Befehle anzeigt, installierst du so:
+
+```bash
+HOST=your.server.ip USER_NAME=deploy ./scripts/install-vps-backup-login-info.sh
+```
+
+Der Backup-Workflow deckt jetzt ab:
+
+- automatische Pre-Deploy-Snapshots vor jedem VPS-Sync
+- taegliche VPS-lokale Backups mit Retention-Bereinigung
+- einen Restore-Helfer fuer einen ausgewaehlten Zeitstempel
+- eine SSH-Login-Uebersicht mit letztem Backup-Namen, Alter, naechstem Lauf und Download-Befehl
 
 ### Mobile Builds 📱
 

@@ -30,6 +30,9 @@ The app UI itself is still being translated step by step 🌍
 If you just want to take a quick look before installing anything, you can open the demo here 🙂
 
 - [edashboard.bjornlabs.app](https://edashboard.bjornlabs.app/)
+- The demo runs fully client-side and does not persist any changes
+- Demo years generate a realistic sample set with roughly `30` to `50` charging sessions
+- Demo prices and energy amounts are intentionally more lifelike, with AC/DC variance, seasonal consumption, and a `79 kWh` reference battery profile
 
 ### Features
 
@@ -37,7 +40,9 @@ If you just want to take a quick look before installing anything, you can open t
 - Smart charging insights, SoC analysis, and outlier detection
 - Session management with inline editing, detail drawer, undo, and CSV export
 - Demo mode for testing without a running API or database
+- More realistic demo data with higher session counts, variable AC/DC pricing, and EV-like charging windows
 - Visual vehicle profiles for CUPRA Born, CUPRA Tavascan, CUPRA Raval, and Generic EV
+- Versioned VPS backup workflow with automatic pre-deploy snapshots, daily retention-based backups, and restore helpers
 
 ### Screenshots 📸
 
@@ -204,6 +209,43 @@ For a simple VPS workflow, the repo ships with a small sync-and-deploy helper.
 ```bash
 HOST=your.server.ip USER_NAME=deploy ./scripts/deploy-to-vps.sh
 ```
+
+Create a versioned VPS backup manually:
+
+```bash
+HOST=your.server.ip USER_NAME=deploy ./scripts/backup-vps.sh
+```
+
+`deploy-to-vps.sh` now creates that backup automatically before syncing unless you explicitly set `CREATE_REMOTE_BACKUP=0`.
+
+Install a daily VPS backup cron job:
+
+```bash
+HOST=your.server.ip USER_NAME=deploy ./scripts/install-vps-backup-cron.sh
+```
+
+Default schedule: every day at `03:20` server time, with `RETENTION=5`.
+
+Restore a selected VPS backup:
+
+```bash
+HOST=your.server.ip USER_NAME=deploy ./scripts/restore-vps-backup.sh 20260311-201308
+```
+
+That restore helper can restore the file tree and, if desired, the matching PostgreSQL dump.
+
+Install an SSH login hint that shows the latest backup, its age, the next backup window, and optional download commands:
+
+```bash
+HOST=your.server.ip USER_NAME=deploy ./scripts/install-vps-backup-login-info.sh
+```
+
+The backup workflow now covers:
+
+- automatic pre-deploy snapshots before every VPS sync
+- daily VPS-local backups with retention cleanup
+- a restore helper for a selected timestamp
+- an SSH login summary with last backup name, age, next run, and download command
 
 ### Mobile Builds 📱
 

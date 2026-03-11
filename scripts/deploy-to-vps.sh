@@ -8,6 +8,9 @@ REMOTE_PATH="${REMOTE_PATH:-${SSH_DEPLOY_PATH:-/srv/mobility-dashboard}}"
 LOCAL_PATH="${LOCAL_PATH:-$(pwd)}"
 SERVICES="${SERVICES:-api ui}"
 RUN_REMOTE_DEPLOY="${RUN_REMOTE_DEPLOY:-1}"
+CREATE_REMOTE_BACKUP="${CREATE_REMOTE_BACKUP:-1}"
+REMOTE_BACKUP_ROOT="${REMOTE_BACKUP_ROOT:-/srv/mobility-dashboard-backups}"
+BACKUP_RETENTION="${BACKUP_RETENTION:-5}"
 
 if [[ -z "${USER_NAME}" || -z "${HOST}" ]]; then
   cat >&2 <<'EOF'
@@ -20,6 +23,9 @@ Optional env vars:
   LOCAL_PATH=/Users/.../mobility-dashboard
   SERVICES="api ui"
   RUN_REMOTE_DEPLOY=1
+  CREATE_REMOTE_BACKUP=1
+  REMOTE_BACKUP_ROOT=/srv/mobility-dashboard-backups
+  BACKUP_RETENTION=5
 
 Example:
   HOST=your.server.ip USER_NAME=deploy ./scripts/deploy-to-vps.sh
@@ -33,6 +39,16 @@ if ! command -v rsync >/dev/null 2>&1; then
 fi
 
 echo "Deploying ${LOCAL_PATH} -> ${USER_NAME}@${HOST}:${REMOTE_PATH}"
+
+if [[ "${CREATE_REMOTE_BACKUP}" == "1" ]]; then
+  echo "Creating remote backup before sync"
+  HOST="${HOST}" \
+  USER_NAME="${USER_NAME}" \
+  REMOTE_PATH="${REMOTE_PATH}" \
+  BACKUP_ROOT="${REMOTE_BACKUP_ROOT}" \
+  RETENTION="${BACKUP_RETENTION}" \
+  ./scripts/backup-vps.sh
+fi
 
 rsync -avz --delete \
   --exclude '.DS_Store' \
