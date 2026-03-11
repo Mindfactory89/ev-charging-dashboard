@@ -1,1 +1,8 @@
-blank_issues_enabled: true
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and Ideas
+    url: https://github.com/Mindfactory89/ev-charging-dashboard/discussions
+    about: Please use GitHub Discussions for questions, ideas, and general feedback.
+  - name: Security Reports
+    url: https://github.com/Mindfactory89/ev-charging-dashboard/security/policy
+    about: Please do not post security issues publicly. Use the private reporting path described in the security policy.
