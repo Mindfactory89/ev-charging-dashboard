@@ -5144,12 +5144,72 @@ body.touch-shell .tableWrap{
   color: rgba(132,218,174,0.96);
 }
 
+.mobilityLabelValue.tone-frost{
+  color: rgba(150,209,255,0.96);
+}
+
+.mobilityLabelValue.tone-neutral{
+  color: rgba(228,230,238,0.92);
+}
+
 .mobilityLabelValue.tone-warm{
   color: rgba(244,204,142,0.96);
 }
 
 .mobilityLabelValue.tone-danger{
   color: rgba(255,154,154,0.96);
+}
+
+.mobilitySummaryHint{
+  margin-top: 8px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: rgba(255,255,255,0.62);
+}
+
+.mobilityChipRow{
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mobilityChip{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.05);
+  font-size: 12px;
+  line-height: 1;
+  color: rgba(245,247,250,0.88);
+}
+
+.mobilityChip.tone-mint{
+  border-color: rgba(132,218,174,0.18);
+  background: rgba(132,218,174,0.10);
+}
+
+.mobilityChip.tone-frost{
+  border-color: rgba(126,192,255,0.18);
+  background: rgba(126,192,255,0.10);
+}
+
+.mobilityChip.tone-neutral{
+  border-color: rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.05);
+}
+
+.mobilityChip.tone-warm{
+  border-color: rgba(244,204,142,0.18);
+  background: rgba(244,204,142,0.10);
+}
+
+.mobilityChip.tone-danger{
+  border-color: rgba(255,154,154,0.20);
+  background: rgba(255,154,154,0.10);
 }
 
 .efficiencyTipsGrid{

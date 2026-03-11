@@ -30,7 +30,7 @@ export default function MobilityCostCard({ sessions = [], year = 2026 }) {
                 placement="top"
                 openDelayMs={120}
                 closeDelayMs={220}
-                content="Pro Ladevorgang reicht der aktuelle Kilometerstand nach dem Laden. Das Dashboard berechnet daraus automatisch die Differenz zum vorherigen Eintrag sowie Distanz, Verbrauch, Effizienzlabel und Fahrtipps."
+                content="Pro Ladevorgang reicht der aktuelle Kilometerstand nach dem Laden. Das Dashboard berechnet daraus automatisch die Differenz zum vorherigen Eintrag sowie Distanz, Verbrauch, Effizienzstufe, Kontext-Chips und Fahrtipps."
               >
                 <button className="ttTrigger" type="button" aria-label="Erklärung: Fahrprofil und Effizienz">
                   i
@@ -50,7 +50,21 @@ export default function MobilityCostCard({ sessions = [], year = 2026 }) {
               <article className="summaryCard warm">
                 <div className="summaryLabel">Fahrprofil</div>
                 <div className={`summaryValue mobilityLabelValue tone-${mobility.tone}`}>{mobility.label}</div>
-                <div className="summarySub">{mobility.score != null ? `${num(mobility.score, 0)}/100 Effizienzscore` : "Noch keine Bewertung"}</div>
+                <div className="summarySub">
+                  {mobility.score != null ? `${num(mobility.score, 0)}/100 Effizienzscore` : "Noch keine Bewertung"}
+                  {mobility.coverageBadge ? ` • ${mobility.coverageBadge}` : ""}
+                </div>
+                {mobility.summaryHint ? <div className="mobilitySummaryHint">{mobility.summaryHint}</div> : null}
+                {mobility.chips.length ? (
+                  <div className="mobilityChipRow" aria-label="Kontextfaktoren zur Fahreffizienz">
+                    {mobility.chips.map((chip) => (
+                      <span key={`${chip.icon}-${chip.label}`} className={`mobilityChip tone-${chip.tone}`}>
+                        <span aria-hidden="true">{chip.icon}</span>
+                        <span>{chip.label}</span>
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
               </article>
 
               <article className="summaryCard frost">

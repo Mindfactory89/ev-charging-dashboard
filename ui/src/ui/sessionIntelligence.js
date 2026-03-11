@@ -22,6 +22,14 @@ const SEGMENT_DEFINITIONS = {
   },
 };
 
+const DRIVING_EFFICIENCY_TIERS = [
+  { maxEnergyPer100Km: 15.0, label: "Sehr effizient", emoji: "😄", tone: "mint" },
+  { maxEnergyPer100Km: 16.5, label: "Effizient", emoji: "🙂", tone: "frost" },
+  { maxEnergyPer100Km: 18.0, label: "Ausgewogen", emoji: "😐", tone: "neutral" },
+  { maxEnergyPer100Km: 19.5, label: "Optimierbar", emoji: "😕", tone: "warm" },
+  { maxEnergyPer100Km: Number.POSITIVE_INFINITY, label: "Verbrauch hoch", emoji: "😬", tone: "danger" },
+];
+
 function round(value, digits = 2) {
   const num = Number(value);
   if (!Number.isFinite(num)) return 0;
@@ -31,6 +39,11 @@ function round(value, digits = 2) {
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
+}
+
+function drivingEfficiencyTier(avgEnergyPer100Km) {
+  if (!Number.isFinite(avgEnergyPer100Km) || avgEnergyPer100Km <= 0) return null;
+  return DRIVING_EFFICIENCY_TIERS.find((tier) => avgEnergyPer100Km <= tier.maxEnergyPer100Km) || DRIVING_EFFICIENCY_TIERS[DRIVING_EFFICIENCY_TIERS.length - 1];
 }
 
 function median(values = [], digits = 2) {
@@ -404,45 +417,78 @@ export function buildDrivingEfficiencyProfile(sessions = []) {
   const shortTripShare = rows.length > 0 ? rows.filter((session) => Number(session.distanceKm || 0) < 35).length / rows.length : 0;
   const highSocShare = sessions.length > 0 ? sessions.filter((session) => Number(session?.soc_end) >= 85).length / sessions.length : 0;
   const dcShare = mix.totalEnergyKwh > 0 ? Number(mix.byKey.public_dc?.totalEnergyKwh || 0) / mix.totalEnergyKwh : 0;
+  const homeShare = mix.totalEnergyKwh > 0 ? Number(mix.byKey.home?.totalEnergyKwh || 0) / mix.totalEnergyKwh : 0;
+  const tier = drivingEfficiencyTier(avgEnergy);
 
   let label = "Keine Daten";
   let tone = "neutral";
+  let summaryHint = null;
   let narrative = "Sobald genug Sessions mit Kilometerstand vorhanden sind, wird hier dein reales Fahrprofil beschrieben.";
+  let coverageBadge = "Noch keine Bewertung";
 
-  if (Number.isFinite(avgEnergy) && avgEnergy > 0) {
-    if (avgEnergy <= 15.8) {
-      label = "Green Energy";
-      tone = "mint";
-    } else if (avgEnergy <= 18.2) {
-      label = "Sparsam";
-      tone = "warm";
+  if (tier) {
+    const decoratedTierLabel = `${tier.emoji} ${tier.label}`;
+    coverageBadge =
+      mobility.coveragePct < 40
+        ? "Vorläufig"
+        : mobility.coveragePct < 70
+          ? "Tendenz"
+          : "Stabil";
+
+    if (mobility.coveragePct < 40) {
+      label = "Noch zu wenig Daten";
+      tone = "neutral";
+      summaryHint = `Tendenz: ${decoratedTierLabel}`;
+    } else if (mobility.coveragePct < 70) {
+      label = `Tendenz: ${decoratedTierLabel}`;
+      tone = tier.tone;
+      summaryHint = "Mit mehr Kilometerdaten wird die Einordnung belastbarer.";
     } else {
-      label = "Nicht so sparsam";
-      tone = "danger";
+      label = decoratedTierLabel;
+      tone = tier.tone;
     }
-    narrative = `${label} beschreibt aktuell dein Fahrprofil auf Basis von ${round(mobility.totalDistanceKm, 0)} km und ${round(avgEnergy, 1)} kWh pro 100 km.`;
+
+    const coverageNarrative =
+      mobility.coveragePct < 40
+        ? `Die Einordnung ist noch vorläufig, weil erst ${round(mobility.coveragePct, 0)} % deiner Sessions eine belastbare KM-Basis haben.`
+        : mobility.coveragePct < 70
+          ? `Die Tendenz ist sichtbar, mit ${round(mobility.coveragePct, 0)} % Abdeckung aber noch nicht voll stabil.`
+          : `Die Einordnung basiert auf einer soliden KM-Abdeckung von ${round(mobility.coveragePct, 0)} %.`;
+
+    narrative = `${decoratedTierLabel} beschreibt aktuell dein Fahrprofil auf Basis von ${round(mobility.totalDistanceKm, 0)} km und ${round(avgEnergy, 1)} kWh pro 100 km. ${coverageNarrative}`;
   }
 
   const score = Number.isFinite(avgEnergy) && avgEnergy > 0 ? Math.round(clamp(100 - (avgEnergy - 14) * 12, 34, 96)) : null;
   const tips = [];
+  const chips = [];
 
   if (Number.isFinite(avgEnergy) && avgEnergy >= 18.5) {
     tips.push("Auf Langstrecke sind 110–120 km/h meist der stärkste Hebel für spürbar weniger Verbrauch.");
   }
   if (shortTripShare >= 0.35) {
     tips.push("Viele Kurzstrecken treiben den Jahresverbrauch. Vorklimatisierung vor dem Losfahren hilft besonders im Winter.");
+    chips.push({ icon: "🏙️", label: "Kurzstrecke", tone: "warm" });
   }
   if (winterShare >= 0.3) {
     tips.push("Winterbetrieb ist bei dir stark sichtbar. Reifendruck und vorausschauendes Heizen senken den Kälteaufschlag.");
+    chips.push({ icon: "❄️", label: "Winter", tone: "frost" });
   }
   if (dcShare >= 0.35) {
     tips.push("Dein Profil hat einen hohen DC-Anteil. Mehr ruhige AC- oder Heimladungen verbessern meist Kosten- und Effizienzbild gleichzeitig.");
+    chips.push({ icon: "⚡", label: "Viel DC", tone: "danger" });
   }
   if (highSocShare >= 0.4) {
     tips.push("Viele Sessions enden über 85 %. Für Alltag und Zeitgewinn bleibt 10–80 % oft das effizientere Fenster.");
+    chips.push({ icon: "🔋", label: "Oft über 85 %", tone: "warm" });
+  }
+  if (homeShare >= 0.45) {
+    chips.push({ icon: "🏠", label: "Viel Heimladen", tone: "mint" });
   }
   if (!tips.length && Number.isFinite(avgEnergy) && avgEnergy > 0) {
     tips.push("Dein aktuelles Profil ist bereits ruhig. Konstanz bei Tempo, Reifendruck und Vorklimatisierung ist jetzt der größte Hebel.");
+  }
+  if (!chips.length && tier) {
+    chips.push({ icon: "🧭", label: "Konstantes Profil", tone: tier.tone === "danger" ? "warm" : tier.tone });
   }
 
   return {
@@ -450,7 +496,10 @@ export function buildDrivingEfficiencyProfile(sessions = []) {
     score,
     label,
     tone,
+    summaryHint,
+    coverageBadge,
     narrative,
+    chips: chips.slice(0, 4),
     tips: tips.slice(0, 3),
   };
 }
