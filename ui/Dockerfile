@@ -1,7 +1,7 @@
 # ui/Dockerfile
 
 # --- Build stage ---
-FROM node:20-alpine AS build
+FROM node:25-alpine AS build
 WORKDIR /app
 
 ARG VITE_API_BASE=""
