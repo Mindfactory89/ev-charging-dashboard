@@ -4250,6 +4250,158 @@ body::before{
   box-shadow: none;
 }
 
+.runtimeToastStack{
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 140;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: min(360px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.runtimeToast{
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background:
+    radial-gradient(380px 140px at 0% 0%, rgba(255,255,255,0.08), transparent 62%),
+    linear-gradient(180deg, rgba(255,255,255,0.06), rgba(10,10,14,0.86));
+  box-shadow:
+    0 18px 48px rgba(0,0,0,0.44),
+    inset 0 1px 0 rgba(255,255,255,0.08);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  animation: sessionToastIn .22s ease;
+}
+
+.runtimeToast-neutral{
+  border-color: rgba(255,255,255,0.10);
+}
+
+.runtimeToast-danger{
+  border-color: rgba(255,138,138,0.24);
+  background:
+    radial-gradient(380px 140px at 0% 0%, rgba(255,138,138,0.12), transparent 62%),
+    linear-gradient(180deg, rgba(255,255,255,0.06), rgba(10,10,14,0.86));
+}
+
+.runtimeToast-warm{
+  border-color: rgba(205,132,64,0.24);
+  background:
+    radial-gradient(380px 140px at 0% 0%, rgba(205,132,64,0.12), transparent 62%),
+    linear-gradient(180deg, rgba(255,255,255,0.06), rgba(10,10,14,0.86));
+}
+
+.runtimeToast-success{
+  border-color: rgba(132,218,174,0.22);
+  background:
+    radial-gradient(380px 140px at 0% 0%, rgba(132,218,174,0.10), transparent 62%),
+    linear-gradient(180deg, rgba(255,255,255,0.06), rgba(10,10,14,0.86));
+}
+
+.runtimeToastCopy{
+  min-width: 0;
+}
+
+.runtimeToastTitle{
+  color: rgba(255,255,255,0.92);
+  font-size: 12px;
+  font-weight: 760;
+  letter-spacing: 0.18px;
+}
+
+.runtimeToastMessage{
+  margin-top: 4px;
+  color: rgba(255,255,255,0.82);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.runtimeToastClose{
+  border: 0;
+  background: transparent;
+  color: rgba(255,255,255,0.58);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 650;
+  padding: 2px 0;
+}
+
+.runtimeToastClose:hover{
+  color: rgba(255,255,255,0.88);
+}
+
+.runtimeDialogOverlay{
+  position: fixed;
+  inset: 0;
+  z-index: 160;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(5,6,10,0.58);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.runtimeDialog{
+  width: min(460px, calc(100vw - 28px));
+  padding: 22px 22px 18px;
+  border-radius: 26px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background:
+    radial-gradient(460px 180px at 0% 0%, rgba(255,255,255,0.08), transparent 64%),
+    linear-gradient(180deg, rgba(24,24,30,0.96), rgba(10,10,14,0.96));
+  box-shadow:
+    0 28px 76px rgba(0,0,0,0.52),
+    inset 0 1px 0 rgba(255,255,255,0.08);
+  animation: ttInPremium 180ms cubic-bezier(.16, 1, .3, 1) both;
+}
+
+.runtimeDialog-danger{
+  border-color: rgba(255,138,138,0.24);
+}
+
+.runtimeDialog-warm{
+  border-color: rgba(205,132,64,0.24);
+}
+
+.runtimeDialogHeader{
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.runtimeDialogTitle{
+  color: rgba(255,255,255,0.94);
+  font-size: 24px;
+  font-weight: 760;
+  line-height: 1.1;
+}
+
+.runtimeDialogMessage{
+  margin-top: 14px;
+  color: rgba(255,255,255,0.76);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.runtimeDialogActions{
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .sessionsPanel .tableEditRow{
   margin-top: 8px;
   border-color: rgba(255,255,255,0.08);
@@ -4266,6 +4418,32 @@ body::before{
 }
 
 @media (max-width: 640px){
+  .runtimeToastStack{
+    right: 12px;
+    left: 12px;
+    bottom: 12px;
+    width: auto;
+  }
+
+  .runtimeDialogOverlay{
+    padding: 12px;
+    align-items: flex-end;
+  }
+
+  .runtimeDialog{
+    width: 100%;
+    border-radius: 24px;
+  }
+
+  .runtimeDialogActions{
+    justify-content: stretch;
+  }
+
+  .runtimeDialogActions .pill{
+    width: 100%;
+    justify-content: center;
+  }
+
   .title{
     font-size: 30px;
   }

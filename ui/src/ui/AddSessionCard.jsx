@@ -1,6 +1,8 @@
 import React from "react";
 import { createSession } from "./api.js";
 import { deriveMobilityForSession } from "./sessionIntelligence.js";
+import { formatTags } from "./sessionMetadata.js";
+import { buildSessionMetadataOptions } from "./sessionMetadataOptions.js";
 
 function pad2(n){ return String(n).padStart(2,"0"); }
 
@@ -16,8 +18,12 @@ function hhmmToSeconds(hhmm){
 }
 
 const CONNECTOR_OPTIONS = ["CCS - DC", "CCS AC", "Wallbox AC"];
+const PROVIDER_LIST_ID = "add-session-provider-options";
+const LOCATION_LIST_ID = "add-session-location-options";
+const VEHICLE_LIST_ID = "add-session-vehicle-options";
+const TAG_LIST_ID = "add-session-tag-options";
 
-export default function AddSessionCard({ onCreated, demo = false, sessions = [] }) {
+export default function AddSessionCard({ onCreated, demo = false, intelligence = null, sessions = [] }) {
   const [date, setDate] = React.useState(() => {
     const d = new Date();
     return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
@@ -30,10 +36,18 @@ export default function AddSessionCard({ onCreated, demo = false, sessions = [] 
   const [pricePerKwh, setPricePerKwh] = React.useState("0.59");
   const [durationHHMM, setDurationHHMM] = React.useState("00:30");
   const [odometerKm, setOdometerKm] = React.useState("");
+  const [provider, setProvider] = React.useState("");
+  const [location, setLocation] = React.useState("");
+  const [vehicle, setVehicle] = React.useState("CUPRA Born 79 kWh");
+  const [tags, setTags] = React.useState("");
   const [note, setNote] = React.useState("");
 
   const [busy, setBusy] = React.useState(false);
   const [msg, setMsg] = React.useState(null);
+  const metadataOptions = React.useMemo(
+    () => buildSessionMetadataOptions({ sessions, intelligence }),
+    [intelligence, sessions]
+  );
 
   const socOptions = Array.from({ length: 101 }, (_, i) => i);
   const parsedEnergy = Number(String(energyKwh).replace(",", "."));
@@ -95,6 +109,10 @@ export default function AddSessionCard({ onCreated, demo = false, sessions = [] 
     try{
       await createSession({
         date,
+        provider,
+        location,
+        vehicle,
+        tags: formatTags(tags),
         connector,
         soc_start: Number(socStart),
         soc_end: Number(socEnd),
@@ -169,6 +187,50 @@ export default function AddSessionCard({ onCreated, demo = false, sessions = [] 
         </label>
 
         <label className="field">
+          <span>Anbieter</span>
+          <input
+            className="input"
+            list={metadataOptions.providers.length ? PROVIDER_LIST_ID : undefined}
+            value={provider}
+            onChange={(e)=>setProvider(e.target.value)}
+            placeholder="z.B. Ionity"
+          />
+        </label>
+
+        <label className="field">
+          <span>Ort / Standort</span>
+          <input
+            className="input"
+            list={metadataOptions.locations.length ? LOCATION_LIST_ID : undefined}
+            value={location}
+            onChange={(e)=>setLocation(e.target.value)}
+            placeholder="z.B. Brohltal Ost"
+          />
+        </label>
+
+        <label className="field">
+          <span>Fahrzeug</span>
+          <input
+            className="input"
+            list={metadataOptions.vehicles.length ? VEHICLE_LIST_ID : undefined}
+            value={vehicle}
+            onChange={(e)=>setVehicle(e.target.value)}
+            placeholder="z.B. CUPRA Born 79 kWh"
+          />
+        </label>
+
+        <label className="field">
+          <span>Tags</span>
+          <input
+            className="input"
+            list={metadataOptions.tags.length ? TAG_LIST_ID : undefined}
+            value={tags}
+            onChange={(e)=>setTags(e.target.value)}
+            placeholder="reise, hpc, urlaub"
+          />
+        </label>
+
+        <label className="field">
           <span>Anschluss</span>
           <select className="input" value={connector} onChange={(e)=>setConnector(e.target.value)}>
             {CONNECTOR_OPTIONS.map((option) => (
@@ -236,6 +298,27 @@ export default function AddSessionCard({ onCreated, demo = false, sessions = [] 
           {msg ? <div className="formMsg">{msg}</div> : null}
         </div>
       </form>
+
+      {metadataOptions.providers.length ? (
+        <datalist id={PROVIDER_LIST_ID}>
+          {metadataOptions.providers.map((value) => <option key={value} value={value} />)}
+        </datalist>
+      ) : null}
+      {metadataOptions.locations.length ? (
+        <datalist id={LOCATION_LIST_ID}>
+          {metadataOptions.locations.map((value) => <option key={value} value={value} />)}
+        </datalist>
+      ) : null}
+      {metadataOptions.vehicles.length ? (
+        <datalist id={VEHICLE_LIST_ID}>
+          {metadataOptions.vehicles.map((value) => <option key={value} value={value} />)}
+        </datalist>
+      ) : null}
+      {metadataOptions.tags.length ? (
+        <datalist id={TAG_LIST_ID}>
+          {metadataOptions.tags.map((value) => <option key={value} value={value} />)}
+        </datalist>
+      ) : null}
     </div>
   );
 }

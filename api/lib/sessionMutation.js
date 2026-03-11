@@ -1,5 +1,7 @@
 'use strict';
 
+const { normalizeOptionalText, normalizeTagsInput } = require('./sessionMetadata');
+
 function hhmmToSeconds(hhmm) {
   const source = String(hhmm ?? '').trim();
   const [hh, mm] = source.split(':').map((value) => Number(value));
@@ -44,6 +46,11 @@ function parseSessionMutation(body) {
   if (!connector) {
     return { error: 'Anschluss darf nicht leer sein.' };
   }
+
+  const provider = normalizeOptionalText(payload.provider);
+  const location = normalizeOptionalText(payload.location);
+  const vehicle = normalizeOptionalText(payload.vehicle);
+  const tags = normalizeTagsInput(payload.tags);
 
   const soc_start = parseBoundedInteger(payload.soc_start, 0, 100);
   const soc_end = parseBoundedInteger(payload.soc_end, 0, 100);
@@ -94,6 +101,10 @@ function parseSessionMutation(body) {
     data: {
       date,
       connector,
+      provider,
+      location,
+      vehicle,
+      tags,
       soc_start,
       soc_end,
       energy_kwh: energy,

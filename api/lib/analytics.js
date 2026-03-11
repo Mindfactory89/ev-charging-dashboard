@@ -1,5 +1,8 @@
 'use strict';
 
+const { parseTags } = require('./sessionMetadata');
+const { buildSelectableYears } = require('./year');
+
 function round(value, digits = 2) {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return 0;
@@ -36,6 +39,29 @@ const SEASON_META = {
   summer: { key: 'summer', label: 'Sommer', months: [6, 7, 8] },
   autumn: { key: 'autumn', label: 'Herbst', months: [9, 10, 11] },
 };
+
+const SOC_BUCKET_SIZE = 10;
+
+function sessionDateIso(session) {
+  return new Date(session.date).toISOString().slice(0, 10);
+}
+
+function labelOrFallback(value, fallback = 'Nicht zugeordnet') {
+  const text = String(value ?? '').replace(/\s+/g, ' ').trim();
+  return text || fallback;
+}
+
+function buildAvailableYearsFromSessions(sessions, fallbackYear = null) {
+  const years = Array.from(
+    new Set(
+      (sessions || [])
+        .map((session) => new Date(session.date).getUTCFullYear())
+        .filter((year) => Number.isInteger(year))
+    )
+  );
+
+  return buildSelectableYears(years, fallbackYear);
+}
 
 function getSessionMonthUTC(session) {
   return new Date(session.date).getUTCMonth() + 1;
@@ -653,6 +679,344 @@ function buildEfficiencyAnalyticsPayload(sessions, year) {
   };
 }
 
+function getSocBucketMeta(start) {
+  const bucketStart = clamp(Math.floor(Number(start) / SOC_BUCKET_SIZE) * SOC_BUCKET_SIZE, 0, 100 - SOC_BUCKET_SIZE);
+  const bucketEnd = Math.min(100, bucketStart + SOC_BUCKET_SIZE);
+  return {
+    key: `${bucketStart}-${bucketEnd}`,
+    label: `${bucketStart}-${bucketEnd}%`,
+    start: bucketStart,
+    end: bucketEnd,
+  };
+}
+
+function getSocWindowMeta(socStart, socEnd) {
+  const start = Number(socStart);
+  const end = Number(socEnd);
+
+  if (!Number.isFinite(start) || !Number.isFinite(end)) return null;
+  if (start < 0 || start > 100 || end < 0 || end > 100 || end <= start) return null;
+
+  const bucketStart = clamp(Math.floor(start / SOC_BUCKET_SIZE) * SOC_BUCKET_SIZE, 0, 100 - SOC_BUCKET_SIZE);
+  let bucketEnd = clamp(Math.ceil(end / SOC_BUCKET_SIZE) * SOC_BUCKET_SIZE, SOC_BUCKET_SIZE, 100);
+
+  if (bucketEnd <= bucketStart) {
+    bucketEnd = Math.min(100, bucketStart + SOC_BUCKET_SIZE);
+  }
+
+  return {
+    key: `${bucketStart}-${bucketEnd}`,
+    label: `${bucketStart}-${bucketEnd}%`,
+    start: bucketStart,
+    end: bucketEnd,
+  };
+}
+
+function getSocBandSlices(socStart, socEnd) {
+  const start = Number(socStart);
+  const end = Number(socEnd);
+
+  if (!Number.isFinite(start) || !Number.isFinite(end)) return [];
+
+  const clampedStart = clamp(start, 0, 100);
+  const clampedEnd = clamp(end, 0, 100);
+  const totalDelta = clampedEnd - clampedStart;
+  if (totalDelta <= 0) return [];
+
+  const firstBandStart = clamp(Math.floor(clampedStart / SOC_BUCKET_SIZE) * SOC_BUCKET_SIZE, 0, 100 - SOC_BUCKET_SIZE);
+  const slices = [];
+
+  for (let bandStart = firstBandStart; bandStart < clampedEnd; bandStart += SOC_BUCKET_SIZE) {
+    const meta = getSocBucketMeta(bandStart);
+    const overlapStart = Math.max(clampedStart, meta.start);
+    const overlapEnd = Math.min(clampedEnd, meta.end);
+    const overlap = overlapEnd - overlapStart;
+    if (overlap <= 0) continue;
+
+    slices.push({
+      ...meta,
+      overlap_pct: round(overlap, 1),
+      weight: overlap / totalDelta,
+    });
+  }
+
+  return slices;
+}
+
+function createSocAggregate(meta) {
+  return {
+    ...meta,
+    count: 0,
+    total_weight: 0,
+    total_score: 0,
+    score_weight: 0,
+    total_price_per_kwh: 0,
+    price_weight: 0,
+    total_power_kw: 0,
+    power_weight: 0,
+    total_duration_seconds: 0,
+    duration_weight: 0,
+    total_energy_kwh: 0,
+    energy_weight: 0,
+    total_soc_delta: 0,
+    soc_delta_weight: 0,
+    best_session: null,
+    worst_session: null,
+  };
+}
+
+function accumulateSocAggregate(target, scored, session, options = {}) {
+  const { weight = 1, countWeight = 1 } = options;
+  const socDelta = Math.max(0, Number(session?.soc_end || 0) - Number(session?.soc_start || 0));
+  const scoreValue = Number(scored.score);
+  const priceValue = Number(scored.price_per_kwh);
+  const powerValue = Number(scored.avg_power_kw);
+  const durationValue = Number(scored.duration_seconds);
+  const energyValue = Number(scored.energy_kwh);
+
+  target.count += countWeight;
+  target.total_weight += weight;
+
+  if (Number.isFinite(scoreValue)) {
+    target.total_score += scoreValue * weight;
+    target.score_weight += weight;
+  }
+  if (Number.isFinite(priceValue) && priceValue > 0) {
+    target.total_price_per_kwh += priceValue * weight;
+    target.price_weight += weight;
+  }
+  if (Number.isFinite(powerValue) && powerValue > 0) {
+    target.total_power_kw += powerValue * weight;
+    target.power_weight += weight;
+  }
+  if (Number.isFinite(durationValue) && durationValue > 0) {
+    target.total_duration_seconds += durationValue * weight;
+    target.duration_weight += weight;
+  }
+  if (Number.isFinite(energyValue) && energyValue > 0) {
+    target.total_energy_kwh += energyValue * weight;
+    target.energy_weight += weight;
+  }
+  if (Number.isFinite(socDelta) && socDelta > 0) {
+    target.total_soc_delta += socDelta * countWeight;
+    target.soc_delta_weight += countWeight;
+  }
+
+  const sessionSnapshot = { ...scored, soc_start: Number(session.soc_start), soc_end: Number(session.soc_end) };
+  target.best_session =
+    !target.best_session || Number(scored.score || 0) > Number(target.best_session.score || -1) ? sessionSnapshot : target.best_session;
+  target.worst_session =
+    !target.worst_session || Number(scored.score || 0) < Number(target.worst_session.score || Infinity) ? sessionSnapshot : target.worst_session;
+}
+
+function finalizeSocAggregates(collection, analyzedSessionCount) {
+  return Array.from(collection.values())
+    .map((entry) => ({
+      key: entry.key,
+      label: entry.label,
+      start: entry.start,
+      end: entry.end,
+      count: Math.round(entry.count),
+      coverage_pct: analyzedSessionCount > 0 ? round((entry.count / analyzedSessionCount) * 100, 1) : 0,
+      share_pct: analyzedSessionCount > 0 ? round((entry.count / analyzedSessionCount) * 100, 1) : 0,
+      avg_score: entry.score_weight ? round(entry.total_score / entry.score_weight, 1) : null,
+      avg_price_per_kwh: entry.price_weight ? round(entry.total_price_per_kwh / entry.price_weight, 3) : null,
+      avg_power_kw: entry.power_weight ? round(entry.total_power_kw / entry.power_weight, 1) : null,
+      avg_duration_seconds: entry.duration_weight ? Math.round(entry.total_duration_seconds / entry.duration_weight) : 0,
+      avg_energy_kwh: entry.energy_weight ? round(entry.total_energy_kwh / entry.energy_weight, 1) : null,
+      avg_soc_delta: entry.soc_delta_weight ? round(entry.total_soc_delta / entry.soc_delta_weight, 1) : null,
+      best_session: entry.best_session,
+      worst_session: entry.worst_session,
+    }))
+    .sort((left, right) => {
+      if (Number(left.start || 0) !== Number(right.start || 0)) {
+        return Number(left.start || 0) - Number(right.start || 0);
+      }
+      return Number(left.end || 0) - Number(right.end || 0);
+    });
+}
+
+function buildSocWindowAnalyticsPayload(sessions, year) {
+  const framework = calcEfficiencyFramework(sessions);
+  const byWindow = new Map();
+  const byBand = new Map();
+  let analyzedSessionCount = 0;
+
+  for (const session of framework.enriched) {
+    const windowMeta = getSocWindowMeta(session?.soc_start, session?.soc_end);
+    if (!windowMeta) continue;
+    analyzedSessionCount += 1;
+
+    const scored = framework.perSessionScore(session);
+    const windowBucket = byWindow.get(windowMeta.key) || createSocAggregate(windowMeta);
+    accumulateSocAggregate(windowBucket, scored, session, { weight: 1, countWeight: 1 });
+    byWindow.set(windowMeta.key, windowBucket);
+
+    const bandSlices = getSocBandSlices(session?.soc_start, session?.soc_end);
+    for (const bandMeta of bandSlices) {
+      const bandBucket = byBand.get(bandMeta.key) || createSocAggregate(bandMeta);
+      accumulateSocAggregate(bandBucket, scored, session, { weight: bandMeta.weight, countWeight: 1 });
+      byBand.set(bandMeta.key, bandBucket);
+    }
+  }
+
+  const windows = finalizeSocAggregates(byWindow, analyzedSessionCount);
+  const bands = finalizeSocAggregates(byBand, analyzedSessionCount);
+  const highlightPool = bands.length ? bands : windows;
+
+  return {
+    ok: true,
+    year: Number(year),
+    analyzed_session_count: analyzedSessionCount,
+    windows,
+    bands,
+    highlights: {
+      best_efficiency_window: highlightPool.reduce((best, entry) => (!best || Number(entry.avg_score || -1) > Number(best.avg_score || -1) ? entry : best), null),
+      cheapest_window: highlightPool.reduce((best, entry) => (!best || Number(entry.avg_price_per_kwh ?? Infinity) < Number(best.avg_price_per_kwh ?? Infinity) ? entry : best), null),
+      fastest_window: highlightPool.reduce((best, entry) => (!best || Number(entry.avg_power_kw || -1) > Number(best.avg_power_kw || -1) ? entry : best), null),
+      widest_window: highlightPool.reduce((best, entry) => (!best || Number(entry.avg_soc_delta || -1) > Number(best.avg_soc_delta || -1) ? entry : best), null),
+    },
+  };
+}
+
+function summarizeRows(rows, label, meta = {}) {
+  const base = aggregateGroup(rows, label, meta);
+  const providers = new Set(rows.map((row) => labelOrFallback(row.provider, '')).filter(Boolean));
+  const locations = new Set(rows.map((row) => labelOrFallback(row.location, '')).filter(Boolean));
+  const vehicles = new Set(rows.map((row) => labelOrFallback(row.vehicle, '')).filter(Boolean));
+  const tags = new Set(rows.flatMap((row) => parseTags(row.tags)));
+  const lastSessionDate = rows.length ? sessionDateIso(rows[rows.length - 1]) : null;
+  const firstSessionDate = rows.length ? sessionDateIso(rows[0]) : null;
+
+  return {
+    ...base,
+    first_session_date: firstSessionDate,
+    last_session_date: lastSessionDate,
+    providers,
+    locations,
+    vehicles,
+    tags,
+  };
+}
+
+function finalizeDimensionSummaries(collection) {
+  return Array.from(collection.values())
+    .map((entry) => ({
+      key: entry.key,
+      label: entry.label,
+      count: entry.count,
+      energy_kwh: entry.energy_kwh,
+      cost: entry.cost,
+      avg_duration_seconds: entry.avg_duration_seconds,
+      avg_kwh_per_session: entry.avg_kwh_per_session,
+      avg_cost_per_session: entry.avg_cost_per_session,
+      avg_price_per_kwh: entry.avg_price_per_kwh,
+      avg_power_kw: entry.avg_power_kw,
+      first_session_date: entry.first_session_date,
+      last_session_date: entry.last_session_date,
+      provider_count: entry.providers?.size || 0,
+      location_count: entry.locations?.size || 0,
+      vehicle_count: entry.vehicles?.size || 0,
+      tags: Array.from(entry.tags || []).sort((left, right) => left.localeCompare(right, 'de')),
+    }))
+    .sort((left, right) => {
+      if (right.cost !== left.cost) return right.cost - left.cost;
+      if (right.energy_kwh !== left.energy_kwh) return right.energy_kwh - left.energy_kwh;
+      return String(left.label).localeCompare(String(right.label), 'de');
+    });
+}
+
+function groupSessionsByLabel(sessions, labelResolver) {
+  const grouped = new Map();
+
+  for (const session of sessions) {
+    const label = labelResolver(session);
+    if (!grouped.has(label)) grouped.set(label, []);
+    grouped.get(label).push(session);
+  }
+
+  return grouped;
+}
+
+function buildIntelligenceAnalyticsPayload(sessions, year) {
+  const providerGroups = groupSessionsByLabel(sessions, (session) => labelOrFallback(session.provider));
+  const locationGroups = groupSessionsByLabel(sessions, (session) => labelOrFallback(session.location));
+  const vehicleGroups = groupSessionsByLabel(sessions, (session) => labelOrFallback(session.vehicle, 'Standardfahrzeug'));
+  const tagGroups = new Map();
+
+  for (const session of sessions) {
+    for (const tag of parseTags(session.tags)) {
+      if (!tagGroups.has(tag)) tagGroups.set(tag, []);
+      tagGroups.get(tag).push(session);
+    }
+  }
+
+  const providers = new Map(
+    Array.from(providerGroups.entries()).map(([label, rows]) => [label, summarizeRows(rows, label, { key: label.toLowerCase() })])
+  );
+  const locations = new Map(
+    Array.from(locationGroups.entries()).map(([label, rows]) => [label, summarizeRows(rows, label, { key: label.toLowerCase() })])
+  );
+  const vehicles = new Map(
+    Array.from(vehicleGroups.entries()).map(([label, rows]) => [label, summarizeRows(rows, label, { key: label.toLowerCase() })])
+  );
+  const tags = new Map(
+    Array.from(tagGroups.entries()).map(([label, rows]) => [label, summarizeRows(rows, label, { key: label.toLowerCase() })])
+  );
+
+  const providerRows = finalizeDimensionSummaries(providers);
+  const locationRows = finalizeDimensionSummaries(locations);
+  const vehicleRows = finalizeDimensionSummaries(vehicles);
+  const tagRows = finalizeDimensionSummaries(tags);
+
+  return {
+    ok: true,
+    year: Number(year),
+    providers: providerRows,
+    locations: locationRows,
+    vehicles: vehicleRows,
+    tags: tagRows,
+    highlights: {
+      cheapest_provider: providerRows.reduce((best, row) => (!best || Number(row.avg_price_per_kwh ?? Infinity) < Number(best.avg_price_per_kwh ?? Infinity) ? row : best), null),
+      fastest_provider: providerRows.reduce((best, row) => (!best || Number(row.avg_power_kw || -1) > Number(best.avg_power_kw || -1) ? row : best), null),
+      strongest_location: locationRows[0] || null,
+      dominant_vehicle: vehicleRows[0] || null,
+    },
+    filters: {
+      providers: providerRows.map((row) => row.label),
+      locations: locationRows.map((row) => row.label),
+      vehicles: vehicleRows.map((row) => row.label),
+      tags: tagRows.map((row) => row.label),
+    },
+  };
+}
+
+function buildDashboardPayload({ sessions, allSessions = sessions, year }) {
+  const numericYear = Number(year);
+  return {
+    ok: true,
+    year: numericYear,
+    available_years: buildAvailableYearsFromSessions(allSessions, numericYear),
+    stats: buildStatsPayload(sessions, year),
+    monthly: buildMonthlyAnalyticsPayload(sessions, year),
+    seasons: buildSeasonAnalyticsPayload(sessions, year),
+    efficiency: buildEfficiencyAnalyticsPayload(sessions, year),
+    outliers: calcOutlierAnalytics(sessions, year),
+    soc_window_analysis: buildSocWindowAnalyticsPayload(sessions, year),
+    intelligence: buildIntelligenceAnalyticsPayload(sessions, year),
+    sessions: {
+      rows: [...sessions].sort((left, right) => new Date(right.date).getTime() - new Date(left.date).getTime()),
+      meta: {
+        total: sessions.length,
+        offset: 0,
+        limit: null,
+        has_more: false,
+        truncated: false,
+      },
+    },
+  };
+}
+
 function buildSessionsCsvRows(rows) {
   return rows.map((session) => {
     const energy = Number(session.energy_kwh || 0);
@@ -660,6 +1024,10 @@ function buildSessionsCsvRows(rows) {
 
     return {
       date: new Date(session.date).toISOString().slice(0, 10),
+      provider: session.provider ?? '',
+      location: session.location ?? '',
+      vehicle: session.vehicle ?? '',
+      tags: session.tags ?? '',
       connector: session.connector,
       soc_start: session.soc_start,
       soc_end: session.soc_end,
@@ -734,13 +1102,16 @@ function buildSeasonsCsvRows(sessions) {
 
 module.exports = {
   SEASON_META,
+  buildDashboardPayload,
   buildEfficiencyAnalyticsPayload,
+  buildIntelligenceAnalyticsPayload,
   buildMonthlyAnalyticsPayload,
   buildMonthlyCsvRows,
   buildSeasonAnalyticsPayload,
   buildSeasonsCsvRows,
   buildSessionDerived,
   buildSessionsCsvRows,
+  buildSocWindowAnalyticsPayload,
   buildStatsPayload,
   calcOutlierAnalytics,
 };

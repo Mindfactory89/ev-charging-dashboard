@@ -1,33 +1,22 @@
-import Charts from "../../ui/Charts.jsx";
-import ChargingMixCard from "../../ui/ChargingMixCard.jsx";
-import ForecastCard from "../../ui/ForecastCard.jsx";
-import MedianSnapshotPanel from "../../ui/MedianSnapshotPanel.jsx";
-import MobilityCostCard from "../../ui/MobilityCostCard.jsx";
-import MonthlyReportCard from "../../ui/MonthlyReportCard.jsx";
-import OutlierAnalysis from "../../ui/OutlierAnalysis.jsx";
-import PowerCurveCard from "../../ui/PowerCurveCard.jsx";
-import SmartInsightsCard from "../../ui/SmartInsightsCard.jsx";
-import SocWindowAnalysis from "../../ui/SocWindowAnalysis.jsx";
-import WeekdayHeatmapCard from "../../ui/WeekdayHeatmapCard.jsx";
-import WhatIfCard from "../../ui/WhatIfCard.jsx";
-import YearComparisonPanel from "../../ui/YearComparisonPanel.jsx";
-import { YEARS } from "../constants.js";
-import EfficiencyPanel from "../panels/EfficiencyPanel.jsx";
-import MonthlyPanel from "../panels/MonthlyPanel.jsx";
-import PricePanel from "../panels/PricePanel.jsx";
-import SeasonPanel from "../panels/SeasonPanel.jsx";
+import { Suspense, lazy } from "react";
+import LazySectionFallback from "../LazySectionFallback.jsx";
 
-function comparisonRightYear(year) {
-  return year === YEARS[0] ? YEARS[1] : YEARS[0];
-}
+const CompareMode = lazy(() => import("../analysisModes/CompareMode.jsx"));
+const EfficiencyMode = lazy(() => import("../analysisModes/EfficiencyMode.jsx"));
+const SignalsMode = lazy(() => import("../analysisModes/SignalsMode.jsx"));
+const TimeMode = lazy(() => import("../analysisModes/TimeMode.jsx"));
+const MobilityMode = lazy(() => import("../analysisModes/MobilityMode.jsx"));
 
 export default function AnalysisScreen({
+  availableYears,
   analysisMode,
   displayEfficiency,
   displayStats,
+  intelligence,
   monthly,
   monthlyCsvUrl,
   monthlySorted,
+  onDrilldownHistory,
   onAnalysisModeChange,
   onDownloadMonthlyCsv,
   onDownloadSeasonCsv,
@@ -43,83 +32,58 @@ export default function AnalysisScreen({
   function renderAnalysisContent() {
     if (analysisMode === "signals") {
       return (
-        <>
-          <SmartInsightsCard
-            stats={displayStats}
-            monthly={monthly}
-            outliers={outliers}
-            socWindowAnalysis={socWindowAnalysis}
-            sessions={sessions}
-            year={year}
-          />
-          <OutlierAnalysis analysis={outliers} year={year} />
-        </>
+        <SignalsMode
+          displayStats={displayStats}
+          monthly={monthly}
+          outliers={outliers}
+          sessions={sessions}
+          socWindowAnalysis={socWindowAnalysis}
+          year={year}
+        />
       );
     }
 
     if (analysisMode === "efficiency") {
       return (
-        <>
-          <EfficiencyPanel displayEfficiency={displayEfficiency} year={year} />
-          <MedianSnapshotPanel stats={displayStats} year={year} />
-          <SocWindowAnalysis analysis={socWindowAnalysis} year={year} />
-          <PowerCurveCard analysis={socWindowAnalysis} year={year} />
-        </>
+        <EfficiencyMode
+          displayEfficiency={displayEfficiency}
+          displayStats={displayStats}
+          socWindowAnalysis={socWindowAnalysis}
+          year={year}
+        />
       );
     }
 
     if (analysisMode === "time") {
       return (
-        <>
-          <MonthlyReportCard months={monthlySorted} sessions={sessions} year={year} />
-          <ForecastCard months={monthlySorted} year={year} />
-          <SeasonPanel
-            onDownloadSeasonCsv={onDownloadSeasonCsv}
-            seasonRows={seasonRows}
-            seasons={seasons}
-            seasonsCsvUrl={seasonsCsvUrl}
-            year={year}
-          />
-          <PricePanel priceSummary={priceSummary} year={year} />
-          <MonthlyPanel
-            activeMonths={monthlySorted.filter((month) => Number(month?.count || 0) > 0)}
-            monthlyCsvUrl={monthlyCsvUrl}
-            monthlySorted={monthlySorted}
-            onDownloadMonthlyCsv={onDownloadMonthlyCsv}
-            year={year}
-          />
-          <section className="row">
-            {sessions.length ? (
-              <Charts sessions={sessions} />
-            ) : (
-              <div className="card glassStrong">
-                <div className="emptyStateCard">Keine Verlaufswerte für {year} vorhanden.</div>
-              </div>
-            )}
-          </section>
-        </>
+        <TimeMode
+          monthlyCsvUrl={monthlyCsvUrl}
+          monthly={monthly}
+          monthlySorted={monthlySorted}
+          onDownloadMonthlyCsv={onDownloadMonthlyCsv}
+          onDownloadSeasonCsv={onDownloadSeasonCsv}
+          priceSummary={priceSummary}
+          seasonRows={seasonRows}
+          seasons={seasons}
+          seasonsCsvUrl={seasonsCsvUrl}
+          sessions={sessions}
+          year={year}
+        />
       );
     }
 
     if (analysisMode === "mobility") {
       return (
-        <>
-          <ChargingMixCard sessions={sessions} year={year} />
-          <MobilityCostCard sessions={sessions} year={year} />
-          <WeekdayHeatmapCard sessions={sessions} year={year} />
-          <WhatIfCard sessions={sessions} year={year} />
-        </>
+        <MobilityMode
+          intelligence={intelligence}
+          onDrilldownHistory={onDrilldownHistory}
+          sessions={sessions}
+          year={year}
+        />
       );
     }
 
-    return (
-      <YearComparisonPanel
-        key={`analysis-comparison-${year}`}
-        availableYears={YEARS}
-        initialLeftYear={year}
-        initialRightYear={comparisonRightYear(year)}
-      />
-    );
+    return <CompareMode availableYears={availableYears} year={year} />;
   }
 
   return (
@@ -161,7 +125,9 @@ export default function AnalysisScreen({
         </div>
       </section>
 
-      {renderAnalysisContent()}
+      <Suspense fallback={<LazySectionFallback label="Analysebereich wird geladen…" />}>
+        {renderAnalysisContent()}
+      </Suspense>
     </>
   );
 }

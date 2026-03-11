@@ -12,6 +12,10 @@ model ChargingSession {
   id              String   @id @default(uuid())
   date            DateTime
   connector        String   // "CCS-DC", "CCS-AC", "Home", etc.
+  provider        String?
+  location        String?
+  vehicle         String?
+  tags            String?
   soc_start       Int
   soc_end         Int
   energy_kwh      Float

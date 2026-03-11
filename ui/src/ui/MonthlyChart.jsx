@@ -42,10 +42,11 @@ function PremiumTooltip({ active, payload, label, mode }) {
   );
 }
 
-export default function MonthlyChart({ months }) {
+export default function MonthlyChart({ months, onMonthSelect }) {
   const [mode, setMode] = React.useState("energie"); // energie | kosten | vorgaenge | preis
 
   const data = (months || []).map((m) => ({
+    month: Number(m.month),
     name: monthLabel(m.month),
     energie: Number(m.energy_kwh || 0),
     kosten: Number(m.cost || 0),
@@ -142,7 +143,11 @@ export default function MonthlyChart({ months }) {
 
       <div className="chartWrap compact monthlyChartShell">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 20, right: 18, left: -6, bottom: 2 }}>
+          <AreaChart
+            data={data}
+            margin={{ top: 20, right: 18, left: -6, bottom: 2 }}
+            onClick={(state) => onMonthSelect?.(state?.activePayload?.[0]?.payload?.month)}
+          >
             <defs>
               <linearGradient id="monthlyEnergyFill" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="rgba(205,132,64,0.30)" />

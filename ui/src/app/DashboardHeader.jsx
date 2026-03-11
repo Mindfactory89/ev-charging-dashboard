@@ -1,11 +1,12 @@
-import { YEARS } from "./constants.js";
 import { datumDE, num } from "./formatters.js";
 
 export default function DashboardHeader({
+  availableYears = [],
   dashboardTitle,
   demo,
   latestSession,
   loading,
+  refreshing,
   sessionsCount,
   year,
   onSelectYear,
@@ -31,7 +32,7 @@ export default function DashboardHeader({
         <div className="filters premiumYearRail">
           <div className="chipLabel">Jahr</div>
           <div className="chipRow">
-            {YEARS.map((itemYear) => (
+            {availableYears.map((itemYear) => (
               <button
                 key={itemYear}
                 type="button"
@@ -45,7 +46,10 @@ export default function DashboardHeader({
         </div>
 
         <div className="premiumHeaderMeta">
-          <div className="pill ghostPill">{loading ? "Synchronisiert…" : `${num(sessionsCount, 0)} Sessions`}</div>
+          <div className="pill ghostPill">{`${num(sessionsCount, 0)} Sessions`}</div>
+          {loading || refreshing ? (
+            <div className="pill ghostPill">{loading ? "Lädt…" : "Aktualisiert…"}</div>
+          ) : null}
           <div className="pill ghostPill">
             {latestSession?.date ? `Zuletzt ${datumDE(latestSession.date)}` : `Jahr ${year}`}
           </div>

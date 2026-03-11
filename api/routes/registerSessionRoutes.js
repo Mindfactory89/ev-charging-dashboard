@@ -88,6 +88,10 @@ function registerSessionRoutes(fastify) {
 
       const parsed = parseSessionMutation({
         date: existing.date ? new Date(existing.date).toISOString().slice(0, 10) : null,
+        provider: existing.provider,
+        location: existing.location,
+        vehicle: existing.vehicle,
+        tags: existing.tags,
         connector: existing.connector,
         soc_start: existing.soc_start,
         soc_end: existing.soc_end,

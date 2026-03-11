@@ -1,19 +1,23 @@
-import ForecastCard from "../../ui/ForecastCard.jsx";
+import { Suspense, lazy } from "react";
 import MonthlyChart from "../../ui/MonthlyChart.jsx";
 import MonthlyReportCard from "../../ui/MonthlyReportCard.jsx";
-import PowerCurveCard from "../../ui/PowerCurveCard.jsx";
 import Tooltip from "../../ui/Tooltip.jsx";
-import YearComparisonPanel from "../../ui/YearComparisonPanel.jsx";
+import LazySectionFallback from "../LazySectionFallback.jsx";
 import { monthLabel } from "../../ui/monthLabels.js";
-import { YEARS } from "../constants.js";
 import { datumDE, euro, num } from "../formatters.js";
 
-function comparisonRightYear(year) {
-  return year === YEARS[0] ? YEARS[1] : YEARS[0];
+const ForecastCard = lazy(() => import("../../ui/ForecastCard.jsx"));
+const PowerCurveCard = lazy(() => import("../../ui/PowerCurveCard.jsx"));
+const YearComparisonPanel = lazy(() => import("../../ui/YearComparisonPanel.jsx"));
+
+function comparisonRightYear(year, availableYears) {
+  const alternatives = (availableYears || []).filter((entry) => Number(entry) !== Number(year));
+  return alternatives[0] ?? year;
 }
 
 export default function OverviewScreen({
   activeMonths,
+  availableYears,
   currentPrev,
   displayStats,
   focusMonthWeekdayFact,
@@ -21,6 +25,7 @@ export default function OverviewScreen({
   latestSession,
   monthlySorted,
   noYearData,
+  onOpenHistoryDrilldown,
   onOverviewModeChange,
   overviewMode,
   priceSummary,
@@ -31,24 +36,35 @@ export default function OverviewScreen({
   year,
   yearWeekdayFact,
 }) {
+  function renderDeferredOverview(node, label) {
+    return <Suspense fallback={<LazySectionFallback label={label} />}>{node}</Suspense>;
+  }
+
   function renderOverviewFocus() {
     if (overviewMode === "behavior") {
-      return <PowerCurveCard analysis={socWindowAnalysis} year={year} />;
+      return renderDeferredOverview(
+        <PowerCurveCard analysis={socWindowAnalysis} year={year} />,
+        "Ladeverhalten wird geladen…"
+      );
     }
 
     if (overviewMode === "compare") {
-      return (
+      return renderDeferredOverview(
         <YearComparisonPanel
           key={`overview-comparison-${year}`}
-          availableYears={YEARS}
+          availableYears={availableYears}
           initialLeftYear={year}
-          initialRightYear={comparisonRightYear(year)}
-        />
+          initialRightYear={comparisonRightYear(year, availableYears)}
+        />,
+        "Vergleich wird geladen…"
       );
     }
 
     if (overviewMode === "forecast") {
-      return <ForecastCard months={monthlySorted} year={year} />;
+      return renderDeferredOverview(
+        <ForecastCard months={monthlySorted} year={year} />,
+        "Forecast wird geladen…"
+      );
     }
 
     return (
@@ -79,7 +95,7 @@ export default function OverviewScreen({
 
           <div className="chartPanel premiumChartFeature">
             {activeMonths.length ? (
-              <MonthlyChart months={monthlySorted} />
+              <MonthlyChart months={monthlySorted} onMonthSelect={(month) => onOpenHistoryDrilldown?.({ month })} />
             ) : (
               <div className="emptyStateCard">Keine Monatswerte für {year} vorhanden.</div>
             )}

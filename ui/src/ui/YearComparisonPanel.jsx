@@ -12,7 +12,7 @@ import {
   Tooltip as RTooltip,
 } from "recharts";
 import Tooltip from "./Tooltip.jsx";
-import { ladeAuswertung, ladeEfficiencyScore, ladeMonatsauswertung } from "./api.js";
+import { getDashboardBundle } from "./api.js";
 import { monthLabel } from "./monthLabels.js";
 
 const MONTH_OPTIONS = Array.from({ length: 12 }, (_, index) => ({
@@ -85,12 +85,7 @@ function latestActiveMonthNumber(months) {
 }
 
 async function loadYearBundle(year) {
-  const [stats, efficiency, monthly] = await Promise.all([
-    ladeAuswertung(year),
-    ladeEfficiencyScore(year),
-    ladeMonatsauswertung(year),
-  ]);
-  return { stats, efficiency, monthly };
+  return getDashboardBundle(year);
 }
 
 function CompareTooltip({ active, payload, label, leftYear, rightYear, mode }) {

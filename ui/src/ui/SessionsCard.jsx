@@ -5,8 +5,14 @@ import SessionDetailDrawer from "./SessionDetailDrawer.jsx";
 import { deriveMobilityForSession, getSessionOdometerKm } from "./sessionIntelligence.js";
 import { downloadFileFromUrl } from "../platform/download.js";
 import { confirmAction, reloadCurrentPage, showAlert } from "../platform/runtime.js";
+import { formatTags, parseTags } from "./sessionMetadata.js";
+import { buildSessionMetadataOptions } from "./sessionMetadataOptions.js";
 
 const DEFAULT_CONNECTORS = ["CCS - DC", "CCS AC", "Wallbox AC"];
+const PROVIDER_LIST_ID = "history-session-provider-options";
+const LOCATION_LIST_ID = "history-session-location-options";
+const VEHICLE_LIST_ID = "history-session-vehicle-options";
+const TAG_LIST_ID = "history-session-tag-options";
 
 function euro(n) {
   if (n == null || Number.isNaN(Number(n))) return "–";
@@ -30,6 +36,11 @@ function secsToHHMM(s) {
   const hh = Math.floor(totalMinutes / 60);
   const mm = totalMinutes % 60;
   return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+}
+
+function monthNumber(value) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.getMonth() + 1;
 }
 function hhmmToSeconds(hhmm) {
   const raw = String(hhmm || "").trim();
@@ -110,6 +121,10 @@ function buildEditDraft(row) {
   const odometerKm = getSessionOdometerKm(row);
   return {
     date: row?.date ? new Date(row.date).toISOString().slice(0, 10) : "",
+    provider: row?.provider || "",
+    location: row?.location || "",
+    vehicle: row?.vehicle || "",
+    tags: row?.tags || "",
     connector: row?.connector || DEFAULT_CONNECTORS[0],
     soc_start: String(row?.soc_start ?? 10),
     soc_end: String(row?.soc_end ?? 80),
@@ -124,6 +139,10 @@ function buildEditDraft(row) {
 function normalizeDraftForCompare(draft) {
   return {
     date: String(draft?.date || ""),
+    provider: String(draft?.provider || "").trim(),
+    location: String(draft?.location || "").trim(),
+    vehicle: String(draft?.vehicle || "").trim(),
+    tags: formatTags(draft?.tags || ""),
     connector: String(draft?.connector || DEFAULT_CONNECTORS[0]),
     soc_start: Number.parseInt(String(draft?.soc_start || ""), 10),
     soc_end: Number.parseInt(String(draft?.soc_end || ""), 10),
@@ -213,6 +232,9 @@ function buildDraftPreview(draft, sessions = [], sessionId = null, baseRow = nul
 }
 
 export default function SessionsCard({
+  filters = {},
+  intelligence = null,
+  onFiltersChange,
   sessions = [],
   year = 2026,
   onChanged,
@@ -237,6 +259,22 @@ export default function SessionsCard({
   const connectorOptions = React.useMemo(
     () => Array.from(new Set([...DEFAULT_CONNECTORS, ...sessions.map((session) => session.connector).filter(Boolean)])),
     [sessions]
+  );
+  const filterOptions = React.useMemo(
+    () => buildSessionMetadataOptions({ sessions, intelligence }),
+    [intelligence, sessions]
+  );
+  const filteredSessions = React.useMemo(
+    () =>
+      sessions.filter((session) => {
+        if (filters?.month != null && monthNumber(session?.date) !== Number(filters.month)) return false;
+        if (filters?.provider && String(session?.provider || "") !== String(filters.provider)) return false;
+        if (filters?.location && String(session?.location || "") !== String(filters.location)) return false;
+        if (filters?.vehicle && String(session?.vehicle || "") !== String(filters.vehicle)) return false;
+        if (filters?.tag && !parseTags(session?.tags).some((tag) => tag.toLowerCase() === String(filters.tag).toLowerCase())) return false;
+        return true;
+      }),
+    [filters, sessions]
   );
   const detailSession = React.useMemo(
     () => sessions.find((session) => String(session.id) === String(detailSessionId)) || null,
@@ -283,7 +321,12 @@ export default function SessionsCard({
   }
 
   async function onDeleteRow(row) {
-    const ok = confirmAction(`Ladevorgang vom ${datumDE(row?.date)} wirklich löschen?`);
+    const ok = await confirmAction(`Ladevorgang vom ${datumDE(row?.date)} wirklich löschen?`, {
+      title: "Session löschen",
+      confirmLabel: "Löschen",
+      cancelLabel: "Abbrechen",
+      tone: "danger",
+    });
     if (!ok) return;
 
     try {
@@ -362,6 +405,10 @@ export default function SessionsCard({
       setBusyId(`save-${row.id}`);
       await updateSession(row.id, {
         date: draft?.date || new Date(row.date).toISOString().slice(0, 10),
+        provider: draft?.provider || null,
+        location: draft?.location || null,
+        vehicle: draft?.vehicle || null,
+        tags: formatTags(draft?.tags || ""),
         connector: draft?.connector || row.connector,
         soc_start: socStart,
         soc_end: socEnd,
@@ -421,6 +468,68 @@ export default function SessionsCard({
         </div>
       ) : null}
 
+      <div className="formGrid" style={{ marginBottom: 16 }}>
+        <label className="field">
+          <span>Monat</span>
+          <select className="input" value={filters?.month ?? ""} onChange={(event) => onFiltersChange?.((current) => ({ ...(current || {}), month: event.target.value ? Number(event.target.value) : null }))}>
+            <option value="">Alle</option>
+            {Array.from({ length: 12 }, (_, index) => index + 1).map((month) => (
+              <option key={`month-${month}`} value={month}>
+                {month}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="field">
+          <span>Anbieter</span>
+          <select className="input" value={filters?.provider || ""} onChange={(event) => onFiltersChange?.((current) => ({ ...(current || {}), provider: event.target.value }))}>
+            <option value="">Alle</option>
+            {filterOptions.providers.map((provider) => (
+              <option key={provider} value={provider}>
+                {provider}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="field">
+          <span>Ort</span>
+          <select className="input" value={filters?.location || ""} onChange={(event) => onFiltersChange?.((current) => ({ ...(current || {}), location: event.target.value }))}>
+            <option value="">Alle</option>
+            {filterOptions.locations.map((location) => (
+              <option key={location} value={location}>
+                {location}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="field">
+          <span>Fahrzeug</span>
+          <select className="input" value={filters?.vehicle || ""} onChange={(event) => onFiltersChange?.((current) => ({ ...(current || {}), vehicle: event.target.value }))}>
+            <option value="">Alle</option>
+            {filterOptions.vehicles.map((vehicle) => (
+              <option key={vehicle} value={vehicle}>
+                {vehicle}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="field">
+          <span>Tag</span>
+          <select className="input" value={filters?.tag || ""} onChange={(event) => onFiltersChange?.((current) => ({ ...(current || {}), tag: event.target.value }))}>
+            <option value="">Alle</option>
+            {filterOptions.tags.map((tag) => (
+              <option key={tag} value={tag}>
+                {tag}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
       <div className="tableWrap">
         <div className="tableHead">
           <div>Datum</div>
@@ -432,10 +541,14 @@ export default function SessionsCard({
         </div>
 
         <div className={`tableBody ${hasMany ? "tableBodyScroll" : ""}`}>
-          {sessions.length === 0 ? (
-            <div className="emptyRow">Noch keine Ladevorgänge.</div>
+          {filteredSessions.length === 0 ? (
+            <div className="emptyRow">
+              {filters?.month || filters?.provider || filters?.location || filters?.vehicle || filters?.tag
+                ? "Keine Sessions für die aktuellen Filter."
+                : "Noch keine Ladevorgänge."}
+            </div>
           ) : (
-            sessions.map((session) => {
+            filteredSessions.map((session) => {
               const pricePerKwh = effectivePricePerKwh(session);
               const score = sessionScoresById[String(session.id)] || null;
               const outlier = sessionOutliersById[String(session.id)] || null;
@@ -453,7 +566,9 @@ export default function SessionsCard({
                   <div className={`tableRow ${isEditing ? "editing" : ""} ${isFlashing ? `flash-${isFlashing}` : ""}`}>
                     <div>
                       <div className="tablePrimary">{datumDE(session.date)}</div>
-                      <div className="tableSecondary">{session.note || "Erfasste Session"}</div>
+                      <div className="tableSecondary">
+                        {[session.provider, session.location].filter(Boolean).join(" • ") || session.note || "Erfasste Session"}
+                      </div>
                       <div className="sessionScoreStrip">
                         {score ? (
                           <Tooltip
@@ -468,6 +583,10 @@ export default function SessionsCard({
                           </Tooltip>
                         ) : null}
                         {outlier?.flag_count ? <span className="sessionMetaHint">{num(outlier.flag_count, 0)} Hinweise</span> : null}
+                        {session.vehicle ? <span className="sessionMetaHint">{session.vehicle}</span> : null}
+                        {parseTags(session.tags).slice(0, 2).map((tag) => (
+                          <span key={`${session.id}-${tag}`} className="sessionMetaHint">#{tag}</span>
+                        ))}
                         {pricePerKwh != null ? (
                           <div className="tableMetaInline">
                             {euro(session.total_cost)} · {num(pricePerKwh, 3)} €/kWh
@@ -558,6 +677,46 @@ export default function SessionsCard({
                         <label className="field">
                           <span>Datum</span>
                           <input className="input" type="date" value={draft?.date || ""} onChange={(event) => updateDraft("date", event.target.value)} />
+                        </label>
+
+                        <label className="field">
+                          <span>Anbieter</span>
+                          <input
+                            className="input"
+                            list={filterOptions.providers.length ? PROVIDER_LIST_ID : undefined}
+                            value={draft?.provider || ""}
+                            onChange={(event) => updateDraft("provider", event.target.value)}
+                          />
+                        </label>
+
+                        <label className="field">
+                          <span>Ort</span>
+                          <input
+                            className="input"
+                            list={filterOptions.locations.length ? LOCATION_LIST_ID : undefined}
+                            value={draft?.location || ""}
+                            onChange={(event) => updateDraft("location", event.target.value)}
+                          />
+                        </label>
+
+                        <label className="field">
+                          <span>Fahrzeug</span>
+                          <input
+                            className="input"
+                            list={filterOptions.vehicles.length ? VEHICLE_LIST_ID : undefined}
+                            value={draft?.vehicle || ""}
+                            onChange={(event) => updateDraft("vehicle", event.target.value)}
+                          />
+                        </label>
+
+                        <label className="field">
+                          <span>Tags</span>
+                          <input
+                            className="input"
+                            list={filterOptions.tags.length ? TAG_LIST_ID : undefined}
+                            value={draft?.tags || ""}
+                            onChange={(event) => updateDraft("tags", event.target.value)}
+                          />
                         </label>
 
                         <label className="field">
@@ -675,6 +834,27 @@ export default function SessionsCard({
           beginEdit(row);
         }}
       />
+
+      {filterOptions.providers.length ? (
+        <datalist id={PROVIDER_LIST_ID}>
+          {filterOptions.providers.map((value) => <option key={value} value={value} />)}
+        </datalist>
+      ) : null}
+      {filterOptions.locations.length ? (
+        <datalist id={LOCATION_LIST_ID}>
+          {filterOptions.locations.map((value) => <option key={value} value={value} />)}
+        </datalist>
+      ) : null}
+      {filterOptions.vehicles.length ? (
+        <datalist id={VEHICLE_LIST_ID}>
+          {filterOptions.vehicles.map((value) => <option key={value} value={value} />)}
+        </datalist>
+      ) : null}
+      {filterOptions.tags.length ? (
+        <datalist id={TAG_LIST_ID}>
+          {filterOptions.tags.map((value) => <option key={value} value={value} />)}
+        </datalist>
+      ) : null}
     </div>
   );
 }

@@ -1,6 +1,5 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  computeSocWindowAnalysis,
   getMonthlyCsvUrl,
   getSeasonsCsvUrl,
   isDemoMode,
@@ -13,7 +12,9 @@ import { showAlert } from "./platform/runtime.js";
 import DashboardHeader from "./app/DashboardHeader.jsx";
 import DashboardHeroStage from "./app/DashboardHeroStage.jsx";
 import ErrorBoundary from "./app/ErrorBoundary.jsx";
-import { YEARS, floatingAddButtonStyle } from "./app/constants.js";
+import LazySectionFallback from "./app/LazySectionFallback.jsx";
+import RuntimeFeedbackHost from "./app/RuntimeFeedbackHost.jsx";
+import { floatingAddButtonStyle, YEARS } from "./app/constants.js";
 import {
   calcTrend,
   datumDE,
@@ -24,36 +25,59 @@ import {
   sessionPricePerKwh,
   trendPctLabel,
 } from "./app/formatters.js";
+import {
+  clearHistoryFilters,
+  mergeHistoryFilters,
+  readPersistedUiState,
+  writePersistedUiState,
+} from "./app/persistedUiState.js";
 import { useDashboardData } from "./app/useDashboardData.js";
-import AnalysisScreen from "./app/screens/AnalysisScreen.jsx";
-import HistoryScreen from "./app/screens/HistoryScreen.jsx";
-import OverviewScreen from "./app/screens/OverviewScreen.jsx";
+
+const AnalysisScreen = lazy(() => import("./app/screens/AnalysisScreen.jsx"));
+const HistoryScreen = lazy(() => import("./app/screens/HistoryScreen.jsx"));
+const OverviewScreen = lazy(() => import("./app/screens/OverviewScreen.jsx"));
 
 export default function App() {
   const dashboardTitle = "eMobility Dashboard";
   const vehicleProfile = useMemo(() => resolveVehicleProfile(), []);
   const demo = typeof isDemoMode === "function" ? isDemoMode() : !!isDemoMode;
+  const initialUiState = useMemo(() => readPersistedUiState(), []);
 
-  const [year, setYear] = useState(2026);
-  const [activeScreen, setActiveScreen] = useState("overview");
-  const [overviewMode, setOverviewMode] = useState("cost");
-  const [analysisMode, setAnalysisMode] = useState("compare");
+  const [year, setYear] = useState(initialUiState.year);
+  const [activeScreen, setActiveScreen] = useState(initialUiState.activeScreen);
+  const [overviewMode, setOverviewMode] = useState(initialUiState.overviewMode);
+  const [analysisMode, setAnalysisMode] = useState(initialUiState.analysisMode);
+  const [historyFilters, setHistoryFilters] = useState(initialUiState.historyFilters);
   const [addOpen, setAddOpen] = useState(false);
 
   const addSectionRef = useRef(null);
   const addPanelRef = useRef(null);
 
   const {
+    availableYears,
     efficiency,
     err,
+    intelligence,
     loading,
     monthly,
     outliers,
+    refreshing,
     refresh,
     seasons,
     sessions,
+    socWindowAnalysis,
     stats,
   } = useDashboardData(year);
+
+  useEffect(() => {
+    writePersistedUiState({
+      year,
+      activeScreen,
+      overviewMode,
+      analysisMode,
+      historyFilters,
+    });
+  }, [activeScreen, analysisMode, historyFilters, overviewMode, year]);
 
   const openAdd = useCallback(() => {
     setActiveScreen("verlauf");
@@ -67,6 +91,16 @@ export default function App() {
   }, []);
 
   const closeAdd = useCallback(() => setAddOpen(false), []);
+
+  const openHistoryDrilldown = useCallback((filters = {}) => {
+    setActiveScreen("verlauf");
+    setAddOpen(false);
+    setHistoryFilters(mergeHistoryFilters(clearHistoryFilters(), filters));
+  }, []);
+
+  const clearHistoryDrilldown = useCallback(() => {
+    setHistoryFilters(clearHistoryFilters());
+  }, []);
 
   const latestSession = useMemo(() => {
     if (!Array.isArray(sessions) || sessions.length === 0) return null;
@@ -138,7 +172,6 @@ export default function App() {
     return { latest, previous, cheapest, priciest, trend };
   }, [priceMonths]);
 
-  const socWindowAnalysis = useMemo(() => computeSocWindowAnalysis(sessions, year), [sessions, year]);
   const sessionScoresById = useMemo(() => {
     const entries = Array.isArray(efficiency?.sessions) ? efficiency.sessions : [];
     return Object.fromEntries(entries.map((row) => [String(row.session_id), row]));
@@ -159,6 +192,11 @@ export default function App() {
   const noYearData = !loading && !err && !hasYearData;
   const displayStats = hasYearData ? stats : null;
   const displayEfficiency = hasYearData ? efficiency : null;
+  const effectiveAvailableYears = useMemo(() => {
+    const values = Array.isArray(availableYears) ? availableYears : [];
+    const merged = new Set([...(YEARS || []), year, ...values]);
+    return Array.from(merged).sort((left, right) => left - right);
+  }, [availableYears, year]);
 
   const insights = useMemo(() => {
     const items = [];
@@ -401,10 +439,12 @@ export default function App() {
         </button>
 
         <DashboardHeader
+          availableYears={effectiveAvailableYears}
           dashboardTitle={dashboardTitle}
           demo={demo}
           latestSession={latestSession}
           loading={loading}
+          refreshing={refreshing}
           onSelectYear={setYear}
           sessionsCount={sessions.length}
           year={year}
@@ -465,70 +505,83 @@ export default function App() {
             yearWeekdayFact={yearWeekdayFact}
           />
 
-          {activeScreen === "overview" ? (
-            <OverviewScreen
-              activeMonths={activeMonths}
-              currentPrev={currentPrev}
-              displayStats={displayStats}
-              focusMonthWeekdayFact={focusMonthWeekdayFact}
-              loading={loading}
-              latestSession={latestSession}
-              monthlySorted={monthlySorted}
-              noYearData={noYearData}
-              onOverviewModeChange={setOverviewMode}
-              overviewMode={overviewMode}
-              priceSummary={priceSummary}
-              sessions={sessions}
-              socWindowAnalysis={socWindowAnalysis}
-              spotlightCard={spotlightCard}
-              spotlightImpulseValue={spotlightImpulseValue}
-              year={year}
-              yearWeekdayFact={yearWeekdayFact}
-            />
-          ) : null}
+          <Suspense fallback={<LazySectionFallback label="Bereich wird geladen…" />}>
+            {activeScreen === "overview" ? (
+              <OverviewScreen
+                activeMonths={activeMonths}
+                availableYears={effectiveAvailableYears}
+                currentPrev={currentPrev}
+                displayStats={displayStats}
+                focusMonthWeekdayFact={focusMonthWeekdayFact}
+                loading={loading || refreshing}
+                latestSession={latestSession}
+                monthlySorted={monthlySorted}
+                noYearData={noYearData}
+                onOpenHistoryDrilldown={openHistoryDrilldown}
+                onOverviewModeChange={setOverviewMode}
+                overviewMode={overviewMode}
+                priceSummary={priceSummary}
+                sessions={sessions}
+                socWindowAnalysis={socWindowAnalysis}
+                spotlightCard={spotlightCard}
+                spotlightImpulseValue={spotlightImpulseValue}
+                year={year}
+                yearWeekdayFact={yearWeekdayFact}
+              />
+            ) : null}
 
-          {activeScreen === "analysis" ? (
-            <AnalysisScreen
-              analysisMode={analysisMode}
-              displayEfficiency={displayEfficiency}
-              displayStats={displayStats}
-              monthly={monthly}
-              monthlyCsvUrl={monthlyCsvUrl}
-              monthlySorted={monthlySorted}
-              onAnalysisModeChange={setAnalysisMode}
-              onDownloadMonthlyCsv={onDownloadMonthlyCsv}
-              onDownloadSeasonCsv={onDownloadSeasonCsv}
-              outliers={outliers}
-              priceSummary={priceSummary}
-              seasonRows={seasonRows}
-              seasons={seasons}
-              seasonsCsvUrl={seasonsCsvUrl}
-              sessions={sessions}
-              socWindowAnalysis={socWindowAnalysis}
-              year={year}
-            />
-          ) : null}
+            {activeScreen === "analysis" ? (
+              <AnalysisScreen
+                availableYears={effectiveAvailableYears}
+                analysisMode={analysisMode}
+                displayEfficiency={displayEfficiency}
+                displayStats={displayStats}
+                intelligence={intelligence}
+                monthly={monthly}
+                monthlyCsvUrl={monthlyCsvUrl}
+                monthlySorted={monthlySorted}
+                onDrilldownHistory={openHistoryDrilldown}
+                onAnalysisModeChange={setAnalysisMode}
+                onDownloadMonthlyCsv={onDownloadMonthlyCsv}
+                onDownloadSeasonCsv={onDownloadSeasonCsv}
+                outliers={outliers}
+                priceSummary={priceSummary}
+                seasonRows={seasonRows}
+                seasons={seasons}
+                seasonsCsvUrl={seasonsCsvUrl}
+                sessions={sessions}
+                socWindowAnalysis={socWindowAnalysis}
+                year={year}
+              />
+            ) : null}
 
-          {activeScreen === "verlauf" ? (
-            <HistoryScreen
-              addOpen={addOpen}
-              addPanelRef={addPanelRef}
-              addSectionRef={addSectionRef}
-              closeAdd={closeAdd}
-              demo={demo}
-              onCreated={refresh}
-              openAdd={openAdd}
-              sessionOutliersById={sessionOutliersById}
-              sessionScoresById={sessionScoresById}
-              sessions={sessions}
-              year={year}
-            />
-          ) : null}
+            {activeScreen === "verlauf" ? (
+              <HistoryScreen
+                addOpen={addOpen}
+                addPanelRef={addPanelRef}
+                addSectionRef={addSectionRef}
+                closeAdd={closeAdd}
+                demo={demo}
+                onCreated={refresh}
+                openAdd={openAdd}
+                historyFilters={historyFilters}
+                intelligence={intelligence}
+                onClearHistoryFilters={clearHistoryDrilldown}
+                onHistoryFiltersChange={setHistoryFilters}
+                sessionOutliersById={sessionOutliersById}
+                sessionScoresById={sessionScoresById}
+                sessions={sessions}
+                year={year}
+              />
+            ) : null}
+          </Suspense>
         </main>
 
         <footer className="footer">
           <span>Lokales Dashboard über Tailscale • Daten bleiben bei dir</span>
         </footer>
+
+        <RuntimeFeedbackHost />
       </div>
     </ErrorBoundary>
   );

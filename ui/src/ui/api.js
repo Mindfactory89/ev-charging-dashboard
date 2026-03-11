@@ -5,6 +5,8 @@
  */
 
 import { getLocation, isNativeShell, readQueryParam } from "../platform/runtime.js";
+import { YEARS } from "../app/constants.js";
+import { normalizeSessionText, normalizeTagsInput, parseTags } from "./sessionMetadata.js";
 
 const demoByQuery = readQueryParam("demo") === "1";
 const ENV_DEMO_HOST_PREFIXES = String(import.meta.env.VITE_DEMO_HOST_PREFIX || "")
@@ -78,7 +80,7 @@ async function asJson(r) {
   return data;
 }
 
-const DEMO_SEEDED_YEARS = [2026, 2027];
+const DEMO_SEEDED_YEARS = [...YEARS];
 const DEMO_MIN_SEED_ROWS_PER_YEAR = 30;
 const DEMO_MAX_SEED_ROWS_PER_YEAR = 50;
 const DEMO_MAX_USER_ROWS = 8;
@@ -825,6 +827,13 @@ function buildDemoSessionFromTemplate(template, year, idx) {
     price_per_kwh: pricePerKwh,
     provider: template.provider,
     location: template.location,
+    vehicle: "CUPRA Born 79 kWh",
+    tags:
+      templateKind(template) === "wallbox"
+        ? "zuhause, alltag"
+        : templateKind(template) === "ac"
+          ? "stadt, zwischenstopp"
+          : "reise, schnellladen",
     connector: template.connector,
     soc_start: socStart,
     soc_end: Math.min(100, socEnd),
@@ -943,6 +952,27 @@ function sortSessionsDesc(rows) {
   return [...(rows || [])].sort((left, right) => new Date(right?.date || 0).getTime() - new Date(left?.date || 0).getTime());
 }
 
+function buildAvailableYears(rows, fallbackYear = null) {
+  const years = Array.from(
+    new Set(
+      (rows || [])
+        .map((row) => parseDateParts(row?.date)?.year)
+        .filter((value) => Number.isInteger(value))
+    )
+  );
+  const merged = new Set([...(YEARS || []), ...years]);
+
+  if (fallbackYear != null && Number.isInteger(Number(fallbackYear))) {
+    merged.add(Number(fallbackYear));
+  }
+
+  return Array.from(merged).sort((left, right) => left - right);
+}
+
+function labelOrFallback(value, fallback = "Nicht zugeordnet") {
+  return normalizeSessionText(value) || fallback;
+}
+
 function buildDerived(row) {
   const energy = Number(row?.energy_kwh || 0);
   const cost = Number(row?.total_cost || 0);
@@ -1015,6 +1045,115 @@ function computeStatsFromSessions(rows, year) {
     },
     most_expensive: most_expensive ? { date: most_expensive.date, total_cost: most_expensive.total_cost } : null,
     longest: longest ? { date: longest.date, duration_seconds: longest.duration_seconds } : null,
+  };
+}
+
+function summarizeRows(rows, label) {
+  const totalEnergy = rows.reduce((sum, row) => sum + (Number(row.energy_kwh) || 0), 0);
+  const totalCost = rows.reduce((sum, row) => sum + (Number(row.total_cost) || 0), 0);
+  const timedRows = rows.filter((row) => Number(row?.duration_seconds) > 0);
+  const totalDuration = timedRows.reduce((sum, row) => sum + (Number(row.duration_seconds) || 0), 0);
+  const totalTimedEnergy = timedRows.reduce((sum, row) => sum + (Number(row.energy_kwh) || 0), 0);
+  const tags = Array.from(new Set(rows.flatMap((row) => parseTags(row.tags)))).sort((left, right) => left.localeCompare(right, "de"));
+
+  return {
+    key: label.toLowerCase(),
+    label,
+    count: rows.length,
+    energy_kwh: round(totalEnergy, 3),
+    cost: round(totalCost, 2),
+    avg_duration_seconds: timedRows.length ? Math.round(totalDuration / timedRows.length) : 0,
+    avg_kwh_per_session: rows.length ? round(totalEnergy / rows.length, 2) : 0,
+    avg_cost_per_session: rows.length ? round(totalCost / rows.length, 2) : 0,
+    avg_price_per_kwh: totalEnergy > 0 ? round(totalCost / totalEnergy, 3) : null,
+    avg_power_kw: totalDuration > 0 ? round(totalTimedEnergy / (totalDuration / 3600), 1) : null,
+    first_session_date: rows.length ? rows[0].date : null,
+    last_session_date: rows.length ? rows[rows.length - 1].date : null,
+    tags,
+  };
+}
+
+function groupSessions(rows, keyResolver, labelResolver = keyResolver) {
+  const grouped = new Map();
+
+  for (const row of rows) {
+    const key = keyResolver(row);
+    if (!grouped.has(key)) grouped.set(key, []);
+    grouped.get(key).push(row);
+  }
+
+  return Array.from(grouped.entries())
+    .map(([key, groupedRows]) => summarizeRows(groupedRows, labelResolver({ key, rows: groupedRows })))
+    .sort((left, right) => {
+      if (right.cost !== left.cost) return right.cost - left.cost;
+      if (right.energy_kwh !== left.energy_kwh) return right.energy_kwh - left.energy_kwh;
+      return String(left.label).localeCompare(String(right.label), "de");
+    });
+}
+
+function computeIntelligenceFromSessions(rows, year) {
+  const filtered = filterByYear(rows, year).sort((left, right) => new Date(left.date).getTime() - new Date(right.date).getTime());
+  const providers = groupSessions(filtered, (row) => labelOrFallback(row.provider), ({ key }) => key);
+  const locations = groupSessions(filtered, (row) => labelOrFallback(row.location), ({ key }) => key);
+  const vehicles = groupSessions(filtered, (row) => labelOrFallback(row.vehicle, "Standardfahrzeug"), ({ key }) => key);
+  const tagPool = Array.from(new Set(filtered.flatMap((row) => parseTags(row.tags))));
+  const tags = tagPool
+    .map((tag) =>
+      summarizeRows(
+        filtered.filter((row) => parseTags(row.tags).some((entry) => entry.toLowerCase() === tag.toLowerCase())),
+        tag
+      )
+    )
+    .sort((left, right) => {
+      if (right.cost !== left.cost) return right.cost - left.cost;
+      return String(left.label).localeCompare(String(right.label), "de");
+    });
+
+  return {
+    ok: true,
+    year: Number(year) || 2026,
+    providers,
+    locations,
+    vehicles,
+    tags,
+    highlights: {
+      cheapest_provider: providers.reduce((best, row) => (!best || Number(row.avg_price_per_kwh ?? Infinity) < Number(best.avg_price_per_kwh ?? Infinity) ? row : best), null),
+      fastest_provider: providers.reduce((best, row) => (!best || Number(row.avg_power_kw || -1) > Number(best.avg_power_kw || -1) ? row : best), null),
+      strongest_location: locations[0] || null,
+      dominant_vehicle: vehicles[0] || null,
+    },
+    filters: {
+      providers: providers.map((row) => row.label),
+      locations: locations.map((row) => row.label),
+      vehicles: vehicles.map((row) => row.label),
+      tags: tags.map((row) => row.label),
+    },
+  };
+}
+
+function buildDashboardBundleFromSessions(rows, year) {
+  const yearRows = filterByYear(rows, year);
+  return {
+    ok: true,
+    year: Number(year) || 2026,
+    available_years: buildAvailableYears(rows, year),
+    stats: computeStatsFromSessions(yearRows, year),
+    monthly: computeMonthlyFromSessions(yearRows, year),
+    seasons: computeSeasonAnalytics(yearRows, year),
+    efficiency: computeEfficiencyFromSessions(yearRows, year),
+    outliers: computeOutlierAnalytics(yearRows, year),
+    soc_window_analysis: computeSocWindowAnalysis(yearRows, year),
+    intelligence: computeIntelligenceFromSessions(yearRows, year),
+    sessions: {
+      rows: sortSessionsDesc(yearRows),
+      meta: {
+        total: yearRows.length,
+        offset: 0,
+        limit: null,
+        has_more: false,
+        truncated: false,
+      },
+    },
   };
 }
 
@@ -1742,6 +1881,8 @@ function normalizePayloadToSession(payload) {
   const odoEndRaw = payload?.odo_end_km ?? payload?.odoEndKm ?? payload?.km_end ?? payload?.odometer_km ?? payload?.odometerKm;
   const odoStart = Number.isFinite(Number(odoStartRaw)) ? Math.max(0, Math.round(Number(odoStartRaw))) : null;
   const odoEnd = Number.isFinite(Number(odoEndRaw)) ? Math.max(0, Math.round(Number(odoEndRaw))) : null;
+  const vehicle = normalizeSessionText(payload?.vehicle ?? payload?.fahrzeug) || "CUPRA Born 79 kWh";
+  const tags = normalizeTagsInput(payload?.tags ?? payload?.schlagworte);
 
   return {
     id: payload?.id || `demo-user-${safeUUID()}`,
@@ -1750,8 +1891,10 @@ function normalizePayloadToSession(payload) {
     total_cost: Number(Math.max(0, cost).toFixed(2)),
     duration_seconds: Math.max(0, Math.round(durSec)),
     price_per_kwh: Number(Math.max(0, pricePerKwh).toFixed(3)),
-    provider: payload?.provider || payload?.anbieter || "DemoNet",
-    location: payload?.location || payload?.ort || "Demo Charger",
+    provider: normalizeSessionText(payload?.provider || payload?.anbieter) || "DemoNet",
+    location: normalizeSessionText(payload?.location || payload?.ort) || "Demo Charger",
+    vehicle,
+    tags: tags.join(", "),
     connector: payload?.connector || payload?.anschluss || "CCS - DC",
     soc_start: payload?.soc_start ?? payload?.socStart ?? 10,
     soc_end: payload?.soc_end ?? payload?.socEnd ?? 80,
@@ -1764,6 +1907,15 @@ function normalizePayloadToSession(payload) {
 export async function getStats(year = 2026) {
   if (isDemoMode) return computeStatsFromSessions(getDemoYearRows(year), year);
   return fetchApiJson(`/api/stats?year=${encodeURIComponent(year)}`);
+}
+
+export async function getDashboardBundle(year = 2026) {
+  if (isDemoMode) {
+    ensureDemoSeeded();
+    const allRows = Object.values(DEMO_BY_YEAR).flatMap((rows) => rows || []);
+    return buildDashboardBundleFromSessions(allRows, year);
+  }
+  return fetchApiJson(`/api/dashboard?year=${encodeURIComponent(year)}`);
 }
 
 export async function getSessions(year = 2026) {

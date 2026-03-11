@@ -1,0 +1,6 @@
+-- AlterTable
+ALTER TABLE "ChargingSession"
+ADD COLUMN IF NOT EXISTS "provider" TEXT,
+ADD COLUMN IF NOT EXISTS "location" TEXT,
+ADD COLUMN IF NOT EXISTS "vehicle" TEXT,
+ADD COLUMN IF NOT EXISTS "tags" TEXT;

@@ -1,5 +1,8 @@
 const NATIVE_PROTOCOLS = new Set(["capacitor:", "ionic:", "file:", "app:"]);
 const VIEWPORT_CLEANUP_KEY = "__mobilityViewportCleanup";
+export const RUNTIME_UI_READY_KEY = "__mobilityRuntimeUiReady";
+export const RUNTIME_TOAST_EVENT = "mobility:runtime-toast";
+export const RUNTIME_CONFIRM_EVENT = "mobility:runtime-confirm";
 
 export function getWindow() {
   return typeof window !== "undefined" ? window : null;
@@ -81,15 +84,54 @@ export function reloadCurrentPage() {
   }
 }
 
-export function confirmAction(message) {
-  const text = String(message || "");
-  const confirmFn = getWindow()?.confirm;
-  if (typeof confirmFn === "function") return confirmFn(text);
-  return true;
+function dispatchRuntimeEvent(name, detail) {
+  const win = getWindow();
+  const CustomEventCtor = win?.CustomEvent;
+  if (!win || typeof CustomEventCtor !== "function" || !win[RUNTIME_UI_READY_KEY]) return false;
+
+  try {
+    win.dispatchEvent(new CustomEventCtor(name, { detail }));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
-export function showAlert(message) {
+export function confirmAction(message, options = {}) {
   const text = String(message || "");
+  if (!text) return Promise.resolve(true);
+
+  if (getWindow()?.CustomEvent && getWindow()?.[RUNTIME_UI_READY_KEY]) {
+    return new Promise((resolve) => {
+      dispatchRuntimeEvent(RUNTIME_CONFIRM_EVENT, {
+        message: text,
+        title: String(options?.title || ""),
+        confirmLabel: String(options?.confirmLabel || ""),
+        cancelLabel: String(options?.cancelLabel || ""),
+        tone: String(options?.tone || ""),
+        resolve,
+      });
+    });
+  }
+
+  const confirmFn = getWindow()?.confirm;
+  if (typeof confirmFn === "function") return Promise.resolve(confirmFn(text));
+  return Promise.resolve(true);
+}
+
+export function showAlert(message, options = {}) {
+  const text = String(message || "");
+  if (!text) return;
+
+  if (dispatchRuntimeEvent(RUNTIME_TOAST_EVENT, {
+    message: text,
+    title: String(options?.title || ""),
+    tone: String(options?.tone || "danger"),
+    durationMs: Number(options?.durationMs || 4200),
+  })) {
+    return;
+  }
+
   const alertFn = getWindow()?.alert;
   if (typeof alertFn === "function") {
     alertFn(text);

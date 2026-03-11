@@ -3,6 +3,7 @@
 const fastifyFactory = require('fastify');
 const { PrismaClient } = require('@prisma/client');
 const { registerAnalyticsRoutes } = require('./routes/registerAnalyticsRoutes');
+const { registerDashboardRoutes } = require('./routes/registerDashboardRoutes');
 const { registerExportRoutes } = require('./routes/registerExportRoutes');
 const { registerHealthRoutes } = require('./routes/registerHealthRoutes');
 const { registerSessionRoutes } = require('./routes/registerSessionRoutes');
@@ -35,6 +36,7 @@ function createApp(options = {}) {
 
   registerHealthRoutes(fastify);
   registerSessionRoutes(fastify);
+  registerDashboardRoutes(fastify);
   registerAnalyticsRoutes(fastify);
   registerExportRoutes(fastify);
 

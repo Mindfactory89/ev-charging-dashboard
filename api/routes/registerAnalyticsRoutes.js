@@ -1,6 +1,8 @@
 'use strict';
 
 const {
+  buildIntelligenceAnalyticsPayload,
+  buildSocWindowAnalyticsPayload,
   buildEfficiencyAnalyticsPayload,
   buildMonthlyAnalyticsPayload,
   buildSeasonAnalyticsPayload,
@@ -57,6 +59,18 @@ function registerAnalyticsRoutes(fastify) {
     const { sessions, error } = await loadYearSessions(fastify.prisma, req.query?.year);
     if (error) return reply.code(400).send({ ok: false, error });
     return calcOutlierAnalytics(sessions, req.query?.year);
+  });
+
+  fastify.get('/api/analytics/soc-windows', async (req, reply) => {
+    const { sessions, error } = await loadYearSessions(fastify.prisma, req.query?.year);
+    if (error) return reply.code(400).send({ ok: false, error });
+    return buildSocWindowAnalyticsPayload(sessions, req.query?.year);
+  });
+
+  fastify.get('/api/analytics/intelligence', async (req, reply) => {
+    const { sessions, error } = await loadYearSessions(fastify.prisma, req.query?.year);
+    if (error) return reply.code(400).send({ ok: false, error });
+    return buildIntelligenceAnalyticsPayload(sessions, req.query?.year);
   });
 }
 

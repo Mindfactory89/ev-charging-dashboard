@@ -35,6 +35,10 @@ function registerExportRoutes(fastify) {
 
     const csv = toCSV(buildSessionsCsvRows(rowsDb), [
       'date',
+      'provider',
+      'location',
+      'vehicle',
+      'tags',
       'connector',
       'soc_start',
       'soc_end',

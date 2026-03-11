@@ -1,4 +1,5 @@
 import AddSessionCard from "../../ui/AddSessionCard.jsx";
+import ImportSessionsCard from "../../ui/ImportSessionsCard.jsx";
 import SessionsCard from "../../ui/SessionsCard.jsx";
 
 export default function HistoryScreen({
@@ -7,7 +8,11 @@ export default function HistoryScreen({
   addSectionRef,
   closeAdd,
   demo,
+  historyFilters,
+  intelligence,
   onCreated,
+  onClearHistoryFilters,
+  onHistoryFiltersChange,
   openAdd,
   sessionOutliersById,
   sessionScoresById,
@@ -29,12 +34,19 @@ export default function HistoryScreen({
 
       <section className="row">
         <SessionsCard
+          filters={historyFilters}
+          intelligence={intelligence}
+          onFiltersChange={onHistoryFiltersChange}
           sessions={sessions}
           year={year}
           onChanged={onCreated}
           sessionScoresById={sessionScoresById}
           sessionOutliersById={sessionOutliersById}
         />
+      </section>
+
+      <section className="row" style={{ marginTop: 18 }}>
+        <ImportSessionsCard onImported={onCreated} sessions={sessions} />
       </section>
 
       <section className="row" ref={addSectionRef} style={{ marginTop: 18 }}>
@@ -49,6 +61,16 @@ export default function HistoryScreen({
               </div>
 
               <div className="panelActions">
+                {(historyFilters?.month || historyFilters?.provider || historyFilters?.location || historyFilters?.vehicle || historyFilters?.tag) ? (
+                  <button
+                    type="button"
+                    className="pill ghostPill"
+                    onClick={onClearHistoryFilters}
+                    style={{ cursor: "pointer" }}
+                  >
+                    Filter löschen
+                  </button>
+                ) : null}
                 {!addOpen ? (
                   <button type="button" className="pill pillWarm" onClick={openAdd} aria-expanded={addOpen} style={{ cursor: "pointer" }}>
                     Öffnen ↓
@@ -88,7 +110,7 @@ export default function HistoryScreen({
               </div>
             ) : (
               <div ref={addPanelRef} tabIndex={-1} className="addComposerFrame">
-                <AddSessionCard onCreated={onCreated} demo={demo} sessions={sessions} />
+                <AddSessionCard onCreated={onCreated} demo={demo} intelligence={intelligence} sessions={sessions} />
               </div>
             )}
           </div>

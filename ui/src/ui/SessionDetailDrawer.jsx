@@ -9,6 +9,7 @@ import {
   getRecoveredRangeKm,
   getSessionOdometerKm,
 } from "./sessionIntelligence.js";
+import { parseTags } from "./sessionMetadata.js";
 
 function num(value, digits = 1) {
   const numValue = Number(value);
@@ -140,6 +141,18 @@ export default function SessionDetailDrawer({ session, sessions = [], score, out
               <div><span>Session Score</span><strong>{score?.score != null ? `${num(score.score, 1)}/100` : "–"}</strong></div>
               <div><span>Preis-Score</span><strong>{score?.breakdown?.price_score != null ? `${num(score.breakdown.price_score, 0)}` : "–"}</strong></div>
               <div><span>Ausreißer-Hinweise</span><strong>{outlier?.flag_count != null ? `${num(outlier.flag_count, 0)}` : "0"}</strong></div>
+            </div>
+          </article>
+        </div>
+
+        <div className="sessionDrawerInfoGrid">
+          <article className="sessionDrawerBlock">
+            <div className="summaryLabel">Kontext</div>
+            <div className="sessionDrawerLines">
+              <div><span>Anbieter</span><strong>{session.provider || "–"}</strong></div>
+              <div><span>Ort</span><strong>{session.location || "–"}</strong></div>
+              <div><span>Fahrzeug</span><strong>{session.vehicle || "–"}</strong></div>
+              <div><span>Tags</span><strong>{parseTags(session.tags).join(", ") || "–"}</strong></div>
             </div>
           </article>
         </div>

@@ -1,5 +1,7 @@
 'use strict';
 
+const DEFAULT_VISIBLE_YEARS = [2026, 2027, 2028];
+
 function yearRange(year) {
   const y = Number(year);
   if (!Number.isFinite(y) || y < 2000 || y > 2100) return null;
@@ -20,7 +22,25 @@ function optionalYearFilter(year) {
   return { year: Number(year), range, error: null };
 }
 
+function buildSelectableYears(years = [], fallbackYear = null) {
+  const merged = new Set(DEFAULT_VISIBLE_YEARS);
+
+  for (const year of years || []) {
+    const numeric = Number(year);
+    if (Number.isInteger(numeric)) merged.add(numeric);
+  }
+
+  if (fallbackYear != null) {
+    const numericFallback = Number(fallbackYear);
+    if (Number.isInteger(numericFallback)) merged.add(numericFallback);
+  }
+
+  return Array.from(merged).sort((left, right) => left - right);
+}
+
 module.exports = {
+  buildSelectableYears,
+  DEFAULT_VISIBLE_YEARS,
   optionalYearFilter,
   yearRange,
 };
