@@ -121,7 +121,7 @@ export default function VehicleHero({ profile, latestDateLabel, year }) {
           <div className="heroFallback">
             {profile?.fallbackLabel || "Hero-Bild"}
             <br />
-            <span>Datei: {profile?.imageSrc || "kein Asset konfiguriert"}</span>
+            <span>{profile?.fallbackHint || `Datei: ${profile?.imageSrc || "kein Asset konfiguriert"}`}</span>
           </div>
         ) : null}
       </div>

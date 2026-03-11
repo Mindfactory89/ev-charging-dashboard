@@ -1,31 +1,22 @@
 # Contributing
 
-Danke fuer dein Interesse an diesem Projekt.
+Thanks for contributing.
 
-## Ziel des Projekts
+## Local Setup
 
-Das Dashboard soll fuer private Nutzer einfach startbar bleiben:
+Recommended:
 
-- lokal mit eigener Datenbank
-- ohne fremde Cloud-Abhaengigkeit
-- ohne Zugriff auf Daten anderer Nutzer
+```bash
+bash ./scripts/setup.sh
+```
 
-Bitte halte Aenderungen deshalb moeglichst:
-
-- nachvollziehbar
-- klein und fokussiert
-- einsteigerfreundlich
-- rueckwaertskompatibel fuer bestehende Docker-Setups
-
-## Schnellstart fuer Mitwirkende
-
-Einfachster lokaler Start:
+Manual local Docker start:
 
 ```bash
 docker compose -f docker-compose.beginner.yml up -d --build
 ```
 
-Alternativ manuell:
+Manual development mode:
 
 ```bash
 cd ui
@@ -40,46 +31,43 @@ npx prisma generate
 npm start
 ```
 
-## Erwartungen an Pull Requests
+## Pull Request Expectations
 
-Bitte achte darauf:
+Please keep changes:
 
-- keine echten Zugangsdaten committen
-- keine `.env`-Dateien committen
-- keine persoenlichen Server-/SSH-Defaults einbauen
-- Demo- und Produktivpfad nicht vermischen
-- UI-Aenderungen auf Desktop und Mobile mitdenken
-- bestehende Designsprache respektieren
+- small and focused
+- understandable for non-experts
+- compatible with the current Docker-based setup
+- aligned with the existing UI language and interaction patterns
 
-## Bevor du einen Pull Request oeffnest
+Before opening a PR, check when possible:
 
-Pruefe bitte nach Moeglichkeit:
+- the app still starts with Docker
+- README or `.env.example` were updated when behavior changed
+- empty states still make sense
+- demo mode still behaves correctly
+- mobile-sensitive UI changes were considered
 
-- startet die App mit Docker noch sauber
-- ist die Aenderung in README oder `.env.example` dokumentiert, wenn noetig
-- wirkt die UI nicht ueberladen oder inkonsistent
-- sind Leerzustaende und Demo-Modus weiter korrekt
+## What Must Not Land In The Repo
 
-## Pull-Request-Umfang
+- real credentials, tokens, SSH keys, or private `.env` files
+- production database dumps or user data
+- unrelated generated artifacts
+- internal release notes, planning scratchpads, or maintainer-only meta documents
 
-Bevorzugt:
+## PR Scope
 
-- ein Problem pro PR
-- ein Feature pro PR
-- klare Commit-Nachricht
-- kurze Beschreibung von Aenderung, Motivation und Auswirkungen
+Preferred:
 
-## Was nicht in Pull Requests gehoert
+- one problem per PR
+- one feature per PR
+- a clear commit message
+- a short description of change, motivation, and impact
 
-- echte Nutzerdaten
-- Dumps aus produktiven Datenbanken
-- SSH-Keys, Tokens oder Zugangsdaten
-- aenderungslos eingecheckte Build-Artefakte
+## Larger Changes
 
-## Fragen oder Ideen
+For larger changes, open an issue first with:
 
-Wenn du bei groesseren Aenderungen unsicher bist, oeffne zuerst ein Issue mit:
-
-- Problem
-- vorgeschlagener Loesung
-- betroffenen Dateien oder Bereichen
+- the problem
+- the proposed approach
+- the affected files or areas

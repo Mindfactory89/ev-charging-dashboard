@@ -1,115 +1,102 @@
 # Mobility Dashboard
 
-Premium EV charging dashboard for charging history, cost analytics, forecasts, year comparison and mobility intelligence.
+Self-hosted EV charging dashboard with yearly analytics, monthly reports, forecasts, session editing, and a local PostgreSQL backend.
 
-Ich habe dieses Dashboard in Eigenregie entwickelt, weil mich die Daten rund um Laden, Kosten, Verbrauch und Fahrprofil meines E-Autos interessiert haben. Gleichzeitig ist es mein persoenliches Lernprojekt und mein Einstieg in die praktische Softwareentwicklung.
+## What it includes
 
-Das Ergebnis ist ein ruhiges, datenfokussiertes Dashboard mit Premium-Anspruch: klare Analysen, lokale Datenhaltung und ein Interface, das sich eher wie ein Produkt als wie ein Roh-Tool anfuehlen soll.
-
-## Betriebsmodi
-
-- `docker-compose.beginner.yml`: lokaler Schnellstart mit eigener PostgreSQL-Datenbank
-- `docker-compose.yml`: privater Betrieb auf eigenem VPS oder in eigener Infrastruktur
-
-## Produktbild
-
-Das Dashboard ist in drei Bereiche gegliedert:
-
-- `Uebersicht`: Hero, KPI-Rail, Monatsverlauf, Monatsbericht, Spotlight, Forecast
-- `Analyse`: Jahresvergleich, Monatsfokus, Ladeleistungskurve nach SoC-Bereich, Smart Insights, Median-/Effizienzsicht, Mobilitaetsanalyse, Ausreisser
-- `Verlauf`: Sessions pflegen, Detail-Drawer oeffnen, inline bearbeiten, loeschen, undoen und neue Sessions erfassen
+- yearly overview with focus month and comparison views
+- monthly reports, forecasts, and smart charging insights
+- SoC analysis, outlier detection, and efficiency scoring
+- session management with inline editing, detail drawer, undo, and CSV export
+- demo mode for testing the UI without a running API or database
 
 ## Screenshots
 
-### Uebersicht
+### Overview
 ![Dashboard Overview](docs/images/overview.png)
 
-### Analyse
+### Analysis
 ![Dashboard Analysis](docs/images/analysis.png)
 
-### Verlauf
+### History
 ![Dashboard History](docs/images/history.png)
 
-## Highlights
+## Guided Setup
 
-- Jahresauswertung pro Jahr
-- sauberer Leerzustand fuer Jahre ohne Daten
-- Monatsanalyse mit Kosten, Energie, Sessions und Preisniveau
-- Jahresvergleich zwischen zwei Jahren mit Monatsreihen
-- Monatsvergleich mit selektierbarem `Monatsfokus` im Diagramm
-- Forecast / Jahreshochrechnung
-- persoenlicher Monatsbericht mit Vergleich zum vorherigen aktiven Monat
-- Smart Insights inkl. `Top-Ladetag` fuer Jahr und Fokusmonat
-- SoC-Band-Analyse und Ladeleistungskurve
-- Medianwerte zusaetzlich zu Durchschnittswerten
-- Cost Efficiency Score
-- Ausreisseranalyse
-- Fahrprofil & Effizienz auf Basis eines einzelnen Kilometerstands pro Ladevorgang
-- Effizienzlabels `Green Energy`, `Sparsam` und `Nicht so sparsam`
-- Fahrtipps auf Basis von Verbrauch, Kurzstrecke, Winterbetrieb, DC-Anteil und SoC-Verhalten
-- Home vs. Public Intelligence, Wochentag-Heatmap und What-if-Rechner
-- Session-Tabelle mit Inline-Edit und Session-Detail-Drawer
-- Undo nach Loeschen
-- CSV-Exporte fuer Sessions, Monate und Saisons
-- Demo-Modus im Frontend
-
-## Demo-Modus
-
-Der Demo-Modus ist aktiv, wenn:
-
-- die URL `?demo=1` enthaelt
-- oder optional ein Host-Praefix ueber `VITE_DEMO_HOST_PREFIX` gesetzt wurde
-
-Verhalten im Demo-Modus:
-
-- Demo-Daten werden nur im Frontend gehalten
-- es gibt keine Speicherung in API oder DB
-- beim Reload entstehen neue Demo-Daten
-- fuer `2026` und `2027` werden pro Jahr jeweils `15-20` realistische Sessions erzeugt
-- Wallbox, Public AC und Public DC werden mit plausiblen Preisen, kWh-Werten und Fahrdistanzen gemischt
-- insgesamt gilt weiterhin ein hartes Demo-Limit fuer manuell hinzugefuegte Eintraege
-- `2028` bleibt leer, bis dort manuell Sessions erfasst werden
-
-## Stack
-
-- `ui/`: React + Vite + Recharts
-- `api/`: Fastify + Prisma
-- `db`: PostgreSQL via Docker Compose
-
-## Schnellstart fuer Einsteiger
-
-Voraussetzungen:
-
-- Docker
-- Docker Compose
-
-Start:
+For most users, the setup script is the cleanest entry point:
 
 ```bash
-git clone <dein-repo-url>
+git clone <your-repo-url>
 cd mobility-dashboard
+bash ./scripts/setup.sh
+```
+
+Preview the full installer without writing `.env` or starting Docker:
+
+```bash
+bash ./scripts/setup.sh --preview
+```
+
+The script can:
+
+- switch between a guided beginner flow and a compact expert flow
+- show colored status messages and progress bars during installation
+- preview the full flow safely without changing files or starting containers
+- choose between local beginner mode and private self-hosted mode
+- choose private self-hosting with or without Tailscale
+- create or replace `.env`
+- ask for the few required values instead of exposing the full config surface
+- optionally start the matching Docker Compose stack directly
+
+## Manual Setup
+
+### Local Docker start
+
+This is the recommended mode for trying the project locally with your own PostgreSQL database.
+
+```bash
 docker compose -f docker-compose.beginner.yml up -d --build
 ```
 
-Danach:
+After startup:
 
 - UI: `http://localhost:8080`
 - API: `http://localhost:18800`
-- Kilometer-Logik: Pro Session wird nur der aktuelle Kilometerstand nach der Ladung erfasst; die Distanz ergibt sich automatisch aus der Differenz zum vorherigen Eintrag.
 
-Stoppen:
+Stop:
 
 ```bash
 docker compose -f docker-compose.beginner.yml down
 ```
 
-Mit persistenter Datenbank loeschen:
+Remove the local database volume as well:
 
 ```bash
 docker compose -f docker-compose.beginner.yml down -v
 ```
 
-## Lokale Entwicklung ohne Docker
+### Private self-hosted Docker setup
+
+`docker-compose.yml` is meant for a private deployment with explicit network bindings.
+
+```bash
+cp .env.example .env
+docker compose up -d --build api ui
+```
+
+Useful follow-up commands:
+
+```bash
+docker compose up -d --build --no-deps ui
+docker compose up -d --build --no-deps api
+docker logs -f mobility_api
+docker logs -f mobility_ui
+```
+
+### Local development without Docker
+
+For backend development, you need a reachable PostgreSQL instance and a matching `DATABASE_URL`.
+If you only want to inspect the frontend, you can run the UI alone and use demo mode.
 
 UI:
 
@@ -122,68 +109,22 @@ npm run dev
 API:
 
 ```bash
+export DATABASE_URL="postgresql://user:password@127.0.0.1:5432/mobility?schema=public"
 cd api
 npm install
 npx prisma generate
 npm start
 ```
 
-UI Build lokal:
+## Configuration
 
-```bash
-cd ui
-npm run build
-```
-
-## Mobile / Android / iOS
-(Hier experimentiere ich grade etwas - es könnte also fehlerhaft sein!)
-Das UI ist so vorbereitet, dass es in einem nativen Container ueber Capacitor laufen kann.
-
-Wichtig fuer Mobile:
-
-- native Builds koennen die API nicht ueber `window.location` erkennen
-- setze deshalb fuer Android/iOS `VITE_MOBILE_API_BASE` oder mindestens `VITE_API_BASE`
-- nutze dafuer einen festen HTTPS-Endpunkt deiner API
-
-Einmalig im UI-Projekt:
-
-```bash
-cd ui
-npm install
-npm run mobile:add:android
-npm run mobile:add:ios
-```
-
-Web-Build in die nativen Projekte synchronisieren:
-
-```bash
-cd ui
-VITE_MOBILE_API_BASE=https://api.example.com npm run mobile:sync
-```
-
-Native Projekte oeffnen:
-
-```bash
-cd ui
-npm run mobile:open:android
-npm run mobile:open:ios
-```
-
-Kurz dazu:
-
-- Android und iOS Projekte liegen nach dem Setup in `ui/android` und `ui/ios`
-- CSV-Exporte werden auf mobilen Geraeten ueber Share/Download-Fallback behandelt
-- fuer iOS brauchst du die volle Xcode-App und nicht nur Command Line Tools
-
-## Fortgeschrittene Konfiguration ueber `.env`
-
-Nutze dafuer `.env.example` als Vorlage:
+Use `.env.example` as the starting point when you want to configure ports, deploy defaults, or fixed API targets:
 
 ```bash
 cp .env.example .env
 ```
 
-Wichtige Variablen:
+Important variables:
 
 - `POSTGRES_DB`
 - `POSTGRES_USER`
@@ -200,85 +141,60 @@ Wichtige Variablen:
 - `SSH_DEPLOY_USER`
 - `SSH_DEPLOY_PATH`
 
-Hinweise:
+Notes:
 
-- `VITE_API_BASE` kann leer bleiben. Dann nutzt die UI automatisch `protocol://hostname:18800`.
-- `VITE_MOBILE_API_BASE` ist fuer native Android/iOS-Builds gedacht und sollte auf deine feste HTTPS-API zeigen.
-- `VITE_DEMO_HOST_PREFIX` ist optional, z. B. `demo.`
-- `docker-compose.yml` erwartet fuer die privaten Tailscale-Bindings eine explizit gesetzte `TAILSCALE_IP`
+- Leave `VITE_API_BASE` empty when the UI should derive `hostname:18800` automatically.
+- `VITE_MOBILE_API_BASE` is intended for native Android/iOS builds.
+- `VITE_VEHICLE_PROFILE` only changes the visual hero/profile presentation. Built-in IDs are `cupra-born`, `cupra-tavascan`, `cupra-raval`, and `generic-ev`.
+- `docker-compose.yml` requires an explicit `TAILSCALE_IP`.
+- Demo mode can be activated with `?demo=1` or via `VITE_DEMO_HOST_PREFIX`.
 
-## Privater Betrieb mit `docker-compose.yml`
+## Deploy Helper
 
-Build und Start:
-
-```bash
-docker compose up -d --build api ui
-```
-
-Gezielt nur UI neu bauen:
-
-```bash
-docker compose up -d --build --no-deps ui
-```
-
-Gezielt nur API neu bauen:
-
-```bash
-docker compose up -d --build --no-deps api
-```
-
-Logs:
-
-```bash
-docker logs -f mobility_api
-docker logs -f mobility_ui
-```
-
-Healthchecks:
-
-- API: `GET /health`
-- DB: `pg_isready`
-- UI: lokaler HTTP-Check im Container
-
-## Deploy auf einen eigenen VPS
-
-Standardbeispiel:
+For a simple VPS workflow, the repo ships with a small sync-and-deploy helper:
 
 ```bash
 HOST=your.server.ip USER_NAME=deploy ./scripts/deploy-to-vps.sh
 ```
 
-Nur UI deployen:
+## Mobile Builds
+
+The UI can also run in a Capacitor container for Android and iOS.
+
+Initial setup:
 
 ```bash
-HOST=your.server.ip USER_NAME=deploy SERVICES=ui ./scripts/deploy-to-vps.sh
+cd ui
+npm install
+npm run mobile:add:android
+npm run mobile:add:ios
 ```
 
-Nur API deployen:
+Sync the current web build into the native projects:
 
 ```bash
-HOST=your.server.ip USER_NAME=deploy SERVICES=api ./scripts/deploy-to-vps.sh
+cd ui
+VITE_MOBILE_API_BASE=https://api.example.com npm run mobile:sync
 ```
 
-Nur Upload ohne Remote-Rebuild:
+Open the native projects:
 
 ```bash
-HOST=your.server.ip USER_NAME=deploy RUN_REMOTE_DEPLOY=0 ./scripts/deploy-to-vps.sh
+cd ui
+npm run mobile:open:android
+npm run mobile:open:ios
 ```
 
-## Daten und Sicherheit
+For mobile builds, set a fixed HTTPS API endpoint. Native containers cannot safely rely on `window.location`.
 
-Das Projekt ist `self-hosted` und fuer den Betrieb mit eigener Datenbank gedacht.
+## Project Layout
 
-- Produktivdaten bleiben in deiner eigenen PostgreSQL-Instanz
-- Zugangsdaten und private Umgebungsdateien gehoeren nicht ins Repository
-- fuer oeffentliche Releases sollte nur `.env.example` verwendet werden
+- `ui/` React + Vite frontend
+- `api/` Fastify + Prisma backend
+- `scripts/` deployment and setup helpers
+- `docs/images/` screenshots used in the README
 
-## Wichtiger Hinweis zu Kilometerstaenden
+## Contributing and Security
 
-Das Dashboard ist auf folgende Logik ausgelegt:
-
-- pro Ladevorgang wird nur der aktuelle Kilometerstand nach dem Laden gespeichert
-- die Fahrdistanz ergibt sich aus der Differenz zum vorherigen bekannten Kilometerstand
-- der erste eingetragene Kilometerstand dient nur als Referenz und erzeugt noch keine Fahrdistanz
-- `kWh / 100 km`, `EUR / 100 km`, Fahrprofil und Fahrtipps bauen auf diesen Differenzen auf
+- Contribution guide: [CONTRIBUTING.md](CONTRIBUTING.md)
+- Security policy: [SECURITY.md](SECURITY.md)
