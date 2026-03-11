@@ -1,5 +1,16 @@
 .DS_Store
 *.log
+*.orig
+*.swp
+*.swo
+
+.vscode/
+.idea/
+*.iml
+
+.npm/
+tmp/
+.tmp/
 
 .env
 .env.local
@@ -17,3 +28,17 @@ dist/
 coverage/
 
 vps-snapshots/
+
+# Native mobile build artifacts
+ui/android/local.properties
+ui/android/.gradle/
+ui/android/app/build/
+ui/android/capacitor-cordova-android-plugins/
+ui/ios/Pods/
+ui/ios/App/Pods/
+ui/ios/App/output/
+ui/ios/App/App/public/
+ui/ios/DerivedData/
+ui/ios/xcuserdata/
+ui/ios/App.xcworkspace/xcuserdata/
+ui/ios/capacitor-cordova-ios-plugins/
