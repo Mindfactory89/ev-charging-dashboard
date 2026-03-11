@@ -195,6 +195,13 @@ HOST=your.server.ip USER_NAME=deploy ./scripts/deploy-to-vps.sh
 
 Die UI kann auch in einem Capacitor-Container fuer Android und iOS laufen.
 
+Wichtiger Hinweis:
+
+- Die Mobile-Version funktioniert aktuell noch nicht zuverlaessig und wurde noch nicht sauber getestet
+- Nutze diesen Bereich daher bitte nur, wenn du weisst, was du tust
+- Die Arbeit daran pausiert im Moment aus zeitlichen Gruenden
+- Ich muss mich in das Thema selbst noch weiter einlesen und es Schritt fuer Schritt lernen
+
 Ersteinrichtung:
 
 ```bash
@@ -414,6 +421,13 @@ HOST=your.server.ip USER_NAME=deploy ./scripts/deploy-to-vps.sh
 ### Mobile Builds 📱
 
 The UI can also run in a Capacitor container for Android and iOS.
+
+Important note:
+
+- The mobile version is not working reliably yet and has not been tested properly
+- Please only use this part if you know what you are doing
+- Work on it is currently paused due to time constraints
+- I still need to read into this topic more deeply and learn it step by step
 
 Initial setup:
 
