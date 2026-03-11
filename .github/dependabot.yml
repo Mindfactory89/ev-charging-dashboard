@@ -7,9 +7,21 @@ updates:
       day: "monday"
       time: "08:00"
       timezone: "Europe/Berlin"
+    open-pull-requests-limit: 2
     labels:
       - "dependencies"
       - "github-actions"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
 
   - package-ecosystem: "npm"
     directory: "/api"
@@ -18,9 +30,21 @@ updates:
       day: "monday"
       time: "08:00"
       timezone: "Europe/Berlin"
+    open-pull-requests-limit: 2
     labels:
       - "dependencies"
       - "api"
+    groups:
+      api-dependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
 
   - package-ecosystem: "npm"
     directory: "/ui"
@@ -29,9 +53,21 @@ updates:
       day: "monday"
       time: "08:00"
       timezone: "Europe/Berlin"
+    open-pull-requests-limit: 2
     labels:
       - "dependencies"
       - "ui"
+    groups:
+      ui-dependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
 
   - package-ecosystem: "docker"
     directory: "/api"
@@ -40,9 +76,21 @@ updates:
       day: "monday"
       time: "08:00"
       timezone: "Europe/Berlin"
+    open-pull-requests-limit: 1
     labels:
       - "dependencies"
       - "docker"
+    groups:
+      api-docker:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
 
   - package-ecosystem: "docker"
     directory: "/ui"
@@ -51,6 +99,18 @@ updates:
       day: "monday"
       time: "08:00"
       timezone: "Europe/Berlin"
+    open-pull-requests-limit: 1
     labels:
       - "dependencies"
       - "docker"
+    groups:
+      ui-docker:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
