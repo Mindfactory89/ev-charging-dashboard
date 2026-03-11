@@ -44,6 +44,9 @@ Eine vollstaendige englische Uebersetzung der App-Oberflaeche ist weiterhin in A
 
 ### Screenshots 📸
 
+#### Hero Card
+![Dashboard Hero Card](docs/images/hero-card.png)
+
 #### Uebersicht
 ![Dashboard Overview](docs/images/overview.png)
 
@@ -270,6 +273,9 @@ A full English translation of the app experience is still in progress 🌍
 - Visual vehicle profiles for CUPRA Born, CUPRA Tavascan, CUPRA Raval, and Generic EV
 
 ### Screenshots 📸
+
+#### Hero Card
+![Dashboard Hero Card](docs/images/hero-card.png)
 
 #### Overview
 ![Dashboard Overview](docs/images/overview.png)
