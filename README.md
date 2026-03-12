@@ -14,7 +14,7 @@ This project is built the way I personally wanted it to be: a dashboard based on
 
 There is still a lot planned for the future 🚀
 
-- A mobile app for iOS and Android, so the dashboard will also be easy to use on the go
+- [Experimental Mobile App] An experimental mobile app for iOS and Android, so the dashboard will also be easy to use on the go
 - A Home Assistant integration
 - More ideas for the structure, features, and overall product direction
 

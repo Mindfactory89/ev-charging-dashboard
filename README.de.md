@@ -14,7 +14,7 @@ Dieses Projekt ist genau so entstanden, wie ich es mir selbst gewuenscht habe: e
 
 Fuer die Zukunft plane ich noch einiges 🚀
 
-- Eine Mobile App fuer iOS und Android, damit das Dashboard auch unterwegs easy zu bedienen ist
+- [Experimentelle Mobile App] Eine experimentelle Mobile App fuer iOS und Android, damit das Dashboard auch unterwegs easy zu bedienen ist
 - Eine Home Assistant Integration
 - Weitere Ideen fuer Struktur, Features und den gesamten Produktaufbau
 
