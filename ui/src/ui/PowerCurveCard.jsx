@@ -10,15 +10,11 @@ import {
   CartesianGrid,
   Tooltip as RTooltip,
 } from "recharts";
+import { useI18n } from "../i18n/I18nProvider.jsx";
+import { num } from "../app/formatters.js";
 import Tooltip from "./Tooltip.jsx";
 
-function num(n, digits = 1) {
-  const value = Number(n);
-  if (!Number.isFinite(value)) return "–";
-  return value.toLocaleString("de-DE", { maximumFractionDigits: digits });
-}
-
-function ChartTooltip({ active, payload, label }) {
+function ChartTooltip({ active, payload, label, t }) {
   if (!active || !payload?.length) return null;
   const power = payload.find((item) => item.dataKey === "power")?.value;
   const count = payload.find((item) => item.dataKey === "count")?.value;
@@ -30,22 +26,22 @@ function ChartTooltip({ active, payload, label }) {
       <div className="chartTooltipLabel">{label}</div>
       <div className="chartTooltipRow">
         <span className="chartTooltipSwatch copper" />
-        <span className="chartTooltipName">Ø Leistung</span>
+        <span className="chartTooltipName">{t("powerCurve.tooltip.averagePower")}</span>
         <span className="chartTooltipValue">{num(power, 1)} kW</span>
       </div>
       <div className="chartTooltipRow">
         <span className="chartTooltipSwatch mint" />
-        <span className="chartTooltipName">Sessions</span>
+        <span className="chartTooltipName">{t("powerCurve.tooltip.sessions")}</span>
         <span className="chartTooltipValue">{num(count, 0)}</span>
       </div>
       <div className="chartTooltipRow">
         <span className="chartTooltipSwatch sky" />
-        <span className="chartTooltipName">Ø Preis</span>
+        <span className="chartTooltipName">{t("powerCurve.tooltip.averagePrice")}</span>
         <span className="chartTooltipValue">{price != null ? `${num(price, 3)} €/kWh` : "–"}</span>
       </div>
       <div className="chartTooltipRow">
         <span className="chartTooltipSwatch frost" />
-        <span className="chartTooltipName">Abdeckung</span>
+        <span className="chartTooltipName">{t("powerCurve.tooltip.coverage")}</span>
         <span className="chartTooltipValue">{coverage != null ? `${num(coverage, 0)}%` : "–"}</span>
       </div>
     </div>
@@ -53,6 +49,7 @@ function ChartTooltip({ active, payload, label }) {
 }
 
 export default function PowerCurveCard({ analysis, year = 2026 }) {
+  const { t } = useI18n();
   const data = React.useMemo(() => {
     const buckets = Array.isArray(analysis?.bands) && analysis.bands.length ? [...analysis.bands] : Array.isArray(analysis?.windows) ? [...analysis.windows] : [];
     return buckets
@@ -77,16 +74,16 @@ export default function PowerCurveCard({ analysis, year = 2026 }) {
       <div className="card glassStrong analysisPanel">
         <div className="panelHeader">
           <div>
-            <div className="sectionKicker">Leistung</div>
+            <div className="sectionKicker">{t("powerCurve.kicker")}</div>
             <div className="ttTitleRow panelTitleRow">
-              <div className="sectionTitle">Ladeleistungskurve nach SoC-Bereich ({year})</div>
+              <div className="sectionTitle">{t("powerCurve.title", { year })}</div>
               <Tooltip
                 placement="top"
                 openDelayMs={120}
                 closeDelayMs={220}
-                content="Zeigt in feinen 10%-SoC-Bändern, wo deine Sessions im Schnitt am schnellsten laden und in welchen Bereichen Preisniveau und Leistung spürbar kippen."
+                content={t("powerCurve.tooltipContent")}
               >
-                <button className="ttTrigger" type="button" aria-label="Erklärung: Ladeleistungskurve">
+                <button className="ttTrigger" type="button" aria-label={t("powerCurve.tooltipLabel")}>
                   i
                 </button>
               </Tooltip>
@@ -94,7 +91,7 @@ export default function PowerCurveCard({ analysis, year = 2026 }) {
           </div>
 
           <div className="pill ghostPill panelMetaPill">
-            {data.length ? `${num(data.length, 0)} SoC-Bänder aktiv` : "Keine SoC-Daten"}
+            {data.length ? t("powerCurve.activeBands", { count: num(data.length, 0) }) : t("powerCurve.noSocData")}
           </div>
         </div>
 
@@ -134,7 +131,7 @@ export default function PowerCurveCard({ analysis, year = 2026 }) {
 
                 <RTooltip
                   cursor={{ stroke: "rgba(255,255,255,0.10)", strokeWidth: 1, strokeDasharray: "4 6" }}
-                  content={<ChartTooltip />}
+                  content={<ChartTooltip t={t} />}
                 />
 
                 <Bar yAxisId="right" dataKey="count" fill="rgba(132,218,174,0.28)" radius={[10, 10, 0, 0]} />
@@ -151,7 +148,7 @@ export default function PowerCurveCard({ analysis, year = 2026 }) {
               </ComposedChart>
             </ResponsiveContainer>
           ) : (
-            <div className="emptyStateCard">Keine Ladeleistungskurve für {year} vorhanden.</div>
+            <div className="emptyStateCard">{t("powerCurve.empty", { year })}</div>
           )}
         </div>
       </div>

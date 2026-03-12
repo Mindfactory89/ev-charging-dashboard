@@ -1,0 +1,101 @@
+{
+  "fieldAliases": {
+    "date": ["date", "datum", "session_date", "start_date", "started_at", "charging_date", "time"],
+    "provider": ["provider", "anbieter", "netzbetreiber", "operator", "brand"],
+    "location": ["location", "ort", "standort", "station", "station_name", "site", "charger_name", "ladestation", "ladepunkt", "supercharger"],
+    "vehicle": ["vehicle", "fahrzeug", "car", "model"],
+    "tags": ["tags", "schlagworte", "kategorien", "category"],
+    "connector": ["connector", "anschluss", "plug", "plug_type", "charge_type", "ladeart"],
+    "soc_start": ["soc_start", "soc start", "socstart", "start_soc", "battery_start", "start_battery"],
+    "soc_end": ["soc_end", "soc ende", "soc end", "socend", "end_soc", "battery_end", "end_battery"],
+    "energy_kwh": ["energy_kwh", "energy", "kwh", "energie", "geladen_kwh", "charged_amount_kwh", "delivered_kwh", "energiemenge_kwh", "energie_kwh", "kwh_added"],
+    "price_per_kwh": ["price_per_kwh", "preis_pro_kwh", "preis", "price", "unit_price", "tariff_price", "preis_kwh"],
+    "total_cost": ["total_cost", "cost", "kosten", "eur", "total_price", "amount", "invoice_amount", "gesamtkosten", "betrag_eur", "session_fee"],
+    "duration_hhmm": ["duration_hhmm", "dauer", "duration", "zeit", "charging_time", "ladezeit", "session_duration"],
+    "duration_seconds": ["duration_seconds", "seconds"],
+    "odometer_km": ["odometer_km", "kilometer", "km", "odo_end_km", "kilometerstand", "mileage"],
+    "note": ["note", "notiz", "beschreibung", "comment", "remarks"]
+  },
+  "profiles": [
+    {
+      "id": "generic",
+      "label": "Generisch",
+      "description": "Freie CSV mit Standardfeldern oder manuell gemappten Exporten.",
+      "detectHeaders": [],
+      "fieldAliases": {},
+      "defaults": {}
+    },
+    {
+      "id": "ionity",
+      "label": "Ionity / HPC",
+      "description": "Typische HPC-Exporte mit Station, Energie und Gesamtpreis.",
+      "detectHeaders": ["charged_amount_kwh", "total_price", "station"],
+      "fieldAliases": {
+        "date": ["start_date", "started_at"],
+        "location": ["station", "station_name"],
+        "energy_kwh": ["charged_amount_kwh", "delivered_kwh"],
+        "total_cost": ["total_price", "amount"],
+        "duration_hhmm": ["charging_time", "duration"]
+      },
+      "defaults": {
+        "provider": "Ionity",
+        "connector": "CCS - DC",
+        "tags": "hpc"
+      }
+    },
+    {
+      "id": "enbw",
+      "label": "EnBW mobility+",
+      "description": "Öffentliche AC/DC-Sessions mit Preis- und Standortfokus.",
+      "detectHeaders": ["ladestation", "energiemenge_kwh", "gesamtkosten"],
+      "fieldAliases": {
+        "date": ["datum", "start_date"],
+        "location": ["ladestation", "standort", "station"],
+        "energy_kwh": ["energiemenge_kwh", "energy_kwh"],
+        "total_cost": ["gesamtkosten", "total_cost"],
+        "price_per_kwh": ["preis_pro_kwh", "price_per_kwh"],
+        "connector": ["ladeart", "anschluss"]
+      },
+      "defaults": {
+        "provider": "EnBW",
+        "tags": "public"
+      }
+    },
+    {
+      "id": "elli",
+      "label": "Elli / VW",
+      "description": "Tarifbasierte Exportdateien mit Energie und Kostenzeilen.",
+      "detectHeaders": ["ladepunkt", "energie_kwh", "betrag_eur"],
+      "fieldAliases": {
+        "date": ["datum", "start_date"],
+        "location": ["ladepunkt", "station"],
+        "energy_kwh": ["energie_kwh", "energy_kwh"],
+        "total_cost": ["betrag_eur", "total_cost"],
+        "price_per_kwh": ["preis_kwh", "price_per_kwh"],
+        "duration_hhmm": ["ladezeit", "duration"]
+      },
+      "defaults": {
+        "provider": "Elli",
+        "tags": "public"
+      }
+    },
+    {
+      "id": "tesla",
+      "label": "Tesla / Supercharger",
+      "description": "Tesla- oder Supercharger-Exporte mit Standort, Energie und Dauer.",
+      "detectHeaders": ["supercharger", "kwh_added", "session_fee"],
+      "fieldAliases": {
+        "date": ["start_date", "date"],
+        "location": ["supercharger", "location"],
+        "energy_kwh": ["kwh_added", "energy_kwh"],
+        "total_cost": ["session_fee", "total_cost"],
+        "duration_hhmm": ["session_duration", "duration"]
+      },
+      "defaults": {
+        "provider": "Tesla Supercharger",
+        "connector": "CCS - DC",
+        "tags": "hpc"
+      }
+    }
+  ]
+}

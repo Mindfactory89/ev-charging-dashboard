@@ -1,14 +1,10 @@
 import React from "react";
+import { useI18n } from "../i18n/I18nProvider.jsx";
+import { num } from "../app/formatters.js";
 import Tooltip from "./Tooltip.jsx";
 import { getWeekdayUsage } from "./loadRhythm.js";
 
-function num(n, digits = 1) {
-  const value = Number(n);
-  if (!Number.isFinite(value)) return "–";
-  return value.toLocaleString("de-DE", { maximumFractionDigits: digits });
-}
-
-function smartInsights({ stats, monthly, outliers, socWindowAnalysis, sessions = [] }) {
+function smartInsights({ stats, monthly, outliers, socWindowAnalysis, sessions = [], t }) {
   const items = [];
   const activeMonths = Array.isArray(monthly?.months)
     ? monthly.months.filter((month) => Number(month?.count || 0) > 0)
@@ -23,9 +19,9 @@ function smartInsights({ stats, monthly, outliers, socWindowAnalysis, sessions =
     if (Math.abs(trend) >= 6) {
       items.push({
         id: "price-trend",
-        title: "Preisimpuls",
+        title: t("smartInsights.items.priceTrend.title"),
         value: `${trend > 0 ? "+" : ""}${num(trend, 0)}%`,
-        text: `Das effektive Preisniveau hat sich gegenüber dem letzten aktiven Monat deutlich bewegt. Das ist ein Signal für Tarif-, Standort- oder Session-Mix-Effekte.`,
+        text: t("smartInsights.items.priceTrend.text"),
       });
     }
   }
@@ -33,18 +29,28 @@ function smartInsights({ stats, monthly, outliers, socWindowAnalysis, sessions =
   if (weekdayFact?.label && weekdayFact.count > 0) {
     items.push({
       id: "weekday-peak",
-      title: "Top-Ladetag",
+      title: t("smartInsights.items.weekdayPeak.title"),
       value: weekdayFact.label,
-      text: `${weekdayFact.label} war mit ${num(weekdayFact.count, 0)} Sessions dein meistgenutzter Ladetag im Jahr${weekdayFact.share ? ` (${num(weekdayFact.share, 0)} %)` : ""}.`,
+      text: t("smartInsights.items.weekdayPeak.text", {
+        day: weekdayFact.label,
+        count: num(weekdayFact.count, 0),
+        share: weekdayFact.share ? t("smartInsights.items.shareSuffix", { share: num(weekdayFact.share, 0) }) : "",
+      }),
     });
   }
 
   if (latestMonth?.month && latestMonthWeekdayFact?.label) {
     items.push({
       id: "focus-month-weekday",
-      title: "Fokusmonat-Rhythmus",
+      title: t("smartInsights.items.focusMonthWeekday.title"),
       value: latestMonthWeekdayFact.label,
-      text: `Im Fokusmonat war ${latestMonthWeekdayFact.label} mit ${num(latestMonthWeekdayFact.count, 0)} Sessions dein häufigster Ladetag${latestMonthWeekdayFact.share ? ` (${num(latestMonthWeekdayFact.share, 0)} % Anteil)` : ""}.`,
+      text: t("smartInsights.items.focusMonthWeekday.text", {
+        day: latestMonthWeekdayFact.label,
+        count: num(latestMonthWeekdayFact.count, 0),
+        share: latestMonthWeekdayFact.share
+          ? t("smartInsights.items.focusShareSuffix", { share: num(latestMonthWeekdayFact.share, 0) })
+          : "",
+      }),
     });
   }
 
@@ -56,9 +62,9 @@ function smartInsights({ stats, monthly, outliers, socWindowAnalysis, sessions =
       if (Math.abs(drift) >= 12) {
         items.push({
           id: "power-drift",
-          title: "Durchschnitt vs. Median",
+          title: t("smartInsights.items.powerDrift.title"),
           value: `${drift > 0 ? "+" : ""}${num(drift, 0)}%`,
-          text: `Der Durchschnitt der Ladeleistung liegt spürbar ${drift > 0 ? "über" : "unter"} dem Median. Einzelne Sessions ziehen deine Jahresleistung also merklich.`,
+          text: drift > 0 ? t("smartInsights.items.powerDrift.above") : t("smartInsights.items.powerDrift.below"),
         });
       }
     }
@@ -67,21 +73,24 @@ function smartInsights({ stats, monthly, outliers, socWindowAnalysis, sessions =
   if (socWindowAnalysis?.highlights?.fastest_window?.label && socWindowAnalysis?.highlights?.best_efficiency_window?.label) {
     items.push({
       id: "soc-window",
-      title: "Bestes Ladefenster",
+      title: t("smartInsights.items.socWindow.title"),
       value: socWindowAnalysis.highlights.best_efficiency_window.label,
       text:
         socWindowAnalysis.highlights.fastest_window.label === socWindowAnalysis.highlights.best_efficiency_window.label
-          ? `Dieses Fenster ist aktuell gleichzeitig dein schnellstes und effizientestes Ladefenster.`
-          : `Effizientestes Fenster: ${socWindowAnalysis.highlights.best_efficiency_window.label}. Schnellstes Fenster: ${socWindowAnalysis.highlights.fastest_window.label}.`,
+          ? t("smartInsights.items.socWindow.same")
+          : t("smartInsights.items.socWindow.different", {
+              best: socWindowAnalysis.highlights.best_efficiency_window.label,
+              fastest: socWindowAnalysis.highlights.fastest_window.label,
+            }),
     });
   }
 
   if (outliers?.outlier_count) {
     items.push({
       id: "outliers",
-      title: "Auffällige Sessions",
+      title: t("smartInsights.items.outliers.title"),
       value: `${num(outliers.outlier_count, 0)}`,
-      text: `Es wurden ${num(outliers.outlier_count, 0)} Sessions mit auffälligem Preis, Score, Dauer oder Leistung erkannt. Diese Sessions haben derzeit den größten Hebel für Verbesserungen.`,
+      text: t("smartInsights.items.outliers.text", { count: num(outliers.outlier_count, 0) }),
     });
   }
 
@@ -98,9 +107,9 @@ function smartInsights({ stats, monthly, outliers, socWindowAnalysis, sessions =
       if (Math.abs(diff) >= 10) {
         items.push({
           id: "eighty-cutoff",
-          title: "80%-Effekt",
+          title: t("smartInsights.items.eightyCutoff.title"),
           value: `${diff > 0 ? "+" : ""}${num(diff, 0)}%`,
-          text: `Sessions mit Ziel-SoC ${diff > 0 ? "über" : "unter"} 80 % verhalten sich bei der mittleren Ladeleistung deutlich anders als der Rest deines Ladeverhaltens.`,
+          text: diff > 0 ? t("smartInsights.items.eightyCutoff.above") : t("smartInsights.items.eightyCutoff.below"),
         });
       }
     }
@@ -110,9 +119,10 @@ function smartInsights({ stats, monthly, outliers, socWindowAnalysis, sessions =
 }
 
 export default function SmartInsightsCard({ stats, monthly, outliers, socWindowAnalysis, sessions = [], year = 2026 }) {
+  const { t } = useI18n();
   const items = React.useMemo(
-    () => smartInsights({ stats, monthly, outliers, socWindowAnalysis, sessions }),
-    [stats, monthly, outliers, socWindowAnalysis, sessions]
+    () => smartInsights({ stats, monthly, outliers, socWindowAnalysis, sessions, t }),
+    [stats, monthly, outliers, socWindowAnalysis, sessions, t]
   );
 
   return (
@@ -120,16 +130,16 @@ export default function SmartInsightsCard({ stats, monthly, outliers, socWindowA
       <div className="card glassStrong analysisPanel">
         <div className="panelHeader">
           <div>
-            <div className="sectionKicker">Smart</div>
+            <div className="sectionKicker">{t("smartInsights.kicker")}</div>
             <div className="ttTitleRow panelTitleRow">
-              <div className="sectionTitle">Smart Insights ({year})</div>
+              <div className="sectionTitle">{t("smartInsights.title", { year })}</div>
               <Tooltip
                 placement="top"
                 openDelayMs={120}
                 closeDelayMs={220}
-                content="Kombiniert Preis, Median, SoC-Fenster, Monatsverlauf und Ausreißer zu kurzen produktnahen Hinweisen."
+                content={t("smartInsights.tooltipContent")}
               >
-                <button className="ttTrigger" type="button" aria-label="Erklärung: Smart Insights">
+                <button className="ttTrigger" type="button" aria-label={t("smartInsights.tooltipLabel")}>
                   i
                 </button>
               </Tooltip>
@@ -137,7 +147,7 @@ export default function SmartInsightsCard({ stats, monthly, outliers, socWindowA
           </div>
 
           <div className="pill ghostPill panelMetaPill">
-            {items.length ? `${num(items.length, 0)} Signale` : "Keine Smart Insights"}
+            {items.length ? t("smartInsights.meta", { count: num(items.length, 0) }) : t("smartInsights.empty", { year })}
           </div>
         </div>
 
@@ -153,7 +163,7 @@ export default function SmartInsightsCard({ stats, monthly, outliers, socWindowA
               </article>
             ))
           ) : (
-            <div className="emptyStateCard">Noch keine Smart Insights für {year} vorhanden.</div>
+            <div className="emptyStateCard">{t("smartInsights.empty", { year })}</div>
           )}
         </div>
       </div>

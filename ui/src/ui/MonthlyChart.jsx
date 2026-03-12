@@ -9,26 +9,28 @@ import {
   Tooltip as RTooltip,
   CartesianGrid,
 } from "recharts";
+import { useI18n } from "../i18n/I18nProvider.jsx";
+import { euro, num } from "../app/formatters.js";
 import Tooltip from "./Tooltip.jsx";
 import { monthLabel } from "./monthLabels.js";
 
-function euro(n) {
-  if (n == null || Number.isNaN(Number(n))) return "–";
-  return Number(n).toLocaleString("de-DE", { style: "currency", currency: "EUR" });
-}
-
 function valueLabel(mode, value) {
-  if (mode === "kosten") return euro(value);
-  if (mode === "energie") return `${Number(value).toLocaleString("de-DE", { maximumFractionDigits: 1 })} kWh`;
-  if (mode === "preis") return `${Number(value).toLocaleString("de-DE", { minimumFractionDigits: 3, maximumFractionDigits: 3 })} €/kWh`;
-  return `${Number(value).toLocaleString("de-DE", { maximumFractionDigits: 0 })}`;
+  if (mode === "cost") return euro(value);
+  if (mode === "energy") return `${num(value, 1)} kWh`;
+  if (mode === "price") return `${num(value, 3)} €/kWh`;
+  return `${num(value, 0)}`;
 }
 
-function PremiumTooltip({ active, payload, label, mode }) {
+function PremiumTooltip({ active, payload, label, mode, t }) {
   if (!active || !payload?.length) return null;
   const value = payload[0]?.value;
-  const title =
-    mode === "energie" ? "Energie" : mode === "kosten" ? "Kosten" : mode === "preis" ? "Preisniveau" : "Ladevorgänge";
+  const title = mode === "energy"
+    ? t("monthlyChart.modes.energy")
+    : mode === "cost"
+      ? t("monthlyChart.modes.cost")
+      : mode === "price"
+        ? t("yearComparison.metricTitles.price")
+        : t("monthlyChart.modes.sessions");
 
   return (
     <div className="chartTooltip">
@@ -43,7 +45,8 @@ function PremiumTooltip({ active, payload, label, mode }) {
 }
 
 export default function MonthlyChart({ months, onMonthSelect }) {
-  const [mode, setMode] = React.useState("energie"); // energie | kosten | vorgaenge | preis
+  const { t } = useI18n();
+  const [mode, setMode] = React.useState("energy");
 
   const data = (months || []).map((m) => ({
     month: Number(m.month),
@@ -55,37 +58,33 @@ export default function MonthlyChart({ months, onMonthSelect }) {
   }));
 
   const title =
-    mode === "energie"
-      ? "Energie im Jahresverlauf"
-      : mode === "kosten"
-      ? "Kosten im Jahresverlauf"
-      : mode === "preis"
-      ? "Preisentwicklung im Jahresverlauf"
-      : "Ladevorgänge im Jahresverlauf";
+    mode === "energy"
+      ? t("monthlyChart.title.energy")
+      : mode === "cost"
+        ? t("monthlyChart.title.cost")
+        : mode === "price"
+          ? t("monthlyChart.title.price")
+          : t("monthlyChart.title.sessions");
 
   const tips = {
-    energie:
-      "Monatliche Summe der geladenen Energie (kWh). Ideal, um Ladebedarf, Saisonalität und Peaks im Jahr zu erkennen.",
-    kosten:
-      "Monatliche Summe deiner Ladekosten (€). Zeigt teure Monate, Tarif-/Standort-Effekte und Kosten-Spikes.",
-    vorgaenge:
-      "Anzahl der Ladevorgänge pro Monat. Hilft zu sehen, ob du eher viele kurze oder wenige lange Sessions hast.",
-    preis:
-      "Durchschnittlicher effektiver Preis pro kWh je Monat. Zeigt dir, wie sich dein reales Preisniveau über das Jahr entwickelt.",
+    energy: t("monthlyChart.tips.energy"),
+    cost: t("monthlyChart.tips.cost"),
+    sessions: t("monthlyChart.tips.sessions"),
+    price: t("monthlyChart.tips.price"),
   };
 
   const strokeByMode = {
-    energie: "rgba(205,132,64,0.95)",
-    kosten: "rgba(196,212,255,0.86)",
-    vorgaenge: "rgba(120,210,160,0.92)",
-    preis: "rgba(120,190,255,0.95)",
+    energy: "rgba(205,132,64,0.95)",
+    cost: "rgba(196,212,255,0.86)",
+    sessions: "rgba(120,210,160,0.92)",
+    price: "rgba(120,190,255,0.95)",
   };
 
   const fillByMode = {
-    energie: "url(#monthlyEnergyFill)",
-    kosten: "url(#monthlyCostFill)",
-    vorgaenge: "url(#monthlyCountFill)",
-    preis: "url(#monthlyPriceFill)",
+    energy: "url(#monthlyEnergyFill)",
+    cost: "url(#monthlyCostFill)",
+    sessions: "url(#monthlyCountFill)",
+    price: "url(#monthlyPriceFill)",
   };
 
   const ToggleItem = ({ id, label, tip }) => (
@@ -102,7 +101,7 @@ export default function MonthlyChart({ months, onMonthSelect }) {
         <button
           type="button"
           className="ttTrigger"
-          aria-label={`Info: ${label}`}
+          aria-label={t("monthlyChart.modeInfo", { label })}
           onClick={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
         >
@@ -116,28 +115,27 @@ export default function MonthlyChart({ months, onMonthSelect }) {
     <div className="card glassStrong monthlyChartCard">
       <div className="sectionHeader">
         <div>
-          <div className="sectionKicker">Monate</div>
+          <div className="sectionKicker">{t("monthlyChart.kicker")}</div>
 
           <div className="ttTitleRow">
             <div className="sectionTitle">{title}</div>
 
             <Tooltip
-              content="Monatliche Aggregation aller Sessions. Je nach Modus wird Energie (kWh), Kosten (€) oder Anzahl der Ladevorgänge dargestellt."
+              content={t("monthlyChart.tooltipContent")}
               placement="top"
             >
-              <button className="ttTrigger" type="button" aria-label="Erklärung: Monatschart">
+              <button className="ttTrigger" type="button" aria-label={t("monthlyChart.tooltipLabel")}>
                 i
               </button>
             </Tooltip>
           </div>
         </div>
 
-        {/* ✅ Toggle rechts wie im Screenshot */}
-        <div className="toggle monthlyChartToggle" aria-label="Monatschart Modus">
-          <ToggleItem id="energie" label="Energie" tip={tips.energie} />
-          <ToggleItem id="kosten" label="Kosten" tip={tips.kosten} />
-          <ToggleItem id="preis" label="€/kWh" tip={tips.preis} />
-          <ToggleItem id="vorgaenge" label="Vorgänge" tip={tips.vorgaenge} />
+        <div className="toggle monthlyChartToggle" aria-label={t("monthlyChart.modeAria")}>
+          <ToggleItem id="energy" label={t("monthlyChart.modes.energy")} tip={tips.energy} />
+          <ToggleItem id="cost" label={t("monthlyChart.modes.cost")} tip={tips.cost} />
+          <ToggleItem id="price" label={t("monthlyChart.modes.price")} tip={tips.price} />
+          <ToggleItem id="sessions" label={t("monthlyChart.modes.sessions")} tip={tips.sessions} />
         </div>
       </div>
 
@@ -145,7 +143,7 @@ export default function MonthlyChart({ months, onMonthSelect }) {
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
             data={data}
-            margin={{ top: 20, right: 18, left: -6, bottom: 2 }}
+            margin={{ top: 24, right: 22, left: 14, bottom: 4 }}
             onClick={(state) => onMonthSelect?.(state?.activePayload?.[0]?.payload?.month)}
           >
             <defs>
@@ -176,71 +174,70 @@ export default function MonthlyChart({ months, onMonthSelect }) {
               tickMargin={16}
             />
             <YAxis
+              width={60}
               tick={{ fill: "rgba(255,255,255,0.40)", fontSize: 10.5 }}
               axisLine={false}
               tickLine={false}
               tickMargin={10}
               tickFormatter={(value) =>
-                mode === "preis"
-                  ? Number(value).toLocaleString("de-DE", { maximumFractionDigits: 2 })
-                  : String(value)
+                mode === "price" ? num(value, 2) : String(value)
               }
             />
 
             <RTooltip
               cursor={{ stroke: "rgba(255,255,255,0.10)", strokeWidth: 1, strokeDasharray: "4 6" }}
-              content={<PremiumTooltip mode={mode} />}
+              content={<PremiumTooltip mode={mode} t={t} />}
             />
 
-            {mode === "energie" ? (
+            {mode === "energy" ? (
               <>
-                <Area type="monotone" dataKey="energie" stroke="none" fill={fillByMode.energie} isAnimationActive={false} />
+                <Area type="monotone" dataKey="energie" stroke="none" fill={fillByMode.energy} isAnimationActive={false} />
                 <Line
                   type="monotone"
                   dataKey="energie"
-                  stroke={strokeByMode.energie}
+                  stroke={strokeByMode.energy}
                   strokeWidth={2.25}
                   dot={false}
-                  activeDot={{ r: 4.4, fill: strokeByMode.energie, stroke: "rgba(255,255,255,0.78)", strokeWidth: 1.2 }}
+                  activeDot={{ r: 4.4, fill: strokeByMode.energy, stroke: "rgba(255,255,255,0.78)", strokeWidth: 1.2 }}
                 />
               </>
             ) : null}
-            {mode === "kosten" ? (
+            {mode === "cost" ? (
               <>
-                <Area type="monotone" dataKey="kosten" stroke="none" fill={fillByMode.kosten} isAnimationActive={false} />
+                <Area type="monotone" dataKey="kosten" stroke="none" fill={fillByMode.cost} isAnimationActive={false} />
                 <Line
                   type="monotone"
                   dataKey="kosten"
-                  stroke={strokeByMode.kosten}
+                  stroke={strokeByMode.cost}
                   strokeWidth={2.25}
                   dot={false}
-                  activeDot={{ r: 4.4, fill: strokeByMode.kosten, stroke: "rgba(20,20,28,0.9)", strokeWidth: 1.2 }}
+                  activeDot={{ r: 4.4, fill: strokeByMode.cost, stroke: "rgba(20,20,28,0.9)", strokeWidth: 1.2 }}
                 />
               </>
             ) : null}
-            {mode === "preis" ? (
+            {mode === "price" ? (
               <>
-                <Area type="monotone" dataKey="preis" stroke="none" fill={fillByMode.preis} isAnimationActive={false} />
+                <Area type="monotone" dataKey="preis" stroke="none" fill={fillByMode.price} isAnimationActive={false} />
                 <Line
                   type="monotone"
                   dataKey="preis"
-                  stroke={strokeByMode.preis}
+                  stroke={strokeByMode.price}
                   strokeWidth={2.25}
                   dot={false}
-                  activeDot={{ r: 4.4, fill: strokeByMode.preis, stroke: "rgba(20,20,28,0.9)", strokeWidth: 1.2 }}
+                  activeDot={{ r: 4.4, fill: strokeByMode.price, stroke: "rgba(20,20,28,0.9)", strokeWidth: 1.2 }}
                 />
               </>
             ) : null}
-            {mode === "vorgaenge" ? (
+            {mode === "sessions" ? (
               <>
-                <Area type="monotone" dataKey="vorgaenge" stroke="none" fill={fillByMode.vorgaenge} isAnimationActive={false} />
+                <Area type="monotone" dataKey="vorgaenge" stroke="none" fill={fillByMode.sessions} isAnimationActive={false} />
                 <Line
                   type="monotone"
                   dataKey="vorgaenge"
-                  stroke={strokeByMode.vorgaenge}
+                  stroke={strokeByMode.sessions}
                   strokeWidth={2.25}
                   dot={false}
-                  activeDot={{ r: 4.4, fill: strokeByMode.vorgaenge, stroke: "rgba(20,20,28,0.9)", strokeWidth: 1.2 }}
+                  activeDot={{ r: 4.4, fill: strokeByMode.sessions, stroke: "rgba(20,20,28,0.9)", strokeWidth: 1.2 }}
                 />
               </>
             ) : null}

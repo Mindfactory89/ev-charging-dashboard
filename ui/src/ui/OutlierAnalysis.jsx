@@ -1,29 +1,9 @@
 import React, { useMemo } from "react";
+import { useI18n } from "../i18n/I18nProvider.jsx";
+import { datumDE, minutesFromSeconds, num } from "../app/formatters.js";
 import Tooltip from "./Tooltip.jsx";
 
-function num(n, digits = 1) {
-  const v = Number(n);
-  if (!Number.isFinite(v)) return "–";
-  return v.toLocaleString("de-DE", { maximumFractionDigits: digits });
-}
-
-function datumDE(value) {
-  try {
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "–";
-    return date.toLocaleDateString("de-DE");
-  } catch {
-    return "–";
-  }
-}
-
-function minutesFromSeconds(seconds) {
-  const v = Number(seconds);
-  if (!Number.isFinite(v) || v <= 0) return "–";
-  return `${Math.round(v / 60)} min`;
-}
-
-function buildAutoHints(analysis) {
+function buildAutoHints(analysis, t) {
   const hints = [];
   const highlights = analysis?.highlights || {};
   const baselines = analysis?.baselines || {};
@@ -31,7 +11,7 @@ function buildAutoHints(analysis) {
   if (highlights?.weakest_score_outlier?.score != null) {
     hints.push({
       id: "weakest_score",
-      title: "Schwächster Score",
+      title: t("outliers.hintTitles.weakestScore"),
       value: `${num(highlights.weakest_score_outlier.score, 1)}/100`,
       detail: `${datumDE(highlights.weakest_score_outlier.date)} • Median ${num(baselines?.score?.median, 1)}/100`,
     });
@@ -40,7 +20,7 @@ function buildAutoHints(analysis) {
   if (highlights?.priciest_outlier?.price_per_kwh != null) {
     hints.push({
       id: "priciest",
-      title: "Preis-Ausreißer",
+      title: t("outliers.hintTitles.priciest"),
       value: `${num(highlights.priciest_outlier.price_per_kwh, 3)} €/kWh`,
       detail: `${datumDE(highlights.priciest_outlier.date)} • Median ${num(baselines?.price_per_kwh?.median, 3)} €/kWh`,
     });
@@ -49,7 +29,7 @@ function buildAutoHints(analysis) {
   if (highlights?.lowest_power_outlier?.avg_power_kw != null) {
     hints.push({
       id: "lowest_power",
-      title: "Schwächste Leistung",
+      title: t("outliers.hintTitles.lowestPower"),
       value: `${num(highlights.lowest_power_outlier.avg_power_kw, 1)} kW`,
       detail: `${datumDE(highlights.lowest_power_outlier.date)} • Median ${num(baselines?.avg_power_kw?.median, 1)} kW`,
     });
@@ -58,7 +38,7 @@ function buildAutoHints(analysis) {
   if (highlights?.longest_outlier?.duration_seconds != null) {
     hints.push({
       id: "longest",
-      title: "Längste Abweichung",
+      title: t("outliers.hintTitles.longest"),
       value: minutesFromSeconds(highlights.longest_outlier.duration_seconds),
       detail: `${datumDE(highlights.longest_outlier.date)} • Median ${minutesFromSeconds(baselines?.duration_seconds?.median)}`,
     });
@@ -67,9 +47,9 @@ function buildAutoHints(analysis) {
   if (highlights?.worst_session?.flag_count > 1) {
     hints.push({
       id: "worst_session",
-      title: "Kritische Session",
+      title: t("outliers.hintTitles.worstSession"),
       value: datumDE(highlights.worst_session.date),
-      detail: `${num(highlights.worst_session.flag_count, 0)} Auffälligkeiten in einer Session`,
+      detail: t("outliers.anomaliesInOneSession", { count: num(highlights.worst_session.flag_count, 0) }),
     });
   }
 
@@ -77,25 +57,34 @@ function buildAutoHints(analysis) {
 }
 
 export default function OutlierAnalysis({ analysis, year = 2026 }) {
+  const { t } = useI18n();
   const sessions = Array.isArray(analysis?.flagged_sessions) ? analysis.flagged_sessions : [];
-  const hints = useMemo(() => buildAutoHints(analysis), [analysis]);
+  const hints = useMemo(() => buildAutoHints(analysis, t), [analysis, t]);
   const hasSessions = Number(analysis?.session_count || 0) > 0;
+
+  function reasonLabel(reason) {
+    const key = String(reason?.key || "");
+    if (key && t(`outliers.reasonLabels.${key}`) !== `outliers.reasonLabels.${key}`) {
+      return t(`outliers.reasonLabels.${key}`);
+    }
+    return reason?.label || "–";
+  }
 
   return (
     <section className="row">
       <div className="card glassStrong analysisPanel">
         <div className="panelHeader">
           <div>
-            <div className="sectionKicker">Ausreißer</div>
+            <div className="sectionKicker">{t("outliers.kicker")}</div>
             <div className="ttTitleRow panelTitleRow">
-              <div className="sectionTitle">Ausreißer & Hinweise ({year})</div>
+              <div className="sectionTitle">{t("outliers.title", { year })}</div>
               <Tooltip
-                content="Die Erkennung markiert Sessions, die im Jahresvergleich auffällig teuer, langsam, lang oder schwach im Efficiency Score sind. Je nach Datenlage werden IQR-Grenzen oder Median-basierte Schwellen genutzt."
+                content={t("outliers.tooltipContent")}
                 placement="top"
                 openDelayMs={120}
                 closeDelayMs={220}
               >
-                <button className="ttTrigger" type="button" aria-label="Erklärung: Ausreißer-Erkennung">
+                <button className="ttTrigger" type="button" aria-label={t("outliers.tooltipLabel")}>
                   i
                 </button>
               </Tooltip>
@@ -104,8 +93,11 @@ export default function OutlierAnalysis({ analysis, year = 2026 }) {
 
           <div className="pill ghostPill panelMetaPill">
             {analysis?.session_count
-              ? `${num(analysis.outlier_count, 0)} von ${num(analysis.session_count, 0)} Sessions auffällig`
-              : "Keine Daten"}
+              ? t("outliers.meta", {
+                  outliers: num(analysis.outlier_count, 0),
+                  sessions: num(analysis.session_count, 0),
+                })
+              : t("common.noData")}
           </div>
         </div>
 
@@ -120,7 +112,7 @@ export default function OutlierAnalysis({ analysis, year = 2026 }) {
             ))
           ) : (
             <div className="emptyStateCard">
-              {hasSessions ? `Keine auffälligen Sessions für ${year} erkannt.` : `Keine Werte für ${year} vorhanden.`}
+              {hasSessions ? t("outliers.noneFound", { year }) : t("outliers.noValues", { year })}
             </div>
           )}
         </div>
@@ -131,7 +123,7 @@ export default function OutlierAnalysis({ analysis, year = 2026 }) {
               <article key={session.session_id} className={`detailCard ${session.flag_count > 1 ? "featured" : ""}`}>
                 <div className="detailCardTop">
                   <div className="detailCardTitle">{datumDE(session.date)}</div>
-                  <div className="detailCardMeta">{num(session.flag_count, 0)} Flags</div>
+                  <div className="detailCardMeta">{t("outliers.flags", { count: num(session.flag_count, 0) })}</div>
                 </div>
 
                 <div className="detailCardSub">{session.connector || "–"}</div>
@@ -139,30 +131,30 @@ export default function OutlierAnalysis({ analysis, year = 2026 }) {
                 <div className="reasonPillRow">
                   {session.reasons.map((reason) => (
                     <div key={`${session.session_id}-${reason.key}`} className={`reasonPill ${reason.severity || "low"}`}>
-                      {reason.label}
+                      {reasonLabel(reason)}
                     </div>
                   ))}
                 </div>
 
                 <div className="metricMiniGrid">
                   <div className="metricMiniItem">
-                    <div className="metricMiniLabel">Score</div>
+                    <div className="metricMiniLabel">{t("common.score")}</div>
                     <div className="metricMiniValue">{session.score != null ? `${num(session.score, 1)}/100` : "–"}</div>
                   </div>
                   <div className="metricMiniItem">
-                    <div className="metricMiniLabel">€/kWh</div>
+                    <div className="metricMiniLabel">{t("common.pricePerKwh")}</div>
                     <div className="metricMiniValue">
-                      {session.price_per_kwh != null ? `${num(session.price_per_kwh, 3)} €` : "–"}
+                      {session.price_per_kwh != null ? `${num(session.price_per_kwh, 3)} €/kWh` : "–"}
                     </div>
                   </div>
                   <div className="metricMiniItem">
-                    <div className="metricMiniLabel">Ø kW</div>
+                    <div className="metricMiniLabel">{t("common.avgPower")}</div>
                     <div className="metricMiniValue">
                       {session.avg_power_kw != null ? `${num(session.avg_power_kw, 1)} kW` : "–"}
                     </div>
                   </div>
                   <div className="metricMiniItem">
-                    <div className="metricMiniLabel">Dauer</div>
+                    <div className="metricMiniLabel">{t("common.duration")}</div>
                     <div className="metricMiniValue">{minutesFromSeconds(session.duration_seconds)}</div>
                   </div>
                 </div>
@@ -173,8 +165,8 @@ export default function OutlierAnalysis({ analysis, year = 2026 }) {
                       .slice(0, 2)
                       .map((reason) => {
                         const deviation =
-                          reason.deviation_pct != null ? `${num(reason.deviation_pct, 0)} %` : "spürbar";
-                        return `${reason.label}: ${deviation} vom Median`;
+                          reason.deviation_pct != null ? `${num(reason.deviation_pct, 0)} %` : t("outliers.noticeable");
+                        return t("outliers.detailFromMedian", { label: reasonLabel(reason), deviation });
                       })
                       .join(" • ")}
                   </div>
@@ -183,7 +175,7 @@ export default function OutlierAnalysis({ analysis, year = 2026 }) {
             ))
           ) : (
             <div className="emptyStateCard detailEmpty">
-              {hasSessions ? `Keine Details für ${year}.` : `Keine Werte für ${year} vorhanden.`}
+              {hasSessions ? t("outliers.noDetails", { year }) : t("outliers.noValues", { year })}
             </div>
           )}
         </div>

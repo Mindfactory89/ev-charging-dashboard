@@ -1,6 +1,7 @@
 import VehicleHero from "../ui/VehicleHero.jsx";
 import KpiTitle from "./KpiTitle.jsx";
 import { num } from "./formatters.js";
+import { useI18n } from "../i18n/I18nProvider.jsx";
 
 export default function DashboardHeroStage({
   displayStats,
@@ -11,6 +12,8 @@ export default function DashboardHeroStage({
   year,
   yearWeekdayFact,
 }) {
+  const { t } = useI18n();
+
   return (
     <section className="premiumHeroStage">
       <VehicleHero profile={vehicleProfile} latestDateLabel={latestDateLabel} year={year} />
@@ -35,13 +38,13 @@ export default function DashboardHeroStage({
           <div className="premiumSpotlightMeta">{spotlightCard.meta}</div>
           <p className="premiumSpotlightText">{spotlightCard.body}</p>
           <div className="premiumSpotlightFoot">
-            <span>{displayStats ? `${num(displayStats.count, 0)} Sessions` : "Keine Sessions"}</span>
+            <span>{displayStats ? `${num(displayStats.count, 0)} ${t("common.sessions")}` : t("hero.noSessions")}</span>
             <span>
               {yearWeekdayFact?.label
-                ? `${yearWeekdayFact.label} häufigster Tag`
+                ? t("hero.mostFrequentDay", { day: yearWeekdayFact.label })
                 : displayStats?.avg_power_kw != null
-                  ? `${num(displayStats.avg_power_kw, 1)} kW Ø`
-                  : "Kein Leistungsschnitt"}
+                  ? t("hero.averagePower", { value: num(displayStats.avg_power_kw, 1) })
+                  : t("hero.noPowerAverage")}
             </span>
           </div>
         </article>

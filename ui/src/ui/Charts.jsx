@@ -9,27 +9,15 @@ import {
   Tooltip as RTooltip,
   CartesianGrid,
 } from "recharts";
+import { useI18n } from "../i18n/I18nProvider.jsx";
+import { euro, num } from "../app/formatters.js";
 import Tooltip from "./Tooltip.jsx";
 
-function fmtDatumDE(d) {
-  try {
-    return new Date(d).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
-  } catch {
-    return "";
-  }
-}
-
-function euro(n) {
-  if (n === null || n === undefined || Number.isNaN(Number(n))) return "–";
-  return Number(n).toLocaleString("de-DE", { style: "currency", currency: "EUR" });
-}
-
 function kwh(n) {
-  if (n === null || n === undefined || Number.isNaN(Number(n))) return "–";
-  return `${Number(n).toLocaleString("de-DE", { maximumFractionDigits: 1 })} kWh`;
+  return `${num(n, 1)} kWh`;
 }
 
-function PremiumTooltip({ active, payload, label }) {
+function PremiumTooltip({ active, payload, label, t }) {
   if (!active || !payload?.length) return null;
 
   const energy = payload.find((item) => item.dataKey === "energie")?.value;
@@ -40,12 +28,12 @@ function PremiumTooltip({ active, payload, label }) {
       <div className="chartTooltipLabel">{label}</div>
       <div className="chartTooltipRow">
         <span className="chartTooltipSwatch copper" />
-        <span className="chartTooltipName">Energie</span>
+        <span className="chartTooltipName">{t("charts.tooltipEnergy")}</span>
         <span className="chartTooltipValue">{kwh(energy)}</span>
       </div>
       <div className="chartTooltipRow">
         <span className="chartTooltipSwatch frost" />
-        <span className="chartTooltipName">Kosten</span>
+        <span className="chartTooltipName">{t("charts.tooltipCost")}</span>
         <span className="chartTooltipValue">{euro(cost)}</span>
       </div>
     </div>
@@ -53,14 +41,15 @@ function PremiumTooltip({ active, payload, label }) {
 }
 
 export default function Charts({ sessions = [] }) {
+  const { formatDate, t } = useI18n();
   const data = React.useMemo(() => {
     const sorted = [...sessions].sort((a, b) => new Date(a.date) - new Date(b.date));
     return sorted.map((s) => ({
-      datum: fmtDatumDE(s.date),
+      datum: formatDate(s.date, { day: "2-digit", month: "2-digit" }),
       energie: Number(s.energy_kwh || 0),
       kosten: Number(s.total_cost || 0),
     }));
-  }, [sessions]);
+  }, [formatDate, sessions]);
 
   const summary = React.useMemo(() => {
     const totalEnergy = data.reduce((sum, row) => sum + Number(row.energie || 0), 0);
@@ -76,14 +65,14 @@ export default function Charts({ sessions = [] }) {
     <div className="card glassStrong">
       <div className="sectionHeader">
         <div>
-          <div className="sectionKicker">Ladeverlauf</div>
+          <div className="sectionKicker">{t("charts.kicker")}</div>
 
           <Tooltip
             placement="top"
-            content="Diese Kurve zeigt dir Energie (kWh) und Kosten (€) über deine Sessions hinweg – in zeitlicher Reihenfolge. So erkennst du Muster, Ausreißer und ob teure Ladungen auch wirklich „viel Energie“ gebracht haben. Hover über die Linie zeigt Datum und Werte pro Punkt."
+            content={t("charts.tooltipContent")}
           >
             <span className="sectionTitle cupraActionTitle" tabIndex={0}>
-              Energie &amp; Kosten
+              {t("charts.title")}
             </span>
           </Tooltip>
         </div>
@@ -98,14 +87,14 @@ export default function Charts({ sessions = [] }) {
             {euro(summary.totalCost)}
           </span>
           <span className="chartLegendItem muted">
-            {summary.count} Sessions
+            {t("charts.sessionsMeta", { count: num(summary.count, 0) })}
           </span>
         </div>
       </div>
 
       <div className="chartWrap">
         <ResponsiveContainer width="100%" height={260}>
-          <ComposedChart data={data} margin={{ top: 16, right: 18, left: 0, bottom: 0 }}>
+          <ComposedChart data={data} margin={{ top: 20, right: 20, left: 12, bottom: 2 }}>
             <defs>
               <linearGradient id="energyFill" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="rgba(205,132,64,0.34)" />
@@ -123,6 +112,7 @@ export default function Charts({ sessions = [] }) {
             />
             <YAxis
               yAxisId="left"
+              width={56}
               tick={{ fill: "rgba(255,255,255,0.46)", fontSize: 11 }}
               axisLine={false}
               tickLine={false}
@@ -131,6 +121,7 @@ export default function Charts({ sessions = [] }) {
             <YAxis
               yAxisId="right"
               orientation="right"
+              width={56}
               tick={{ fill: "rgba(255,255,255,0.46)", fontSize: 11 }}
               axisLine={false}
               tickLine={false}
@@ -139,7 +130,7 @@ export default function Charts({ sessions = [] }) {
 
             <RTooltip
               cursor={{ stroke: "rgba(255,255,255,0.10)", strokeWidth: 1, strokeDasharray: "4 6" }}
-              content={<PremiumTooltip />}
+              content={<PremiumTooltip t={t} />}
             />
 
             <Area

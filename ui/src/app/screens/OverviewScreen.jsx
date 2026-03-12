@@ -5,6 +5,7 @@ import Tooltip from "../../ui/Tooltip.jsx";
 import LazySectionFallback from "../LazySectionFallback.jsx";
 import { monthLabel } from "../../ui/monthLabels.js";
 import { datumDE, euro, num } from "../formatters.js";
+import { useI18n } from "../../i18n/I18nProvider.jsx";
 
 const ForecastCard = lazy(() => import("../../ui/ForecastCard.jsx"));
 const PowerCurveCard = lazy(() => import("../../ui/PowerCurveCard.jsx"));
@@ -36,6 +37,8 @@ export default function OverviewScreen({
   year,
   yearWeekdayFact,
 }) {
+  const { t } = useI18n();
+
   function renderDeferredOverview(node, label) {
     return <Suspense fallback={<LazySectionFallback label={label} />}>{node}</Suspense>;
   }
@@ -44,7 +47,7 @@ export default function OverviewScreen({
     if (overviewMode === "behavior") {
       return renderDeferredOverview(
         <PowerCurveCard analysis={socWindowAnalysis} year={year} />,
-        "Ladeverhalten wird geladen…"
+        t("overview.loading.behavior")
       );
     }
 
@@ -56,14 +59,14 @@ export default function OverviewScreen({
           initialLeftYear={year}
           initialRightYear={comparisonRightYear(year, availableYears)}
         />,
-        "Vergleich wird geladen…"
+        t("overview.loading.compare")
       );
     }
 
     if (overviewMode === "forecast") {
       return renderDeferredOverview(
         <ForecastCard months={monthlySorted} year={year} />,
-        "Forecast wird geladen…"
+        t("overview.loading.forecast")
       );
     }
 
@@ -72,16 +75,16 @@ export default function OverviewScreen({
         <div className="card glassStrong analysisPanel premiumFeatureCard premiumFeatureChartPanel">
           <div className="panelHeader">
             <div>
-              <div className="sectionKicker">Kosten</div>
+              <div className="sectionKicker">{t("overview.costPanel.kicker")}</div>
               <div className="ttTitleRow panelTitleRow">
-                <div className="sectionTitle">Monatsverlauf ({year})</div>
+                <div className="sectionTitle">{t("overview.costPanel.title", { year })}</div>
                 <Tooltip
-                  content="Ein ruhiger Überblick über Kosten, Preisniveau und Monatsimpuls des gewählten Jahres."
+                  content={t("overview.costPanel.tip")}
                   placement="top"
                   openDelayMs={120}
                   closeDelayMs={220}
                 >
-                  <button className="ttTrigger" type="button" aria-label="Erklärung: Monatsverlauf">
+                  <button className="ttTrigger" type="button" aria-label={t("overview.costPanel.tooltipLabel")}>
                     i
                   </button>
                 </Tooltip>
@@ -89,7 +92,9 @@ export default function OverviewScreen({
             </div>
 
             <div className="pill ghostPill panelMetaPill">
-              {priceSummary.latest ? `${num(priceSummary.latest.price_per_kwh, 3)} €/kWh aktuell` : "Noch keine Monatswerte"}
+              {priceSummary.latest
+                ? t("overview.costPanel.latestPrice", { value: num(priceSummary.latest.price_per_kwh, 3) })
+                : t("overview.costPanel.noMonthlyValues")}
             </div>
           </div>
 
@@ -97,38 +102,38 @@ export default function OverviewScreen({
             {activeMonths.length ? (
               <MonthlyChart months={monthlySorted} onMonthSelect={(month) => onOpenHistoryDrilldown?.({ month })} />
             ) : (
-              <div className="emptyStateCard">Keine Monatswerte für {year} vorhanden.</div>
+              <div className="emptyStateCard">{t("overview.costPanel.empty", { year })}</div>
             )}
           </div>
 
           <div className="premiumMiniGrid premiumFeatureStats">
             <article className="premiumMiniCard premiumFeatureStatCard">
-              <div className="premiumMiniLabel">Letzter Monatswert</div>
+              <div className="premiumMiniLabel">{t("overview.costPanel.latestMonthValue")}</div>
               <div className="premiumMiniValue">
                 {priceSummary.latest ? `${num(priceSummary.latest.price_per_kwh, 3)} €/kWh` : "–"}
               </div>
               <div className="premiumMiniSub">
-                {priceSummary.latest ? monthLabel(priceSummary.latest.month) : "Keine Daten"}
+                {priceSummary.latest ? monthLabel(priceSummary.latest.month) : t("common.noData")}
               </div>
             </article>
 
             <article className="premiumMiniCard premiumFeatureStatCard">
-              <div className="premiumMiniLabel">Günstigster Monat</div>
+              <div className="premiumMiniLabel">{t("overview.costPanel.cheapestMonth")}</div>
               <div className="premiumMiniValue">
                 {priceSummary.cheapest ? `${num(priceSummary.cheapest.price_per_kwh, 3)} €/kWh` : "–"}
               </div>
               <div className="premiumMiniSub">
-                {priceSummary.cheapest ? monthLabel(priceSummary.cheapest.month) : "Keine Daten"}
+                {priceSummary.cheapest ? monthLabel(priceSummary.cheapest.month) : t("common.noData")}
               </div>
             </article>
 
             <article className="premiumMiniCard premiumFeatureStatCard">
-              <div className="premiumMiniLabel">Teuerster Monat</div>
+              <div className="premiumMiniLabel">{t("overview.costPanel.priciestMonth")}</div>
               <div className="premiumMiniValue">
                 {priceSummary.priciest ? `${num(priceSummary.priciest.price_per_kwh, 3)} €/kWh` : "–"}
               </div>
               <div className="premiumMiniSub">
-                {priceSummary.priciest ? monthLabel(priceSummary.priciest.month) : "Keine Daten"}
+                {priceSummary.priciest ? monthLabel(priceSummary.priciest.month) : t("common.noData")}
               </div>
             </article>
           </div>
@@ -141,34 +146,34 @@ export default function OverviewScreen({
     <>
       <section className="premiumModeBar">
         <div className="premiumModeIntro">
-          <div className="sectionKicker">Fokusfläche</div>
-          <div className="premiumModeTitle">Eine dominante Fläche statt Kartenwand</div>
+          <div className="sectionKicker">{t("overview.focusKicker")}</div>
+          <div className="premiumModeTitle">{t("overview.focusTitle")}</div>
         </div>
 
         <div className="toggle premiumModeToggle" aria-label="Übersicht Fokus">
           <button type="button" className={overviewMode === "cost" ? "toggleBtn active" : "toggleBtn"} onClick={() => onOverviewModeChange("cost")}>
-            Kosten
+            {t("overview.modes.cost")}
           </button>
           <button
             type="button"
             className={overviewMode === "behavior" ? "toggleBtn active" : "toggleBtn"}
             onClick={() => onOverviewModeChange("behavior")}
           >
-            Ladeverhalten
+            {t("overview.modes.behavior")}
           </button>
           <button
             type="button"
             className={overviewMode === "compare" ? "toggleBtn active" : "toggleBtn"}
             onClick={() => onOverviewModeChange("compare")}
           >
-            Vergleich
+            {t("overview.modes.compare")}
           </button>
           <button
             type="button"
             className={overviewMode === "forecast" ? "toggleBtn active" : "toggleBtn"}
             onClick={() => onOverviewModeChange("forecast")}
           >
-            Forecast
+            {t("overview.modes.forecast")}
           </button>
         </div>
       </section>
@@ -185,11 +190,11 @@ export default function OverviewScreen({
             <div className="card glassStrong analysisPanel premiumSpotlightReportCard">
               <div className="panelHeader">
                 <div>
-                  <div className="sectionKicker">Spotlight</div>
-                  <div className="sectionTitle sectionTitleSpaced">Jahresfokus ({year})</div>
+                  <div className="sectionKicker">{t("overview.spotlight.kicker")}</div>
+                  <div className="sectionTitle sectionTitleSpaced">{t("overview.spotlight.title", { year })}</div>
                 </div>
                 <div className="pill ghostPill panelMetaPill">
-                  {loading ? "Aktualisiert…" : noYearData ? "Keine Werte" : "Kuratiert"}
+                  {loading ? t("common.refreshing") : noYearData ? t("common.noValues") : t("overview.spotlight.curated")}
                 </div>
               </div>
 
@@ -202,38 +207,41 @@ export default function OverviewScreen({
                 </article>
 
                 <article className="summaryCard frost">
-                  <div className="summaryLabel">Letzte Session</div>
+                  <div className="summaryLabel">{t("overview.spotlight.latestSession")}</div>
                   <div className="summaryValue">{latestSession?.date ? datumDE(latestSession.date) : "–"}</div>
                   <div className="summarySub">
-                    {latestSession ? `${num(latestSession.energy_kwh, 1)} kWh` : "Noch keine Session"}
+                    {latestSession ? `${num(latestSession.energy_kwh, 1)} kWh` : t("overview.spotlight.noSessionYet")}
                   </div>
                 </article>
 
                 <article className="summaryCard mint">
-                  <div className="summaryLabel">Medianpreis</div>
+                  <div className="summaryLabel">{t("overview.spotlight.medianPrice")}</div>
                   <div className="summaryValue">
                     {displayStats?.medians?.price_per_kwh != null ? `${num(displayStats.medians.price_per_kwh, 3)} €/kWh` : "–"}
                   </div>
-                  <div className="summarySub">Ruhiger Preisanker des Jahres</div>
+                  <div className="summarySub">{t("overview.spotlight.quietAnchor")}</div>
                 </article>
 
                 <article className="summaryCard">
-                  <div className="summaryLabel">Top-Ladetag</div>
+                  <div className="summaryLabel">{t("overview.spotlight.topChargingDay")}</div>
                   <div className="summaryValue">{yearWeekdayFact?.label || "–"}</div>
                   <div className="summarySub">
                     {yearWeekdayFact
                       ? `${num(yearWeekdayFact.count, 0)} Sessions • ${num(yearWeekdayFact.share, 0)} % Anteil`
-                      : "Noch kein Jahresrhythmus"}
+                      : t("overview.spotlight.noRhythmYet")}
                   </div>
                 </article>
 
                 <article className="summaryCard premiumSpotlightImpulseCard">
-                  <div className="summaryLabel">Monatsimpuls</div>
+                  <div className="summaryLabel">{t("overview.spotlight.monthlyImpulse")}</div>
                   <div className="summaryValue">{spotlightImpulseValue}</div>
                   <div className="summarySub">
                     {focusMonthWeekdayFact?.label
-                      ? `${focusMonthWeekdayFact.label} prägt ${currentPrev.current ? monthLabel(currentPrev.current.month) : "den Fokusmonat"}`
-                      : "Kosten vs. Vormonat"}
+                      ? t("overview.modeNarrative.currentMonth", {
+                          day: focusMonthWeekdayFact.label,
+                          month: currentPrev.current ? monthLabel(currentPrev.current.month) : t("app.spotlight.focusMonth"),
+                        })
+                      : t("overview.modeNarrative.fallback")}
                   </div>
                 </article>
               </div>

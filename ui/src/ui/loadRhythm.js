@@ -1,4 +1,14 @@
-export const WEEKDAY_LABELS = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
+import { formatWeekdayLabel } from "../i18n/runtime.js";
+
+export function weekdayLabel(weekday) {
+  return formatWeekdayLabel(weekday);
+}
+
+export function getWeekdayLabels() {
+  return Array.from({ length: 7 }, (_, weekday) => weekdayLabel(weekday));
+}
+
+export const WEEKDAY_LABELS = getWeekdayLabels();
 
 export function parseSessionDate(value) {
   const raw = String(value ?? "").trim();
@@ -17,7 +27,7 @@ export function parseSessionDate(value) {
       month,
       day,
       weekday: utcDate.getUTCDay(),
-      weekdayLabel: WEEKDAY_LABELS[utcDate.getUTCDay()] || null,
+      weekdayLabel: weekdayLabel(utcDate.getUTCDay()) || null,
     };
   }
 
@@ -29,7 +39,7 @@ export function parseSessionDate(value) {
     month: parsed.getUTCMonth() + 1,
     day: parsed.getUTCDate(),
     weekday: parsed.getUTCDay(),
-    weekdayLabel: WEEKDAY_LABELS[parsed.getUTCDay()] || null,
+    weekdayLabel: weekdayLabel(parsed.getUTCDay()) || null,
   };
 }
 
@@ -45,15 +55,14 @@ export function getWeekdayUsage(sessions = [], filters = {}) {
     if (month != null && Number(parts.month) !== Number(month)) return;
 
     total += 1;
-    counts.set(parts.weekdayLabel, (counts.get(parts.weekdayLabel) || 0) + 1);
+    counts.set(parts.weekday, (counts.get(parts.weekday) || 0) + 1);
   });
 
-  const rows = WEEKDAY_LABELS
-    .map((label, weekday) => ({
+  const rows = Array.from({ length: 7 }, (_, weekday) => ({
       weekday,
-      label,
-      count: counts.get(label) || 0,
-      share: total > 0 ? ((counts.get(label) || 0) / total) * 100 : 0,
+      label: weekdayLabel(weekday),
+      count: counts.get(weekday) || 0,
+      share: total > 0 ? ((counts.get(weekday) || 0) / total) * 100 : 0,
     }))
     .filter((row) => row.count > 0)
     .sort((left, right) => {

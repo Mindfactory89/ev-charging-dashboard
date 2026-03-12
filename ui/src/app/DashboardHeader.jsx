@@ -1,4 +1,5 @@
 import { datumDE, num } from "./formatters.js";
+import { useI18n } from "../i18n/I18nProvider.jsx";
 
 export default function DashboardHeader({
   availableYears = [],
@@ -11,18 +12,20 @@ export default function DashboardHeader({
   year,
   onSelectYear,
 }) {
+  const { locale, setLocale, supportedLocales, t } = useI18n();
+
   return (
     <header className="topBar topBarPremium">
       <div className="topLeft premiumTopCopy">
-        <div className="kicker">Cupra Charging Intelligence</div>
+        <div className="kicker">{t("header.kicker")}</div>
         <h1 className="title">{dashboardTitle}</h1>
-        <div className="sub">Ein ruhiges Charging-Cockpit mit Fokus auf Verlauf, Preisniveau und Ladequalität.</div>
+        <div className="sub">{t("header.subtitle")}</div>
 
         {demo ? (
           <div className="demoBanner" role="status" aria-live="polite">
             <div className="demoBannerLeft">
-              <span className="demoPill">DEMO</span>
-              <span className="demoText">Demo-Daten aktiv – keine Speicherung, keine API/DB</span>
+              <span className="demoPill">{t("header.demoPill")}</span>
+              <span className="demoText">{t("header.demoText")}</span>
             </div>
           </div>
         ) : null}
@@ -30,7 +33,7 @@ export default function DashboardHeader({
 
       <div className="premiumTopControls">
         <div className="filters premiumYearRail">
-          <div className="chipLabel">Jahr</div>
+          <div className="chipLabel">{t("header.year")}</div>
           <div className="chipRow">
             {availableYears.map((itemYear) => (
               <button
@@ -45,13 +48,31 @@ export default function DashboardHeader({
           </div>
         </div>
 
+        <div className="filters premiumYearRail">
+          <div className="chipLabel">{t("language.label")}</div>
+          <div className="chipRow">
+            {supportedLocales.map((itemLocale) => (
+              <button
+                key={itemLocale}
+                type="button"
+                className={locale === itemLocale ? "chip" : "chip ghost"}
+                onClick={() => setLocale(itemLocale)}
+              >
+                {t(`language.options.${itemLocale}`)}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="premiumHeaderMeta">
-          <div className="pill ghostPill">{`${num(sessionsCount, 0)} Sessions`}</div>
+          <div className="pill ghostPill">{t("header.sessionsCount", { count: num(sessionsCount, 0) })}</div>
           {loading || refreshing ? (
-            <div className="pill ghostPill">{loading ? "Lädt…" : "Aktualisiert…"}</div>
+            <div className="pill ghostPill">{loading ? t("common.loading") : t("common.refreshing")}</div>
           ) : null}
           <div className="pill ghostPill">
-            {latestSession?.date ? `Zuletzt ${datumDE(latestSession.date)}` : `Jahr ${year}`}
+            {latestSession?.date
+              ? t("header.latest", { date: datumDE(latestSession.date) })
+              : t("header.yearPill", { year })}
           </div>
         </div>
       </div>

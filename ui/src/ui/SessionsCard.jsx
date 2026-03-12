@@ -1,4 +1,7 @@
 import React from "react";
+import { useI18n } from "../i18n/I18nProvider.jsx";
+import { euro, num, datumDE } from "../app/formatters.js";
+import { monthLabel } from "./monthLabels.js";
 import { deleteSession, getSessionsCsvUrl, restoreSession, updateSession } from "./api.js";
 import Tooltip from "./Tooltip.jsx";
 import SessionDetailDrawer from "./SessionDetailDrawer.jsx";
@@ -7,28 +10,13 @@ import { downloadFileFromUrl } from "../platform/download.js";
 import { confirmAction, reloadCurrentPage, showAlert } from "../platform/runtime.js";
 import { formatTags, parseTags } from "./sessionMetadata.js";
 import { buildSessionMetadataOptions } from "./sessionMetadataOptions.js";
+import { CONNECTOR_OPTIONS as SHARED_CONNECTOR_OPTIONS } from "../app/constants.js";
 
-const DEFAULT_CONNECTORS = ["CCS - DC", "CCS AC", "Wallbox AC"];
+const DEFAULT_CONNECTORS = SHARED_CONNECTOR_OPTIONS;
 const PROVIDER_LIST_ID = "history-session-provider-options";
 const LOCATION_LIST_ID = "history-session-location-options";
 const VEHICLE_LIST_ID = "history-session-vehicle-options";
 const TAG_LIST_ID = "history-session-tag-options";
-
-function euro(n) {
-  if (n == null || Number.isNaN(Number(n))) return "–";
-  return Number(n).toLocaleString("de-DE", { style: "currency", currency: "EUR" });
-}
-function num(n, d = 1) {
-  if (n == null || Number.isNaN(Number(n))) return "–";
-  return Number(n).toLocaleString("de-DE", { maximumFractionDigits: d });
-}
-function datumDE(d) {
-  try {
-    return new Date(d).toLocaleDateString("de-DE");
-  } catch {
-    return "–";
-  }
-}
 function secsToHHMM(s) {
   const n = Number(s || 0);
   if (!Number.isFinite(n) || n <= 0) return "–";
@@ -106,13 +94,13 @@ function sessionScoreTone(score) {
   return "danger";
 }
 
-function sessionScoreLabel(score) {
+function sessionScoreLabel(score, t) {
   const value = Number(score);
-  if (!Number.isFinite(value)) return "Kein Score";
-  if (value >= 80) return "Top";
-  if (value >= 65) return "Effizient";
-  if (value >= 50) return "Solide";
-  return "Auffällig";
+  if (!Number.isFinite(value)) return t("sessionsCard.scoreLabels.none");
+  if (value >= 80) return t("sessionsCard.scoreLabels.top");
+  if (value >= 65) return t("sessionsCard.scoreLabels.efficient");
+  if (value >= 50) return t("sessionsCard.scoreLabels.solid");
+  return t("sessionsCard.scoreLabels.notable");
 }
 
 function buildEditDraft(row) {
@@ -241,6 +229,7 @@ export default function SessionsCard({
   sessionScoresById = {},
   sessionOutliersById = {},
 }) {
+  const { t } = useI18n();
   const hasMany = sessions.length > 5;
   const sessionsCsvUrl = getSessionsCsvUrl(year);
   const [editingId, setEditingId] = React.useState(null);
@@ -321,10 +310,10 @@ export default function SessionsCard({
   }
 
   async function onDeleteRow(row) {
-    const ok = await confirmAction(`Ladevorgang vom ${datumDE(row?.date)} wirklich löschen?`, {
-      title: "Session löschen",
-      confirmLabel: "Löschen",
-      cancelLabel: "Abbrechen",
+    const ok = await confirmAction(t("sessionsCard.deleteConfirm.message", { date: datumDE(row?.date) }), {
+      title: t("sessionsCard.deleteConfirm.title"),
+      confirmLabel: t("sessionsCard.deleteConfirm.confirm"),
+      cancelLabel: t("sessionsCard.deleteConfirm.cancel"),
       tone: "danger",
     });
     if (!ok) return;
@@ -386,20 +375,24 @@ export default function SessionsCard({
             odo_end_km: odometer,
           });
 
-    if (!(draft?.date || row?.date)) return showAlert("Bitte Datum auswählen.");
-    if (!Number.isFinite(energy) || energy <= 0) return showAlert("Energie (kWh) muss > 0 sein.");
-    if (!Number.isFinite(price) || price <= 0) return showAlert("Preis pro kWh muss > 0 sein.");
-    if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) return showAlert("Dauer bitte als HH:MM angeben.");
-    if (Number.isNaN(odometer)) return showAlert("Kilometerstand muss eine positive Ganzzahl sein.");
+    if (!(draft?.date || row?.date)) return showAlert(t("sessionsCard.validation.date"));
+    if (!Number.isFinite(energy) || energy <= 0) return showAlert(t("sessionsCard.validation.energy"));
+    if (!Number.isFinite(price) || price <= 0) return showAlert(t("sessionsCard.validation.price"));
+    if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) return showAlert(t("sessionsCard.validation.duration"));
+    if (Number.isNaN(odometer)) return showAlert(t("sessionsCard.validation.odometer"));
     if (mobilityCandidate?.previousOdometerKm != null && odometer != null && odometer < mobilityCandidate.previousOdometerKm) {
-      return showAlert(`Kilometerstand muss mindestens ${mobilityCandidate.previousOdometerKm} km betragen, damit die Historie konsistent bleibt.`);
+      return showAlert(
+        t("sessionsCard.validation.odometerMin", { value: num(mobilityCandidate.previousOdometerKm, 0) })
+      );
     }
     if (mobilityCandidate?.nextOdometerKm != null && odometer != null && odometer > mobilityCandidate.nextOdometerKm) {
-      return showAlert(`Kilometerstand darf höchstens ${mobilityCandidate.nextOdometerKm} km betragen, damit spätere Sessions konsistent bleiben.`);
+      return showAlert(
+        t("sessionsCard.validation.odometerMax", { value: num(mobilityCandidate.nextOdometerKm, 0) })
+      );
     }
-    if (!Number.isInteger(socStart) || socStart < 0 || socStart > 100) return showAlert("SoC Start muss 0–100 sein.");
-    if (!Number.isInteger(socEnd) || socEnd < 0 || socEnd > 100) return showAlert("SoC Ende muss 0–100 sein.");
-    if (socEnd < socStart) return showAlert("SoC Ende darf nicht kleiner als SoC Start sein.");
+    if (!Number.isInteger(socStart) || socStart < 0 || socStart > 100) return showAlert(t("sessionsCard.validation.socStart"));
+    if (!Number.isInteger(socEnd) || socEnd < 0 || socEnd > 100) return showAlert(t("sessionsCard.validation.socEnd"));
+    if (socEnd < socStart) return showAlert(t("sessionsCard.validation.socOrder"));
 
     try {
       setBusyId(`save-${row.id}`);
@@ -432,8 +425,8 @@ export default function SessionsCard({
     <div className="card glassStrong sessionsPanel">
       <div className="sectionHeader stickyHeader">
         <div>
-          <div className="sectionKicker">Verlauf</div>
-          <div className="sectionTitle">Letzte Ladevorgänge</div>
+          <div className="sectionKicker">{t("sessionsCard.kicker")}</div>
+          <div className="sectionTitle">{t("sessionsCard.title")}</div>
         </div>
 
         <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
@@ -444,47 +437,47 @@ export default function SessionsCard({
               if (!sessionsCsvUrl) return;
               downloadFileFromUrl(sessionsCsvUrl, {
                 fileName: `charging-sessions-${year || "all"}.csv`,
-                title: `Session Export ${year || "alle Jahre"}`,
+                title: t("sessionsCard.export.title"),
               }).catch((error) => {
                 showAlert(String(error?.message || error));
               });
             }}
-            title="CSV exportieren"
+            title={t("sessionsCard.export.title")}
             disabled={!sessionsCsvUrl}
           >
-            CSV Export
+            {t("sessionsCard.export.label")}
           </button>
-          {latestDate ? <div className="pill ghostPill">Zuletzt: {latestDate}</div> : null}
-          <div className="pill ghostPill">{sessions.length} gesamt</div>
+          {latestDate ? <div className="pill ghostPill">{t("sessionsCard.export.latest", { date: latestDate })}</div> : null}
+          <div className="pill ghostPill">{t("sessionsCard.export.total", { count: num(sessions.length, 0) })}</div>
         </div>
       </div>
 
       {undoState ? (
         <div className="sessionUndoToast" role="status" aria-live="polite">
-          <div className="sessionUndoText">Session vom {undoState.label} gelöscht.</div>
+          <div className="sessionUndoText">{t("sessionsCard.export.deleted", { date: undoState.label })}</div>
           <button type="button" className="pill pillWarm" onClick={onUndoDelete} disabled={busyId === `undo-${undoState.row?.id}`}>
-            {busyId === `undo-${undoState.row?.id}` ? "Stelle wieder her…" : "Rückgängig"}
+            {busyId === `undo-${undoState.row?.id}` ? t("sessionsCard.export.restoring") : t("sessionsCard.export.undo")}
           </button>
         </div>
       ) : null}
 
       <div className="formGrid" style={{ marginBottom: 16 }}>
         <label className="field">
-          <span>Monat</span>
+          <span>{t("sessionsCard.filters.month")}</span>
           <select className="input" value={filters?.month ?? ""} onChange={(event) => onFiltersChange?.((current) => ({ ...(current || {}), month: event.target.value ? Number(event.target.value) : null }))}>
-            <option value="">Alle</option>
+            <option value="">{t("common.all")}</option>
             {Array.from({ length: 12 }, (_, index) => index + 1).map((month) => (
               <option key={`month-${month}`} value={month}>
-                {month}
+                {monthLabel(month)}
               </option>
             ))}
           </select>
         </label>
 
         <label className="field">
-          <span>Anbieter</span>
+          <span>{t("sessionsCard.filters.provider")}</span>
           <select className="input" value={filters?.provider || ""} onChange={(event) => onFiltersChange?.((current) => ({ ...(current || {}), provider: event.target.value }))}>
-            <option value="">Alle</option>
+            <option value="">{t("common.all")}</option>
             {filterOptions.providers.map((provider) => (
               <option key={provider} value={provider}>
                 {provider}
@@ -494,9 +487,9 @@ export default function SessionsCard({
         </label>
 
         <label className="field">
-          <span>Ort</span>
+          <span>{t("sessionsCard.filters.location")}</span>
           <select className="input" value={filters?.location || ""} onChange={(event) => onFiltersChange?.((current) => ({ ...(current || {}), location: event.target.value }))}>
-            <option value="">Alle</option>
+            <option value="">{t("common.all")}</option>
             {filterOptions.locations.map((location) => (
               <option key={location} value={location}>
                 {location}
@@ -506,9 +499,9 @@ export default function SessionsCard({
         </label>
 
         <label className="field">
-          <span>Fahrzeug</span>
+          <span>{t("sessionsCard.filters.vehicle")}</span>
           <select className="input" value={filters?.vehicle || ""} onChange={(event) => onFiltersChange?.((current) => ({ ...(current || {}), vehicle: event.target.value }))}>
-            <option value="">Alle</option>
+            <option value="">{t("common.all")}</option>
             {filterOptions.vehicles.map((vehicle) => (
               <option key={vehicle} value={vehicle}>
                 {vehicle}
@@ -518,9 +511,9 @@ export default function SessionsCard({
         </label>
 
         <label className="field">
-          <span>Tag</span>
+          <span>{t("sessionsCard.filters.tag")}</span>
           <select className="input" value={filters?.tag || ""} onChange={(event) => onFiltersChange?.((current) => ({ ...(current || {}), tag: event.target.value }))}>
-            <option value="">Alle</option>
+            <option value="">{t("common.all")}</option>
             {filterOptions.tags.map((tag) => (
               <option key={tag} value={tag}>
                 {tag}
@@ -532,20 +525,20 @@ export default function SessionsCard({
 
       <div className="tableWrap">
         <div className="tableHead">
-          <div>Datum</div>
-          <div>Anschluss</div>
-          <div>SoC</div>
-          <div>Energie</div>
-          <div>Dauer</div>
-          <div>Kosten</div>
+          <div>{t("sessionsCard.table.date")}</div>
+          <div>{t("sessionsCard.table.connector")}</div>
+          <div>{t("sessionsCard.table.soc")}</div>
+          <div>{t("sessionsCard.table.energy")}</div>
+          <div>{t("sessionsCard.table.duration")}</div>
+          <div>{t("sessionsCard.table.cost")}</div>
         </div>
 
         <div className={`tableBody ${hasMany ? "tableBodyScroll" : ""}`}>
           {filteredSessions.length === 0 ? (
             <div className="emptyRow">
               {filters?.month || filters?.provider || filters?.location || filters?.vehicle || filters?.tag
-                ? "Keine Sessions für die aktuellen Filter."
-                : "Noch keine Ladevorgänge."}
+                ? t("sessionsCard.table.emptyFiltered")
+                : t("sessionsCard.table.emptyInitial")}
             </div>
           ) : (
             filteredSessions.map((session) => {
@@ -564,10 +557,10 @@ export default function SessionsCard({
               return (
                 <React.Fragment key={session.id}>
                   <div className={`tableRow ${isEditing ? "editing" : ""} ${isFlashing ? `flash-${isFlashing}` : ""}`}>
-                    <div>
+                    <div className="tableCell tableCellLead" data-label={t("sessionsCard.table.date")}>
                       <div className="tablePrimary">{datumDE(session.date)}</div>
                       <div className="tableSecondary">
-                        {[session.provider, session.location].filter(Boolean).join(" • ") || session.note || "Erfasste Session"}
+                        {[session.provider, session.location].filter(Boolean).join(" • ") || session.note || t("sessionsCard.table.recordedSession")}
                       </div>
                       <div className="sessionScoreStrip">
                         {score ? (
@@ -575,14 +568,18 @@ export default function SessionsCard({
                             placement="top"
                             openDelayMs={90}
                             closeDelayMs={180}
-                            content={`Session Score ${num(score.score, 1)}/100 • Preis ${num(score.price_per_kwh, 3)} €/kWh • Leistung ${num(score.avg_power_kw, 1)} kW`}
+                            content={t("sessionsCard.scoreLabels.tooltip", {
+                              score: num(score.score, 1),
+                              price: num(score.price_per_kwh, 3),
+                              power: num(score.avg_power_kw, 1),
+                            })}
                           >
                             <span className={`sessionScorePill ${sessionScoreTone(score.score)}`}>
-                              {num(score.score, 1)}/100 · {sessionScoreLabel(score.score)}
+                              {num(score.score, 1)}/100 · {sessionScoreLabel(score.score, t)}
                             </span>
                           </Tooltip>
                         ) : null}
-                        {outlier?.flag_count ? <span className="sessionMetaHint">{num(outlier.flag_count, 0)} Hinweise</span> : null}
+                        {outlier?.flag_count ? <span className="sessionMetaHint">{t("sessionsCard.table.hints", { count: num(outlier.flag_count, 0) })}</span> : null}
                         {session.vehicle ? <span className="sessionMetaHint">{session.vehicle}</span> : null}
                         {parseTags(session.tags).slice(0, 2).map((tag) => (
                           <span key={`${session.id}-${tag}`} className="sessionMetaHint">#{tag}</span>
@@ -594,25 +591,25 @@ export default function SessionsCard({
                         ) : null}
                       </div>
                     </div>
-                    <div>
+                    <div className="tableCell" data-label={t("sessionsCard.table.connector")}>
                       <span className="tableBadge">{session.connector || "–"}</span>
                     </div>
-                    <div>
+                    <div className="tableCell" data-label={t("sessionsCard.table.soc")}>
                       <span className="tableSoc">
                         {session.soc_start} → {session.soc_end} %
                       </span>
-                      <div className="sessionMiniMeta">{socDelta ? `${num(socDelta, 0)} %-Hub` : "–"}</div>
+                      <div className="sessionMiniMeta">{socDelta ? t("sessionsCard.table.socDelta", { value: num(socDelta, 0) }) : "–"}</div>
                     </div>
-                    <div className="tableValueStrong">
-                      {num(session.energy_kwh, 1)} kWh
-                      <div className="sessionMiniMeta">{score?.avg_power_kw != null ? `${num(score.avg_power_kw, 1)} kW` : "Score folgt"}</div>
+                    <div className="tableCell tableValueStrong" data-label={t("sessionsCard.table.energy")}>
+                      <span>{num(session.energy_kwh, 1)} kWh</span>
+                      <div className="sessionMiniMeta">{score?.avg_power_kw != null ? `${num(score.avg_power_kw, 1)} kW` : t("sessionsCard.table.scorePending")}</div>
                     </div>
-                    <div className="tableValueSoft">
-                      {secsToHHMM(session.duration_seconds)}
-                      <div className="sessionMiniMeta">{score?.breakdown?.speed_score != null ? `Tempo ${num(score.breakdown.speed_score, 0)}` : "–"}</div>
+                    <div className="tableCell tableValueSoft" data-label={t("sessionsCard.table.duration")}>
+                      <span>{secsToHHMM(session.duration_seconds)}</span>
+                      <div className="sessionMiniMeta">{score?.breakdown?.speed_score != null ? t("sessionsCard.table.speed", { value: num(score.breakdown.speed_score, 0) }) : "–"}</div>
                     </div>
 
-                    <div className="tableCostCell">
+                    <div className="tableCell tableCostCell" data-label={t("sessionsCard.table.cost")}>
                       <div className="tableCostStack">
                         <span className="tableValueStrong">{euro(session.total_cost)}</span>
                         {pricePerKwh != null ? (
@@ -621,8 +618,8 @@ export default function SessionsCard({
                             openDelayMs={90}
                             closeDelayMs={180}
                             content={[
-                              `Effektiver Preis: ${num(pricePerKwh, 3)} €/kWh`,
-                              score?.breakdown?.price_score != null ? `Preis-Score ${num(score.breakdown.price_score, 0)}` : null,
+                              `${t("common.pricePerKwh")}: ${num(pricePerKwh, 3)} €/kWh`,
+                              score?.breakdown?.price_score != null ? `${t("sessionDetail.quality.priceScore")} ${num(score.breakdown.price_score, 0)}` : null,
                               session.provider || null,
                               session.location || null,
                             ]
@@ -632,7 +629,7 @@ export default function SessionsCard({
                             <button
                               type="button"
                               className="tablePricePill"
-                              aria-label={`Preisdetails: ${num(pricePerKwh, 3)} Euro pro Kilowattstunde`}
+                              aria-label={t("sessionsCard.table.priceDetails", { value: num(pricePerKwh, 3) })}
                             >
                               {num(pricePerKwh, 3)} €/kWh
                             </button>
@@ -647,7 +644,7 @@ export default function SessionsCard({
                           onClick={() => openDetails(session)}
                           disabled={saveBusy || deleteBusy}
                         >
-                          Details
+                          {t("sessionsCard.buttons.details")}
                         </button>
                         <button
                           type="button"
@@ -655,17 +652,17 @@ export default function SessionsCard({
                           onClick={() => (isEditing ? cancelEdit() : beginEdit(session))}
                           disabled={saveBusy || deleteBusy}
                         >
-                          {isEditing ? "Abbrechen" : "Bearbeiten"}
+                          {isEditing ? t("sessionsCard.buttons.cancel") : t("sessionsCard.buttons.edit")}
                         </button>
                         <button
                           type="button"
                           className="rowDeleteBtn"
-                          title="Ladevorgang löschen"
-                          aria-label="Ladevorgang löschen"
+                          title={t("sessionsCard.buttons.delete")}
+                          aria-label={t("sessionsCard.buttons.delete")}
                           onClick={() => onDeleteRow(session)}
                           disabled={deleteBusy || saveBusy}
                         >
-                          {deleteBusy ? "Löscht…" : "Löschen"}
+                          {deleteBusy ? t("sessionsCard.buttons.deleting") : t("sessionsCard.buttons.delete")}
                         </button>
                       </div>
                     </div>
@@ -675,12 +672,12 @@ export default function SessionsCard({
                     <div className={`tableEditRow ${hasPendingChanges ? "isDirty" : "isPristine"}`}>
                       <div className="tableEditGrid">
                         <label className="field">
-                          <span>Datum</span>
+                          <span>{t("common.date")}</span>
                           <input className="input" type="date" value={draft?.date || ""} onChange={(event) => updateDraft("date", event.target.value)} />
                         </label>
 
                         <label className="field">
-                          <span>Anbieter</span>
+                          <span>{t("common.provider")}</span>
                           <input
                             className="input"
                             list={filterOptions.providers.length ? PROVIDER_LIST_ID : undefined}
@@ -690,7 +687,7 @@ export default function SessionsCard({
                         </label>
 
                         <label className="field">
-                          <span>Ort</span>
+                          <span>{t("common.location")}</span>
                           <input
                             className="input"
                             list={filterOptions.locations.length ? LOCATION_LIST_ID : undefined}
@@ -700,7 +697,7 @@ export default function SessionsCard({
                         </label>
 
                         <label className="field">
-                          <span>Fahrzeug</span>
+                          <span>{t("common.vehicle")}</span>
                           <input
                             className="input"
                             list={filterOptions.vehicles.length ? VEHICLE_LIST_ID : undefined}
@@ -710,7 +707,7 @@ export default function SessionsCard({
                         </label>
 
                         <label className="field">
-                          <span>Tags</span>
+                          <span>{t("common.tags")}</span>
                           <input
                             className="input"
                             list={filterOptions.tags.length ? TAG_LIST_ID : undefined}
@@ -720,7 +717,7 @@ export default function SessionsCard({
                         </label>
 
                         <label className="field">
-                          <span>Anschluss</span>
+                          <span>{t("common.connector")}</span>
                           <select className="input" value={draft?.connector || ""} onChange={(event) => updateDraft("connector", event.target.value)}>
                             {connectorOptions.map((connector) => (
                               <option key={`${session.id}-${connector}`} value={connector}>
@@ -731,68 +728,68 @@ export default function SessionsCard({
                         </label>
 
                         <label className="field">
-                          <span>SoC Start</span>
+                          <span>{t("addSession.fields.socStart")}</span>
                           <input className="input" type="number" min="0" max="100" value={draft?.soc_start || ""} onChange={(event) => updateDraft("soc_start", event.target.value)} />
                         </label>
 
                         <label className="field">
-                          <span>SoC Ende</span>
+                          <span>{t("addSession.fields.socEnd")}</span>
                           <input className="input" type="number" min="0" max="100" value={draft?.soc_end || ""} onChange={(event) => updateDraft("soc_end", event.target.value)} />
                         </label>
 
                         <label className="field">
-                          <span>Energie</span>
+                          <span>{t("common.energy")}</span>
                           <input className="input" value={draft?.energy_kwh || ""} onChange={(event) => updateDraft("energy_kwh", event.target.value)} />
                         </label>
 
                         <label className="field">
-                          <span>€/kWh</span>
+                          <span>{t("common.pricePerKwh")}</span>
                           <input className="input" value={draft?.price_per_kwh || ""} onChange={(event) => updateDraft("price_per_kwh", event.target.value)} />
                         </label>
 
                         <label className="field">
-                          <span>Dauer</span>
+                          <span>{t("common.duration")}</span>
                           <input className="input" value={draft?.duration_hhmm || ""} onChange={(event) => updateDraft("duration_hhmm", event.target.value)} />
                         </label>
 
                         <label className="field">
-                          <span>Kilometerstand</span>
+                          <span>{t("addSession.fields.odometer")}</span>
                           <input className="input" type="number" min="0" value={draft?.odometer_km || ""} onChange={(event) => updateDraft("odometer_km", event.target.value)} />
                         </label>
 
                         <label className="field fieldWide">
-                          <span>Notiz</span>
+                          <span>{t("common.note")}</span>
                           <input className="input" value={draft?.note || ""} onChange={(event) => updateDraft("note", event.target.value)} />
                         </label>
                       </div>
 
                       <div className="tableEditPreview">
                         <div className={`editStatusPill ${hasPendingChanges ? "dirty" : "pristine"} ${draftPreview?.canSave ? "ready" : "needsAttention"}`}>
-                          {hasPendingChanges ? "Ungespeicherte Änderungen" : "Keine Änderung"}
+                          {hasPendingChanges ? t("sessionsCard.edit.statusDirty") : t("sessionsCard.edit.statusClean")}
                         </div>
                         <div className="editPreviewGrid">
                           <div className="editPreviewMetric">
-                            <div className="editPreviewLabel">Live-Kosten</div>
+                            <div className="editPreviewLabel">{t("sessionsCard.edit.liveCost")}</div>
                             <div className="editPreviewValue">{draftPreview?.totalCost != null ? euro(draftPreview.totalCost) : "–"}</div>
                           </div>
                           <div className="editPreviewMetric">
-                            <div className="editPreviewLabel">Live-Ø</div>
+                            <div className="editPreviewLabel">{t("sessionsCard.edit.liveAvg")}</div>
                             <div className="editPreviewValue">{draftPreview?.avgPowerKw != null ? `${num(draftPreview.avgPowerKw, 1)} kW` : "–"}</div>
                           </div>
                           <div className="editPreviewMetric">
-                            <div className="editPreviewLabel">SoC-Hub</div>
+                            <div className="editPreviewLabel">{t("sessionsCard.edit.socDelta")}</div>
                             <div className="editPreviewValue">{draftPreview?.socDelta != null ? `${num(draftPreview.socDelta, 0)} %` : "–"}</div>
                           </div>
                           <div className="editPreviewMetric">
-                            <div className="editPreviewLabel">Dauer</div>
+                            <div className="editPreviewLabel">{t("sessionsCard.edit.duration")}</div>
                             <div className="editPreviewValue">{draftPreview?.durationSeconds ? secsToHHMM(draftPreview.durationSeconds) : "–"}</div>
                           </div>
                           <div className="editPreviewMetric">
-                            <div className="editPreviewLabel">Distanz</div>
+                            <div className="editPreviewLabel">{t("sessionsCard.edit.distance")}</div>
                             <div className="editPreviewValue">{draftPreview?.distanceKm != null ? `${num(draftPreview.distanceKm, 0)} km` : "–"}</div>
                           </div>
                           <div className="editPreviewMetric">
-                            <div className="editPreviewLabel">€/100 km</div>
+                            <div className="editPreviewLabel">{t("sessionsCard.edit.costPer100Km")}</div>
                             <div className="editPreviewValue">{draftPreview?.costPer100Km != null ? `${num(draftPreview.costPer100Km, 2)} €` : "–"}</div>
                           </div>
                         </div>
@@ -802,16 +799,16 @@ export default function SessionsCard({
                         <div className="formHint">
                           {hasPendingChanges
                             ? draftPreview?.canSave
-                              ? "Preview aktualisiert. Speichern zieht Score, Reports, Vergleich und Forecast sofort nach."
+                              ? t("sessionsCard.edit.ready")
                               : draftPreview?.previousOdometerKm != null && draftPreview?.odometerKm != null && draftPreview.odometerKm < draftPreview.previousOdometerKm
-                                ? `Kilometerstand muss mindestens ${draftPreview.previousOdometerKm} km betragen.`
+                                ? t("sessionsCard.edit.odometerMin", { value: num(draftPreview.previousOdometerKm, 0) })
                                 : draftPreview?.nextOdometerKm != null && draftPreview?.odometerKm != null && draftPreview.odometerKm > draftPreview.nextOdometerKm
-                                  ? `Kilometerstand darf höchstens ${draftPreview.nextOdometerKm} km betragen.`
-                                : "Bitte Eingaben prüfen. Für das Speichern werden gültige Werte in allen Pflichtfeldern benötigt."
-                            : "Noch keine Änderung an dieser Session."}
+                                  ? t("sessionsCard.edit.odometerMax", { value: num(draftPreview.nextOdometerKm, 0) })
+                                : t("sessionsCard.edit.invalid")
+                            : t("sessionsCard.edit.noChanges")}
                         </div>
                         <button type="button" className="pill pillWarm" onClick={() => onSaveEdit(session)} disabled={saveDisabled}>
-                          {saveBusy ? "Speichert…" : "Speichern"}
+                          {saveBusy ? t("sessionsCard.buttons.saving") : t("common.save")}
                         </button>
                       </div>
                     </div>

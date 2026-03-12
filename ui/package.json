@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 5173 --strictPort",
     "build": "vite build",
+    "lint": "node ./scripts/lint.js",
     "preview": "vite preview --host 0.0.0.0 --port 5173 --strictPort",
     "mobile:sync": "npm run build && npx cap sync",
     "mobile:android": "npm run build && npx cap sync android",
@@ -13,11 +14,12 @@
     "mobile:add:android": "npx cap add android",
     "mobile:add:ios": "npx cap add ios",
     "mobile:open:android": "npx cap open android",
-    "mobile:open:ios": "npx cap open ios"
+    "mobile:open:ios": "npx cap open ios",
+    "test": "node --test"
   },
   "dependencies": {
     "@capacitor/android": "^8.2.0",
-    "@capacitor/cli": "^7.6.0",
+    "@capacitor/cli": "^8.2.0",
     "@capacitor/core": "^8.2.0",
     "@capacitor/ios": "^8.2.0",
     "react": "^18.3.1",

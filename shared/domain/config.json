@@ -1,0 +1,5 @@
+{
+  "visibleYears": [2026, 2027, 2028],
+  "defaultVehicle": "CUPRA Born 79 kWh",
+  "connectorOptions": ["CCS - DC", "CCS AC", "Wallbox AC"]
+}

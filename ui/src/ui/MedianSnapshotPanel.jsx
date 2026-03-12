@@ -1,25 +1,10 @@
 import React from "react";
+import { useI18n } from "../i18n/I18nProvider.jsx";
+import { euro, minutesFromSeconds, num } from "../app/formatters.js";
 import Tooltip from "./Tooltip.jsx";
 
-function num(n, digits = 1) {
-  const value = Number(n);
-  if (!Number.isFinite(value)) return "–";
-  return value.toLocaleString("de-DE", { maximumFractionDigits: digits });
-}
-
-function euro(n) {
-  const value = Number(n);
-  if (!Number.isFinite(value)) return "–";
-  return value.toLocaleString("de-DE", { style: "currency", currency: "EUR" });
-}
-
-function minutesFromSeconds(seconds) {
-  const value = Number(seconds);
-  if (!Number.isFinite(value) || value <= 0) return "–";
-  return `${Math.round(value / 60)} min`;
-}
-
 export default function MedianSnapshotPanel({ stats, year = 2026 }) {
+  const { t } = useI18n();
   const medians = stats?.medians || null;
   const hasValues = medians && Object.values(medians).some((value) => value != null);
 
@@ -28,60 +13,62 @@ export default function MedianSnapshotPanel({ stats, year = 2026 }) {
       <div className="card glassStrong analysisPanel">
         <div className="panelHeader">
           <div>
-            <div className="sectionKicker">Median</div>
+            <div className="sectionKicker">{t("medianSnapshot.kicker")}</div>
             <div className="ttTitleRow panelTitleRow">
-              <div className="sectionTitle">Median Snapshot ({year})</div>
+              <div className="sectionTitle">{t("medianSnapshot.title", { year })}</div>
               <Tooltip
                 placement="top"
                 openDelayMs={120}
                 closeDelayMs={220}
-                content="Medianwerte zeigen den typischen Ladevorgang robuster als Durchschnittswerte, weil einzelne Ausreißer weniger verzerren."
+                content={t("medianSnapshot.tooltipContent")}
               >
-                <button className="ttTrigger" type="button" aria-label="Erklärung: Median Snapshot">
+                <button className="ttTrigger" type="button" aria-label={t("medianSnapshot.tooltipLabel")}>
                   i
                 </button>
               </Tooltip>
             </div>
           </div>
 
-          <div className="pill ghostPill panelMetaPill">{hasValues ? "Typischer Ladevorgang" : "Keine Daten"}</div>
+          <div className="pill ghostPill panelMetaPill">
+            {hasValues ? t("medianSnapshot.typicalSession") : t("medianSnapshot.noDataStatus")}
+          </div>
         </div>
 
         <div className="summaryGrid">
           {hasValues ? (
             <>
               <div className="summaryCard warm">
-                <div className="summaryLabel">Median Energie</div>
+                <div className="summaryLabel">{t("medianSnapshot.energy")}</div>
                 <div className="summaryValue">{medians?.energy_kwh != null ? `${num(medians.energy_kwh, 1)} kWh` : "–"}</div>
-                <div className="summarySub">Typische Energiemenge pro Session</div>
+                <div className="summarySub">{t("medianSnapshot.energySub")}</div>
               </div>
 
               <div className="summaryCard">
-                <div className="summaryLabel">Median Kosten</div>
+                <div className="summaryLabel">{t("medianSnapshot.cost")}</div>
                 <div className="summaryValue">{euro(medians?.cost_per_session)}</div>
-                <div className="summarySub">Typische Kosten pro Ladevorgang</div>
+                <div className="summarySub">{t("medianSnapshot.costSub")}</div>
               </div>
 
               <div className="summaryCard frost">
-                <div className="summaryLabel">Median Preis</div>
+                <div className="summaryLabel">{t("medianSnapshot.price")}</div>
                 <div className="summaryValue">{medians?.price_per_kwh != null ? `${num(medians.price_per_kwh, 3)} €/kWh` : "–"}</div>
-                <div className="summarySub">Effektives Preisniveau ohne Ausreißer-Bias</div>
+                <div className="summarySub">{t("medianSnapshot.priceSub")}</div>
               </div>
 
               <div className="summaryCard mint">
-                <div className="summaryLabel">Median Ladeleistung</div>
+                <div className="summaryLabel">{t("medianSnapshot.power")}</div>
                 <div className="summaryValue">{medians?.power_kw != null ? `${num(medians.power_kw, 1)} kW` : "–"}</div>
-                <div className="summarySub">Typische Ladegeschwindigkeit</div>
+                <div className="summarySub">{t("medianSnapshot.powerSub")}</div>
               </div>
 
               <div className="summaryCard">
-                <div className="summaryLabel">Median Dauer</div>
+                <div className="summaryLabel">{t("medianSnapshot.duration")}</div>
                 <div className="summaryValue">{minutesFromSeconds(medians?.duration_seconds)}</div>
-                <div className="summarySub">Typische Sessiondauer</div>
+                <div className="summarySub">{t("medianSnapshot.durationSub")}</div>
               </div>
             </>
           ) : (
-            <div className="emptyStateCard">Keine Medianwerte für {year} vorhanden.</div>
+            <div className="emptyStateCard">{t("medianSnapshot.empty", { year })}</div>
           )}
         </div>
       </div>

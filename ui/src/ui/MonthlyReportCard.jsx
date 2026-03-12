@@ -1,19 +1,9 @@
 import React from "react";
+import { useI18n } from "../i18n/I18nProvider.jsx";
 import Tooltip from "./Tooltip.jsx";
 import { monthLabel } from "./monthLabels.js";
 import { getWeekdayUsage } from "./loadRhythm.js";
-
-function num(n, digits = 1) {
-  const value = Number(n);
-  if (!Number.isFinite(value)) return "–";
-  return value.toLocaleString("de-DE", { maximumFractionDigits: digits });
-}
-
-function euro(n) {
-  const value = Number(n);
-  if (!Number.isFinite(value)) return "–";
-  return value.toLocaleString("de-DE", { style: "currency", currency: "EUR" });
-}
+import { euro, num } from "../app/formatters.js";
 
 function monthMedians(sessions, month) {
   const values = (sessions || [])
@@ -46,6 +36,7 @@ function monthMedians(sessions, month) {
 }
 
 export default function MonthlyReportCard({ months, sessions = [], year = 2026 }) {
+  const { t } = useI18n();
   const activeMonths = React.useMemo(
     () => (Array.isArray(months) ? months.filter((month) => Number(month?.count || 0) > 0) : []),
     [months]
@@ -73,16 +64,16 @@ export default function MonthlyReportCard({ months, sessions = [], year = 2026 }
       <div className="card glassStrong analysisPanel premiumEditorialReportCard">
         <div className="panelHeader">
           <div>
-            <div className="sectionKicker">Bericht</div>
+            <div className="sectionKicker">{t("monthlyReport.kicker")}</div>
             <div className="ttTitleRow panelTitleRow">
-              <div className="sectionTitle">Persönlicher Monatsbericht ({year})</div>
+              <div className="sectionTitle">{t("monthlyReport.title", { year })}</div>
               <Tooltip
                 placement="top"
                 openDelayMs={120}
                 closeDelayMs={220}
-                content="Der Bericht fokussiert den zuletzt aktiven Monat und stellt ihn direkt dem vorherigen aktiven Monat gegenüber."
+                content={t("monthlyReport.tooltipContent")}
               >
-                <button className="ttTrigger" type="button" aria-label="Erklärung: Persönlicher Monatsbericht">
+                <button className="ttTrigger" type="button" aria-label={t("monthlyReport.tooltipLabel")}>
                   i
                 </button>
               </Tooltip>
@@ -90,7 +81,7 @@ export default function MonthlyReportCard({ months, sessions = [], year = 2026 }
           </div>
 
           <div className="pill ghostPill panelMetaPill">
-            {current ? `${monthLabel(current.month)} im Fokus` : "Keine Monatsdaten"}
+            {current ? t("monthlyReport.focus", { month: monthLabel(current.month) }) : t("monthlyReport.noMonthlyData")}
           </div>
         </div>
 
@@ -98,62 +89,67 @@ export default function MonthlyReportCard({ months, sessions = [], year = 2026 }
           {current ? (
             <>
               <div className="summaryCard warm">
-                <div className="summaryLabel">Monatskosten</div>
+                <div className="summaryLabel">{t("monthlyReport.monthlyCost")}</div>
                 <div className="summaryValue">{euro(current.cost)}</div>
                 <div className="summarySub">
-                  {previous ? `${delta(current.cost, previous.cost, 0)} vs. ${monthLabel(previous.month)}` : "Erster aktiver Monat"}
+                  {previous ? `${delta(current.cost, previous.cost, 0)} vs. ${monthLabel(previous.month)}` : t("monthlyReport.firstActiveMonth")}
                 </div>
               </div>
 
               <div className="summaryCard frost">
-                <div className="summaryLabel">Monatsenergie</div>
+                <div className="summaryLabel">{t("monthlyReport.monthlyEnergy")}</div>
                 <div className="summaryValue">{`${num(current.energy_kwh, 1)} kWh`}</div>
                 <div className="summarySub">
-                  {previous ? `${delta(current.energy_kwh, previous.energy_kwh, 0)} vs. ${monthLabel(previous.month)}` : "Erster aktiver Monat"}
+                  {previous ? `${delta(current.energy_kwh, previous.energy_kwh, 0)} vs. ${monthLabel(previous.month)}` : t("monthlyReport.firstActiveMonth")}
                 </div>
               </div>
 
               <div className="summaryCard mint">
-                <div className="summaryLabel">Median Kosten</div>
+                <div className="summaryLabel">{t("monthlyReport.medianCost")}</div>
                 <div className="summaryValue">{euro(currentMedian.cost)}</div>
-                <div className="summarySub">Typische Sessionkosten im Fokusmonat</div>
+                <div className="summarySub">{t("monthlyReport.medianCostSub")}</div>
               </div>
 
               <div className="summaryCard">
-                <div className="summaryLabel">Median Preis</div>
+                <div className="summaryLabel">{t("monthlyReport.medianPrice")}</div>
                 <div className="summaryValue">{currentMedian.price != null ? `${num(currentMedian.price, 3)} €/kWh` : "–"}</div>
-                <div className="summarySub">Typisches Preisniveau im Fokusmonat</div>
+                <div className="summarySub">{t("monthlyReport.medianPriceSub")}</div>
               </div>
 
               <div className="summaryCard frost">
-                <div className="summaryLabel">Top-Ladetag Monat</div>
+                <div className="summaryLabel">{t("monthlyReport.topWeekdayMonth")}</div>
                 <div className="summaryValue">{currentWeekday?.label || "–"}</div>
                 <div className="summarySub">
-                  {currentWeekday ? `${num(currentWeekday.count, 0)} Sessions • ${num(currentWeekday.share, 0)} % Anteil` : "Noch kein klarer Rhythmus"}
+                  {currentWeekday ? `${num(currentWeekday.count, 0)} Sessions • ${num(currentWeekday.share, 0)} % Anteil` : t("monthlyReport.noClearRhythm")}
                 </div>
               </div>
 
               <div className="summaryCard mint">
-                <div className="summaryLabel">Top-Ladetag Jahr</div>
+                <div className="summaryLabel">{t("monthlyReport.topWeekdayYear")}</div>
                 <div className="summaryValue">{yearWeekday?.label || "–"}</div>
                 <div className="summarySub">
-                  {yearWeekday ? `${num(yearWeekday.count, 0)} Sessions • wiederkehrendster Wochentag` : "Noch kein Jahresrhythmus"}
+                  {yearWeekday
+                    ? `${num(yearWeekday.count, 0)} Sessions • ${t("monthlyReport.recurringWeekday")}`
+                    : t("monthlyReport.noYearRhythm")}
                 </div>
               </div>
             </>
           ) : (
-            <div className="emptyStateCard">Noch kein Monatsbericht für {year} vorhanden.</div>
+            <div className="emptyStateCard">{t("monthlyReport.empty", { year })}</div>
           )}
         </div>
 
         {current ? (
           <div className="metricNarrative">
-            <b>{monthLabel(current.month)}</b> war dein zuletzt aktiver Monat mit{" "}
-            <b>{num(current.count, 0)} Sessions</b> und <b>{euro(current.cost)}</b> Gesamtkosten.{" "}
-            {currentWeekday ? `${currentWeekday.label} war dabei dein prägendster Ladetag im Fokusmonat. ` : ""}
+            <b>{t("monthlyReport.narrativeIntro", {
+              month: monthLabel(current.month),
+              count: num(current.count, 0),
+              cost: euro(current.cost),
+            })}</b>{" "}
+            {currentWeekday ? `${t("monthlyReport.narrativeWeekday", { weekday: currentWeekday.label })} ` : ""}
             {previous
-              ? `Gegenüber ${monthLabel(previous.month)} hat sich vor allem die Kombination aus Kosten, Energiemenge und Preisniveau verändert.`
-              : "Sobald ein zweiter aktiver Monat vorliegt, wird hier automatisch der direkte Vormonatsvergleich ergänzt."}
+              ? t("monthlyReport.narrativeDelta", { month: monthLabel(previous.month) })
+              : t("monthlyReport.narrativeAwaitingComparison")}
           </div>
         ) : null}
       </div>

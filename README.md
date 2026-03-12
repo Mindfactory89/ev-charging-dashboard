@@ -23,7 +23,7 @@ There is still a lot planned for the future 🚀
 - Feel free to send me a message if you have ideas or feedback
 - Open a thread in GitHub Discussions for suggestions or improvements
 
-The app UI itself is still being translated step by step 🌍
+The app now supports German and English in the UI, and the translation layer can continue to grow step by step 🌍
 
 ### Live Demo
 
@@ -38,6 +38,7 @@ If you just want to take a quick look before installing anything, you can open t
 
 - Yearly overview, focus month, forecasts, and comparisons
 - Smart charging insights, SoC analysis, and outlier detection
+- Bilingual UI in German and English across overview, analysis, history, import, and session detail flows
 - Session management with inline editing, detail drawer, undo, and CSV export
 - Demo mode for testing without a running API or database
 - More realistic demo data with higher session counts, variable AC/DC pricing, and EV-like charging windows

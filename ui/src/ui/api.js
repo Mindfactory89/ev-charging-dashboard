@@ -4,81 +4,34 @@
  * API: http://<host>:18800
  */
 
-import { getLocation, isNativeShell, readQueryParam } from "../platform/runtime.js";
-import { YEARS } from "../app/constants.js";
+import { CONNECTOR_OPTIONS, DEFAULT_VEHICLE, YEARS } from "../app/constants.js";
 import { normalizeSessionText, normalizeTagsInput, parseTags } from "./sessionMetadata.js";
+import {
+  dashboardCacheKey,
+  deleteDashboardCacheEntry,
+  getDashboardCacheEntry,
+  invalidateDashboardBundleCache as invalidateDashboardBundleCacheByMode,
+  setDashboardCachePromise,
+  setDashboardCacheValue,
+} from "./apiCache.js";
+import {
+  createSessionRemote,
+  deleteSessionRemote,
+  getDashboardBundleRemote,
+  getEfficiencyRemote,
+  getMonthlyCsvUrlRemote,
+  getMonthlyRemote,
+  getOutliersRemote,
+  getSeasonsCsvUrlRemote,
+  getSeasonsRemote,
+  getSessionsCsvUrlRemote,
+  getSessionsRemote,
+  getStatsRemote,
+  updateSessionRemote,
+} from "./apiRemote.js";
+import { getApiBaseError, isDemoMode } from "./apiRuntime.js";
 
-const demoByQuery = readQueryParam("demo") === "1";
-const ENV_DEMO_HOST_PREFIXES = String(import.meta.env.VITE_DEMO_HOST_PREFIX || "")
-  .split(",")
-  .map((value) => value.trim().toLowerCase())
-  .filter(Boolean);
-const demoByHost = (() => {
-  const hostname = String(getLocation()?.hostname || "").trim().toLowerCase();
-  if (!hostname || !ENV_DEMO_HOST_PREFIXES.length) return false;
-  return ENV_DEMO_HOST_PREFIXES.some((prefix) => hostname === prefix || hostname.startsWith(prefix));
-})();
-export const isDemoMode = demoByQuery || demoByHost;
-
-const ENV_API_BASE = (import.meta.env.VITE_API_BASE || "").trim();
-const ENV_MOBILE_API_BASE = (import.meta.env.VITE_MOBILE_API_BASE || "").trim();
-
-function normalizeBaseUrl(value) {
-  return String(value || "").trim().replace(/\/+$/, "");
-}
-
-export function getApiBase() {
-  const explicitBase = normalizeBaseUrl(ENV_MOBILE_API_BASE || ENV_API_BASE);
-  if (explicitBase) return explicitBase;
-
-  const location = getLocation();
-  const protocol = String(location?.protocol || "");
-  const hostname = String(location?.hostname || "").trim();
-
-  if (!hostname || isNativeShell()) return "";
-  if (protocol !== "http:" && protocol !== "https:") return "";
-
-  return `${protocol}//${hostname}:18800`;
-}
-
-export function getApiBaseError() {
-  if (getApiBase()) return "";
-
-  if (isNativeShell()) {
-    return "Mobile Build ohne API-Basis. Setze VITE_MOBILE_API_BASE oder VITE_API_BASE auf deinen HTTPS-Endpunkt.";
-  }
-
-  return "API-Basis konnte nicht automatisch ermittelt werden.";
-}
-
-function requireApiBase() {
-  const base = getApiBase();
-  if (base) return base;
-  throw new Error(getApiBaseError());
-}
-
-function buildApiUrl(path) {
-  return `${requireApiBase()}${path}`;
-}
-
-function buildOptionalApiUrl(path) {
-  const base = getApiBase();
-  return base ? `${base}${path}` : null;
-}
-
-async function fetchApiJson(path) {
-  const response = await fetch(buildApiUrl(path), {
-    cache: "no-store",
-    headers: { Accept: "application/json" },
-  });
-  return asJson(response);
-}
-
-async function asJson(r) {
-  const data = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(data?.error || `${r.status} ${r.statusText}`);
-  return data;
-}
+export { getApiBaseError, isDemoMode };
 
 const DEMO_SEEDED_YEARS = [...YEARS];
 const DEMO_MIN_SEED_ROWS_PER_YEAR = 30;
@@ -827,7 +780,7 @@ function buildDemoSessionFromTemplate(template, year, idx) {
     price_per_kwh: pricePerKwh,
     provider: template.provider,
     location: template.location,
-    vehicle: "CUPRA Born 79 kWh",
+    vehicle: DEFAULT_VEHICLE,
     tags:
       templateKind(template) === "wallbox"
         ? "zuhause, alltag"
@@ -1881,7 +1834,7 @@ function normalizePayloadToSession(payload) {
   const odoEndRaw = payload?.odo_end_km ?? payload?.odoEndKm ?? payload?.km_end ?? payload?.odometer_km ?? payload?.odometerKm;
   const odoStart = Number.isFinite(Number(odoStartRaw)) ? Math.max(0, Math.round(Number(odoStartRaw))) : null;
   const odoEnd = Number.isFinite(Number(odoEndRaw)) ? Math.max(0, Math.round(Number(odoEndRaw))) : null;
-  const vehicle = normalizeSessionText(payload?.vehicle ?? payload?.fahrzeug) || "CUPRA Born 79 kWh";
+  const vehicle = normalizeSessionText(payload?.vehicle ?? payload?.fahrzeug) || DEFAULT_VEHICLE;
   const tags = normalizeTagsInput(payload?.tags ?? payload?.schlagworte);
 
   return {
@@ -1895,7 +1848,7 @@ function normalizePayloadToSession(payload) {
     location: normalizeSessionText(payload?.location || payload?.ort) || "Demo Charger",
     vehicle,
     tags: tags.join(", "),
-    connector: payload?.connector || payload?.anschluss || "CCS - DC",
+    connector: payload?.connector || payload?.anschluss || CONNECTOR_OPTIONS[0] || "CCS - DC",
     soc_start: payload?.soc_start ?? payload?.socStart ?? 10,
     soc_end: payload?.soc_end ?? payload?.socEnd ?? 80,
     note: payload?.note ? String(payload.note) : null,
@@ -1906,41 +1859,56 @@ function normalizePayloadToSession(payload) {
 
 export async function getStats(year = 2026) {
   if (isDemoMode) return computeStatsFromSessions(getDemoYearRows(year), year);
-  return fetchApiJson(`/api/stats?year=${encodeURIComponent(year)}`);
+  return getStatsRemote(year);
 }
 
 export async function getDashboardBundle(year = 2026) {
+  const cacheMode = isDemoMode ? "demo" : "real";
+  const cacheKey = dashboardCacheKey(year, cacheMode);
+  const cachedEntry = getDashboardCacheEntry(cacheKey);
+  if (cachedEntry?.value) return cachedEntry.value;
+  if (cachedEntry?.promise) return cachedEntry.promise;
+
   if (isDemoMode) {
     ensureDemoSeeded();
     const allRows = Object.values(DEMO_BY_YEAR).flatMap((rows) => rows || []);
-    return buildDashboardBundleFromSessions(allRows, year);
+    return setDashboardCacheValue(cacheKey, buildDashboardBundleFromSessions(allRows, year));
   }
-  return fetchApiJson(`/api/dashboard?year=${encodeURIComponent(year)}`);
+
+  const request = getDashboardBundleRemote(year)
+    .then((bundle) => setDashboardCacheValue(cacheKey, bundle))
+    .catch((error) => {
+      deleteDashboardCacheEntry(cacheKey);
+      throw error;
+    });
+
+  setDashboardCachePromise(cacheKey, request);
+  return request;
 }
 
 export async function getSessions(year = 2026) {
   if (isDemoMode) return { ok: true, rows: sortSessionsDesc(filterByYear(getDemoYearRows(year), year)) };
-  return fetchApiJson(`/api/sessions?year=${encodeURIComponent(year)}`);
+  return getSessionsRemote(year);
 }
 
 export async function getMonthly(year = 2026) {
   if (isDemoMode) return computeMonthlyFromSessions(getDemoYearRows(year), year);
-  return fetchApiJson(`/api/analytics/monthly?year=${encodeURIComponent(year)}`);
+  return getMonthlyRemote(year);
 }
 
 export async function getSeasons(year = 2026) {
   if (isDemoMode) return computeSeasonAnalytics(getDemoYearRows(year), year);
-  return fetchApiJson(`/api/analytics/seasons?year=${encodeURIComponent(year)}`);
+  return getSeasonsRemote(year);
 }
 
 export async function getEfficiency(year = 2026) {
   if (isDemoMode) return computeEfficiencyFromSessions(getDemoYearRows(year), year);
-  return fetchApiJson(`/api/analytics/efficiency?year=${encodeURIComponent(year)}`);
+  return getEfficiencyRemote(year);
 }
 
 export async function getOutliers(year = 2026) {
   if (isDemoMode) return computeOutlierAnalytics(getDemoYearRows(year), year);
-  return fetchApiJson(`/api/analytics/outliers?year=${encodeURIComponent(year)}`);
+  return getOutliersRemote(year);
 }
 
 export async function createSession(payload) {
@@ -1954,15 +1922,13 @@ export async function createSession(payload) {
 
     const row = ensureDemoOdometer(normalizePayloadToSession(payload || {}), year, rows);
     DEMO_BY_YEAR[year] = [...rows, row].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    invalidateDashboardBundleCache();
     return { ok: true, demo: true, row };
   }
 
-  const r = await fetch(buildApiUrl("/api/sessions"), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  return asJson(r);
+  const result = await createSessionRemote(payload);
+  invalidateDashboardBundleCache();
+  return result;
 }
 
 export async function updateSession(id, payload) {
@@ -1997,16 +1963,13 @@ export async function updateSession(id, payload) {
     DEMO_BY_YEAR[targetYear] = [...getDemoYearRows(targetYear).filter((session) => String(session.id) !== String(id)), updated]
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
+    invalidateDashboardBundleCache();
     return { ok: true, demo: true, updated };
   }
 
-  const r = await fetch(buildApiUrl(`/api/sessions/${encodeURIComponent(id)}`), {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify(payload),
-  });
-
-  return asJson(r);
+  const result = await updateSessionRemote(id, payload);
+  invalidateDashboardBundleCache();
+  return result;
 }
 
 export async function restoreSession(payload) {
@@ -2015,17 +1978,17 @@ export async function restoreSession(payload) {
 
 export function getMonthlyCsvUrl(year = 2026) {
   if (isDemoMode) return null;
-  return buildOptionalApiUrl(`/api/export/monthly.csv?year=${encodeURIComponent(year)}`);
+  return getMonthlyCsvUrlRemote(year);
 }
 
 export function getSessionsCsvUrl(year = 2026) {
   if (isDemoMode) return null;
-  return buildOptionalApiUrl(`/api/export/sessions.csv?year=${encodeURIComponent(year)}`);
+  return getSessionsCsvUrlRemote(year);
 }
 
 export function getSeasonsCsvUrl(year = 2026) {
   if (isDemoMode) return null;
-  return buildOptionalApiUrl(`/api/export/seasons.csv?year=${encodeURIComponent(year)}`);
+  return getSeasonsCsvUrlRemote(year);
 }
 
 export const ladeAuswertung = (year) => getStats(year);
@@ -2050,20 +2013,17 @@ export async function deleteSession(id) {
       const deleted = rows.find((session) => String(session.id) === String(id));
       if (!deleted) continue;
       DEMO_BY_YEAR[y] = rows.filter((session) => String(session.id) !== String(id));
+      invalidateDashboardBundleCache();
       return { ok: true, demo: true, deleted };
     }
     throw new Error("Session not found");
   }
 
-  const r = await fetch(buildApiUrl(`/api/sessions/${encodeURIComponent(id)}`), {
-    method: "DELETE",
-    headers: { Accept: "application/json" },
-  });
+  const result = await deleteSessionRemote(id);
+  invalidateDashboardBundleCache();
+  return result;
+}
 
-  if (!r.ok) {
-    const t = await r.text().catch(() => "");
-    throw new Error(`Delete failed (${r.status}): ${t || r.statusText}`);
-  }
-
-  return r.json().catch(() => ({ ok: true }));
+export function invalidateDashboardBundleCache(year = null) {
+  invalidateDashboardBundleCacheByMode(isDemoMode ? "demo" : "real", year);
 }

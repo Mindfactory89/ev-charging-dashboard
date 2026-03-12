@@ -1,5 +1,11 @@
 'use strict';
 
+const {
+  CREATE_SESSION_BODY_SCHEMA,
+  PATCH_SESSION_BODY_SCHEMA,
+  SESSION_ID_PARAMS_SCHEMA,
+  SESSION_QUERY_SCHEMA,
+} = require('../lib/httpSchemas');
 const { parseSessionMutation } = require('../lib/sessionMutation');
 const { optionalYearFilter } = require('../lib/year');
 
@@ -17,7 +23,11 @@ function parseIntegerQuery(value, { field, min = 0, max = Number.MAX_SAFE_INTEGE
 }
 
 function registerSessionRoutes(fastify) {
-  fastify.get('/api/sessions', async (req, reply) => {
+  fastify.get('/api/sessions', {
+    schema: {
+      querystring: SESSION_QUERY_SCHEMA,
+    },
+  }, async (req, reply) => {
     const { year, range, error } = optionalYearFilter(req.query?.year);
     const limit = parseIntegerQuery(req.query?.limit, { field: 'limit', min: 1, max: 5000 });
     const offset = parseIntegerQuery(req.query?.offset, { field: 'offset', min: 0, max: 1000000 });
@@ -64,7 +74,11 @@ function registerSessionRoutes(fastify) {
     };
   });
 
-  fastify.post('/api/sessions', async (req, reply) => {
+  fastify.post('/api/sessions', {
+    schema: {
+      body: CREATE_SESSION_BODY_SCHEMA,
+    },
+  }, async (req, reply) => {
     const parsed = parseSessionMutation(req.body);
     if (parsed.error) {
       return reply.code(400).send({ ok: false, error: parsed.error });
@@ -77,7 +91,12 @@ function registerSessionRoutes(fastify) {
     return { ok: true, created };
   });
 
-  fastify.patch('/api/sessions/:id', async (req, reply) => {
+  fastify.patch('/api/sessions/:id', {
+    schema: {
+      params: SESSION_ID_PARAMS_SCHEMA,
+      body: PATCH_SESSION_BODY_SCHEMA,
+    },
+  }, async (req, reply) => {
     const id = String(req.params.id);
 
     try {
@@ -120,7 +139,11 @@ function registerSessionRoutes(fastify) {
     }
   });
 
-  fastify.delete('/api/sessions/:id', async (req, reply) => {
+  fastify.delete('/api/sessions/:id', {
+    schema: {
+      params: SESSION_ID_PARAMS_SCHEMA,
+    },
+  }, async (req, reply) => {
     const id = String(req.params.id);
 
     try {

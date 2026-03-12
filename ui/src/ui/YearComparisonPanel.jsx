@@ -11,26 +11,11 @@ import {
   CartesianGrid,
   Tooltip as RTooltip,
 } from "recharts";
+import { useI18n } from "../i18n/I18nProvider.jsx";
+import { euro, num } from "../app/formatters.js";
 import Tooltip from "./Tooltip.jsx";
 import { getDashboardBundle } from "./api.js";
 import { monthLabel } from "./monthLabels.js";
-
-const MONTH_OPTIONS = Array.from({ length: 12 }, (_, index) => ({
-  value: index + 1,
-  label: monthLabel(index + 1),
-}));
-
-function num(n, digits = 1) {
-  const value = Number(n);
-  if (!Number.isFinite(value)) return "–";
-  return value.toLocaleString("de-DE", { maximumFractionDigits: digits });
-}
-
-function euro(n) {
-  const value = Number(n);
-  if (!Number.isFinite(value)) return "–";
-  return value.toLocaleString("de-DE", { style: "currency", currency: "EUR" });
-}
 
 function deltaMeta(current, previous, digits = 1, suffix = "") {
   const left = Number(current);
@@ -71,11 +56,11 @@ function metricLabel(mode, value) {
   return num(value, 0);
 }
 
-function metricTitle(mode) {
-  if (mode === "energy") return "Energie";
-  if (mode === "cost") return "Kosten";
-  if (mode === "price") return "Preisniveau";
-  return "Sessions";
+function metricTitle(mode, t) {
+  if (mode === "energy") return t("yearComparison.metricTitles.energy");
+  if (mode === "cost") return t("yearComparison.metricTitles.cost");
+  if (mode === "price") return t("yearComparison.metricTitles.price");
+  return t("yearComparison.metricTitles.sessions");
 }
 
 function latestActiveMonthNumber(months) {
@@ -88,7 +73,7 @@ async function loadYearBundle(year) {
   return getDashboardBundle(year);
 }
 
-function CompareTooltip({ active, payload, label, leftYear, rightYear, mode }) {
+function CompareTooltip({ active, payload, label, leftYear, rightYear, mode, t }) {
   if (!active || !payload?.length) return null;
   const left = payload.find((item) => item.dataKey === "leftValue")?.value;
   const right = payload.find((item) => item.dataKey === "rightValue")?.value;
@@ -109,7 +94,7 @@ function CompareTooltip({ active, payload, label, leftYear, rightYear, mode }) {
       </div>
       <div className="chartTooltipRow">
         <span className="chartTooltipSwatch mint" />
-        <span className="chartTooltipName">Delta</span>
+        <span className="chartTooltipName">{t("yearComparison.tooltips.delta")}</span>
         <span className="chartTooltipValue">
           {Number.isFinite(leftDelta)
             ? `${leftDelta > 0 ? "+" : ""}${metricLabel(mode, leftDelta)}`
@@ -120,7 +105,7 @@ function CompareTooltip({ active, payload, label, leftYear, rightYear, mode }) {
   );
 }
 
-function FocusTooltip({ active, payload, mode, leftLabel, rightLabel }) {
+function FocusTooltip({ active, payload, mode, leftLabel, rightLabel, t }) {
   if (!active || !payload?.length) return null;
   const left = payload.find((item) => item.dataKey === "leftValue")?.value;
   const right = payload.find((item) => item.dataKey === "rightValue")?.value;
@@ -128,7 +113,7 @@ function FocusTooltip({ active, payload, mode, leftLabel, rightLabel }) {
 
   return (
     <div className="chartTooltip">
-      <div className="chartTooltipLabel">Selektierter Monatsvergleich</div>
+      <div className="chartTooltipLabel">{t("yearComparison.selectedMonthComparison")}</div>
       <div className="chartTooltipRow">
         <span className="chartTooltipSwatch copper" />
         <span className="chartTooltipName">{leftLabel}</span>
@@ -141,7 +126,7 @@ function FocusTooltip({ active, payload, mode, leftLabel, rightLabel }) {
       </div>
       <div className="chartTooltipRow">
         <span className="chartTooltipSwatch mint" />
-        <span className="chartTooltipName">Delta</span>
+        <span className="chartTooltipName">{t("yearComparison.tooltips.delta")}</span>
         <span className="chartTooltipValue">
           {Number.isFinite(leftDelta)
             ? `${leftDelta > 0 ? "+" : ""}${metricLabel(mode, leftDelta)}`
@@ -152,7 +137,18 @@ function FocusTooltip({ active, payload, mode, leftLabel, rightLabel }) {
   );
 }
 
+function ComparisonMetricCard({ label, value, subline, tone = "neutral", emphasis = "compact" }) {
+  return (
+    <article className={`comparisonMetricCard ${tone} ${emphasis}`}>
+      <div className="comparisonMetricLabel">{label}</div>
+      <div className="comparisonMetricValue">{value}</div>
+      <div className="comparisonMetricSub">{subline}</div>
+    </article>
+  );
+}
+
 export default function YearComparisonPanel({ availableYears = [], initialLeftYear = 2026, initialRightYear = 2027 }) {
+  const { locale, t } = useI18n();
   const [leftYear, setLeftYear] = React.useState(initialLeftYear);
   const [rightYear, setRightYear] = React.useState(initialRightYear);
   const [leftMonth, setLeftMonth] = React.useState(null);
@@ -163,6 +159,15 @@ export default function YearComparisonPanel({ availableYears = [], initialLeftYe
   const [error, setError] = React.useState(null);
   const [bundle, setBundle] = React.useState({ left: null, right: null });
   const previousYearsRef = React.useRef({ leftYear: initialLeftYear, rightYear: initialRightYear });
+
+  const monthOptions = React.useMemo(
+    () =>
+      Array.from({ length: 12 }, (_, index) => ({
+        value: index + 1,
+        label: monthLabel(index + 1),
+      })),
+    [locale]
+  );
 
   React.useEffect(() => {
     let active = true;
@@ -209,22 +214,24 @@ export default function YearComparisonPanel({ availableYears = [], initialLeftYe
   const leftMonths = Array.isArray(bundle.left?.monthly?.months) ? bundle.left.monthly.months : [];
   const rightMonths = Array.isArray(bundle.right?.monthly?.months) ? bundle.right.monthly.months : [];
 
-  const yearChartData = React.useMemo(() => {
-    return Array.from({ length: 12 }, (_, index) => {
-      const monthNumber = index + 1;
-      const leftMonth = leftMonths.find((month) => Number(month?.month) === monthNumber) || null;
-      const rightMonth = rightMonths.find((month) => Number(month?.month) === monthNumber) || null;
-      const leftValue = metricValue(leftMonth, mode);
-      const rightValue = metricValue(rightMonth, mode);
+  const yearChartData = React.useMemo(
+    () =>
+      Array.from({ length: 12 }, (_, index) => {
+        const monthNumber = index + 1;
+        const leftMonthRow = leftMonths.find((month) => Number(month?.month) === monthNumber) || null;
+        const rightMonthRow = rightMonths.find((month) => Number(month?.month) === monthNumber) || null;
+        const leftValue = metricValue(leftMonthRow, mode);
+        const rightValue = metricValue(rightMonthRow, mode);
 
-      return {
-        label: monthLabel(monthNumber),
-        leftValue,
-        rightValue,
-        spreadValue: leftValue - rightValue,
-      };
-    });
-  }, [leftMonths, rightMonths, mode]);
+        return {
+          label: monthLabel(monthNumber),
+          leftValue,
+          rightValue,
+          spreadValue: leftValue - rightValue,
+        };
+      }),
+    [leftMonths, locale, mode, rightMonths]
+  );
 
   const latestSpread = React.useMemo(() => {
     const active = [...yearChartData].reverse().find((row) => Number(row.leftValue || 0) > 0 || Number(row.rightValue || 0) > 0);
@@ -254,197 +261,250 @@ export default function YearComparisonPanel({ availableYears = [], initialLeftYe
       spreadValue: leftValue - rightValue,
       label: `${monthLabel(safeLeftMonth)} ${leftYear} vs. ${monthLabel(safeRightMonth)} ${rightYear}`,
     };
-  }, [leftMonth, rightMonth, leftMonths, rightMonths, leftYear, rightYear, mode]);
+  }, [leftMonth, leftMonths, leftYear, locale, mode, rightMonth, rightMonths, rightYear]);
 
-  const selectedMonthChartData = React.useMemo(() => {
-    return [
+  const selectedMonthChartData = React.useMemo(
+    () => [
       {
-        label: "Auswahl",
+        label: t("yearComparison.selection"),
         leftValue: selectedMonthComparison.leftHasValue ? selectedMonthComparison.leftValue : 0,
         rightValue: selectedMonthComparison.rightHasValue ? selectedMonthComparison.rightValue : 0,
       },
-    ];
-  }, [selectedMonthComparison]);
+    ],
+    [selectedMonthComparison, t]
+  );
 
   const leftSelectionLabel = `${monthLabel(selectedMonthComparison.leftMonth)} ${leftYear}`;
   const rightSelectionLabel = `${monthLabel(selectedMonthComparison.rightMonth)} ${rightYear}`;
+  const selectedMetricTitle = metricTitle(mode, t);
 
   return (
     <section className="row">
       <div className="card glassStrong analysisPanel comparisonPanel">
-        <div className="panelHeader">
+        <div className="panelHeader comparisonPanelHeader">
           <div>
-            <div className="sectionKicker">Vergleich</div>
+            <div className="sectionKicker">{t("yearComparison.kicker")}</div>
             <div className="ttTitleRow panelTitleRow">
-              <div className="sectionTitle">Jahres- und Monatsvergleich</div>
+              <div className="sectionTitle">{t("yearComparison.title")}</div>
               <Tooltip
                 placement="top"
                 openDelayMs={120}
                 closeDelayMs={220}
-                content="Vergleicht zwei Jahre über KPIs und Monatsreihen. Zusätzlich lassen sich konkrete Monate links und rechts direkt gegeneinander stellen."
+                content={t("yearComparison.tooltipContent")}
               >
-                <button className="ttTrigger" type="button" aria-label="Erklärung: Jahres- und Monatsvergleich">
+                <button className="ttTrigger" type="button" aria-label={t("yearComparison.tooltipLabel")}>
                   i
                 </button>
               </Tooltip>
             </div>
+            <div className="comparisonPanelLead">{t("yearComparison.lead")}</div>
           </div>
 
-          <div className="comparisonSelectors">
-            <label className="field comparisonSelectField">
-              <span>Links</span>
-              <select className="input" value={leftYear} onChange={(event) => setLeftYear(Number(event.target.value))}>
-                {availableYears.map((year) => (
-                  <option key={`left-${year}`} value={year}>
-                    {year}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="field comparisonSelectField">
-              <span>Monat links</span>
-              <select
-                className="input"
-                value={leftMonth ?? ""}
-                onChange={(event) => {
-                  setLeftMonth(Number(event.target.value));
-                  setChartScope("month");
-                }}
-              >
-                <option value="" disabled>
-                  Monat wählen
-                </option>
-                {MONTH_OPTIONS.map((month) => (
-                  <option key={`left-month-${month.value}`} value={month.value}>
-                    {month.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="field comparisonSelectField">
-              <span>Rechts</span>
-              <select className="input" value={rightYear} onChange={(event) => setRightYear(Number(event.target.value))}>
-                {availableYears.map((year) => (
-                  <option key={`right-${year}`} value={year}>
-                    {year}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="field comparisonSelectField">
-              <span>Monat rechts</span>
-              <select
-                className="input"
-                value={rightMonth ?? ""}
-                onChange={(event) => {
-                  setRightMonth(Number(event.target.value));
-                  setChartScope("month");
-                }}
-              >
-                <option value="" disabled>
-                  Monat wählen
-                </option>
-                {MONTH_OPTIONS.map((month) => (
-                  <option key={`right-month-${month.value}`} value={month.value}>
-                    {month.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+          <div className="pill ghostPill panelMetaPill comparisonScopePill">
+            {chartScope === "month" ? t("yearComparison.scope.monthActive") : t("yearComparison.scope.yearActive")} • {selectedMetricTitle}
           </div>
         </div>
 
         {error ? <div className="errorBox">{error}</div> : null}
 
-        <div className="summaryGrid">
+        <div className="comparisonControlDeck">
+          <article className="comparisonYearCard left">
+            <div className="comparisonYearCardHeader">
+              <div>
+                <div className="comparisonYearEyebrow">{t("yearComparison.roles.primaryYear")}</div>
+                <div className="comparisonYearValue">{leftYear}</div>
+              </div>
+              <div className="comparisonYearBadge">{t("yearComparison.roles.left")}</div>
+            </div>
+
+            <div className="comparisonSelectGrid">
+              <label className="field comparisonSelectField">
+                <span>{t("yearComparison.fields.year")}</span>
+                <select className="input" value={leftYear} onChange={(event) => setLeftYear(Number(event.target.value))}>
+                  {availableYears.map((year) => (
+                    <option key={`left-${year}`} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="field comparisonSelectField">
+                <span>{t("yearComparison.fields.month")}</span>
+                <select
+                  className="input"
+                  value={leftMonth ?? ""}
+                  onChange={(event) => {
+                    setLeftMonth(Number(event.target.value));
+                    setChartScope("month");
+                  }}
+                >
+                  <option value="" disabled>
+                    {t("yearComparison.fields.selectMonth")}
+                  </option>
+                  {monthOptions.map((month) => (
+                    <option key={`left-month-${month.value}`} value={month.value}>
+                      {month.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          </article>
+
+          <article className="comparisonBridgeCard">
+            <div className="comparisonBridgeLabel">{t("yearComparison.roles.activePairing")}</div>
+            <div className="comparisonBridgeValue">
+              {leftYear} <span>vs.</span> {rightYear}
+            </div>
+            <div className="comparisonBridgeSub">{selectedMonthComparison.label}</div>
+            <div className="comparisonBridgeMeta">
+              <span>{chartScope === "month" ? t("yearComparison.scope.month") : t("yearComparison.scope.year")}</span>
+              <span>{selectedMetricTitle}</span>
+            </div>
+          </article>
+
+          <article className="comparisonYearCard right">
+            <div className="comparisonYearCardHeader">
+              <div>
+                <div className="comparisonYearEyebrow">{t("yearComparison.roles.referenceYear")}</div>
+                <div className="comparisonYearValue">{rightYear}</div>
+              </div>
+              <div className="comparisonYearBadge">{t("yearComparison.roles.right")}</div>
+            </div>
+
+            <div className="comparisonSelectGrid">
+              <label className="field comparisonSelectField">
+                <span>{t("yearComparison.fields.year")}</span>
+                <select className="input" value={rightYear} onChange={(event) => setRightYear(Number(event.target.value))}>
+                  {availableYears.map((year) => (
+                    <option key={`right-${year}`} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="field comparisonSelectField">
+                <span>{t("yearComparison.fields.month")}</span>
+                <select
+                  className="input"
+                  value={rightMonth ?? ""}
+                  onChange={(event) => {
+                    setRightMonth(Number(event.target.value));
+                    setChartScope("month");
+                  }}
+                >
+                  <option value="" disabled>
+                    {t("yearComparison.fields.selectMonth")}
+                  </option>
+                  {monthOptions.map((month) => (
+                    <option key={`right-month-${month.value}`} value={month.value}>
+                      {month.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          </article>
+        </div>
+
+        <div className="comparisonMetricBoard">
           {loading ? (
-            <div className="emptyStateCard">Vergleich wird geladen…</div>
+            <div className="emptyStateCard">{t("yearComparison.loading")}</div>
           ) : !hasValues ? (
-            <div className="emptyStateCard">Für die gewählten Jahre sind noch keine Werte vorhanden.</div>
+            <div className="emptyStateCard">{t("yearComparison.empty")}</div>
           ) : (
             <>
-              <div className="summaryCard warm">
-                <div className="summaryLabel">Kosten Delta</div>
-                <div className="summaryValue">{euro(leftStats?.total_cost)}</div>
-                <div className="summarySub">
-                  vs. {rightYear}: {deltaMeta(leftStats?.total_cost, rightStats?.total_cost, 2).value}
-                </div>
-              </div>
+              <ComparisonMetricCard
+                label={t("yearComparison.metricCards.cost")}
+                value={euro(leftStats?.total_cost)}
+                subline={t("yearComparison.versusYear", {
+                  year: rightYear,
+                  value: deltaMeta(leftStats?.total_cost, rightStats?.total_cost, 2).value,
+                })}
+                tone="warm"
+                emphasis="hero"
+              />
 
-              <div className="summaryCard frost">
-                <div className="summaryLabel">Energie Delta</div>
-                <div className="summaryValue">{leftStats?.total_energy_kwh != null ? `${num(leftStats.total_energy_kwh, 1)} kWh` : "–"}</div>
-                <div className="summarySub">
-                  vs. {rightYear}: {deltaMeta(leftStats?.total_energy_kwh, rightStats?.total_energy_kwh, 1, " kWh").value}
-                </div>
-              </div>
+              <ComparisonMetricCard
+                label={t("yearComparison.metricCards.energy")}
+                value={leftStats?.total_energy_kwh != null ? `${num(leftStats.total_energy_kwh, 1)} kWh` : "–"}
+                subline={t("yearComparison.versusYear", {
+                  year: rightYear,
+                  value: deltaMeta(leftStats?.total_energy_kwh, rightStats?.total_energy_kwh, 1, " kWh").value,
+                })}
+                tone="frost"
+                emphasis="hero"
+              />
 
-              <div className="summaryCard">
-                <div className="summaryLabel">Sessions Delta</div>
-                <div className="summaryValue">{leftStats?.count != null ? num(leftStats.count, 0) : "–"}</div>
-                <div className="summarySub">
-                  vs. {rightYear}: {deltaMeta(leftStats?.count, rightStats?.count, 0).value}
-                </div>
-              </div>
+              <ComparisonMetricCard
+                label={t("yearComparison.metricCards.sessions")}
+                value={leftStats?.count != null ? num(leftStats.count, 0) : "–"}
+                subline={t("yearComparison.versusYear", {
+                  year: rightYear,
+                  value: deltaMeta(leftStats?.count, rightStats?.count, 0).value,
+                })}
+              />
 
-              <div className="summaryCard mint">
-                <div className="summaryLabel">Medianpreis Delta</div>
-                <div className="summaryValue">
-                  {leftStats?.medians?.price_per_kwh != null ? `${num(leftStats.medians.price_per_kwh, 3)} €/kWh` : "–"}
-                </div>
-                <div className="summarySub">
-                  vs. {rightYear}: {deltaMeta(leftStats?.medians?.price_per_kwh, rightStats?.medians?.price_per_kwh, 3, " €/kWh").value}
-                </div>
-              </div>
+              <ComparisonMetricCard
+                label={t("yearComparison.metricCards.medianPrice")}
+                value={leftStats?.medians?.price_per_kwh != null ? `${num(leftStats.medians.price_per_kwh, 3)} €/kWh` : "–"}
+                subline={t("yearComparison.versusYear", {
+                  year: rightYear,
+                  value: deltaMeta(leftStats?.medians?.price_per_kwh, rightStats?.medians?.price_per_kwh, 3, " €/kWh").value,
+                })}
+                tone="mint"
+              />
 
-              <div className="summaryCard danger">
-                <div className="summaryLabel">Effizienz Delta</div>
-                <div className="summaryValue">
-                  {leftEfficiency?.overall_score != null ? `${num(leftEfficiency.overall_score, 1)}/100` : "–"}
-                </div>
-                <div className="summarySub">
-                  vs. {rightYear}: {deltaMeta(leftEfficiency?.overall_score, rightEfficiency?.overall_score, 1, " pt").value}
-                </div>
-              </div>
+              <ComparisonMetricCard
+                label={t("yearComparison.metricCards.efficiency")}
+                value={leftEfficiency?.overall_score != null ? `${num(leftEfficiency.overall_score, 1)}/100` : "–"}
+                subline={t("yearComparison.versusYear", {
+                  year: rightYear,
+                  value: deltaMeta(leftEfficiency?.overall_score, rightEfficiency?.overall_score, 1, " pt").value,
+                })}
+                tone="danger"
+              />
             </>
           )}
         </div>
 
         {!loading && hasValues ? (
           <>
-            <div className="comparisonChartHeader">
+            <div className="comparisonToolbar">
               <div>
-                <div className="comparisonChartTitle">{chartScope === "month" ? "Selektierter Monatsvergleich" : "Jahresvergleich nach Monaten"}</div>
+                <div className="comparisonChartTitle">
+                  {chartScope === "month" ? t("yearComparison.selectedMonthComparison") : t("yearComparison.yearlyComparison")}
+                </div>
                 <div className="comparisonChartSub">
-                  Aktiver Modus: <b>{metricTitle(mode)}</b> • Selektion: <b>{selectedMonthComparison.label}</b>
+                  {t("yearComparison.activeMode")}: <b>{selectedMetricTitle}</b> • {t("yearComparison.activeSelection")}:{" "}
+                  <b>{selectedMonthComparison.label}</b>
                 </div>
               </div>
 
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "flex-end" }}>
-                <div className="toggle" aria-label="Chartfokus">
+              <div className="comparisonToolbarControls">
+                <div className="toggle" aria-label={t("yearComparison.scopeAria")}>
                   <button type="button" className={chartScope === "year" ? "toggleBtn active" : "toggleBtn"} onClick={() => setChartScope("year")}>
-                    Jahreschart
+                    {t("yearComparison.toggles.year")}
                   </button>
                   <button type="button" className={chartScope === "month" ? "toggleBtn active" : "toggleBtn"} onClick={() => setChartScope("month")}>
-                    Monatsfokus
+                    {t("yearComparison.toggles.month")}
                   </button>
                 </div>
 
-                <div className="toggle" aria-label="Vergleichsmodus">
+                <div className="toggle" aria-label={t("yearComparison.modeAria")}>
                   <button type="button" className={mode === "cost" ? "toggleBtn active" : "toggleBtn"} onClick={() => setMode("cost")}>
-                  Kosten
+                    {t("yearComparison.toggles.cost")}
                   </button>
                   <button type="button" className={mode === "energy" ? "toggleBtn active" : "toggleBtn"} onClick={() => setMode("energy")}>
-                  Energie
+                    {t("yearComparison.toggles.energy")}
                   </button>
                   <button type="button" className={mode === "price" ? "toggleBtn active" : "toggleBtn"} onClick={() => setMode("price")}>
-                  €/kWh
+                    {t("yearComparison.toggles.price")}
                   </button>
                   <button type="button" className={mode === "sessions" ? "toggleBtn active" : "toggleBtn"} onClick={() => setMode("sessions")}>
-                  Sessions
+                    {t("yearComparison.toggles.sessions")}
                   </button>
                 </div>
               </div>
@@ -460,11 +520,11 @@ export default function YearComparisonPanel({ availableYears = [], initialLeftYe
                   <span className="comparisonLegendDot" />
                   <span>{rightYear}</span>
                 </div>
-                <div className="comparisonLegendMeta">{metricTitle(mode)}</div>
+                <div className="comparisonLegendMeta">{selectedMetricTitle}</div>
               </div>
               <ResponsiveContainer width="100%" height={300}>
                 {chartScope === "month" ? (
-                  <BarChart data={selectedMonthChartData} margin={{ top: 16, right: 18, left: 0, bottom: 0 }} barCategoryGap={42}>
+                  <BarChart data={selectedMonthChartData} margin={{ top: 22, right: 20, left: 12, bottom: 4 }} barCategoryGap={42}>
                     <CartesianGrid stroke="rgba(255,255,255,0.055)" vertical={false} strokeDasharray="2 8" />
                     <XAxis
                       dataKey="label"
@@ -475,6 +535,7 @@ export default function YearComparisonPanel({ availableYears = [], initialLeftYe
                       tickMargin={14}
                     />
                     <YAxis
+                      width={58}
                       tick={{ fill: "rgba(255,255,255,0.46)", fontSize: 11 }}
                       axisLine={false}
                       tickLine={false}
@@ -482,13 +543,13 @@ export default function YearComparisonPanel({ availableYears = [], initialLeftYe
                     />
                     <RTooltip
                       cursor={{ fill: "rgba(255,255,255,0.04)" }}
-                      content={<FocusTooltip mode={mode} leftLabel={leftSelectionLabel} rightLabel={rightSelectionLabel} />}
+                      content={<FocusTooltip mode={mode} leftLabel={leftSelectionLabel} rightLabel={rightSelectionLabel} t={t} />}
                     />
-                    <Bar dataKey="leftValue" name={leftSelectionLabel} fill="rgba(205,132,64,0.94)" radius={[12, 12, 4, 4]} maxBarSize={84} />
-                    <Bar dataKey="rightValue" name={rightSelectionLabel} fill="rgba(126,192,255,0.94)" radius={[12, 12, 4, 4]} maxBarSize={84} />
+                    <Bar yAxisId={undefined} dataKey="leftValue" name={leftSelectionLabel} fill="rgba(205,132,64,0.94)" radius={[12, 12, 4, 4]} maxBarSize={84} />
+                    <Bar yAxisId={undefined} dataKey="rightValue" name={rightSelectionLabel} fill="rgba(126,192,255,0.94)" radius={[12, 12, 4, 4]} maxBarSize={84} />
                   </BarChart>
                 ) : (
-                  <ComposedChart data={yearChartData} margin={{ top: 16, right: 18, left: 0, bottom: 0 }}>
+                  <ComposedChart data={yearChartData} margin={{ top: 22, right: 20, left: 12, bottom: 4 }}>
                     <defs>
                       <linearGradient id="comparisonLeftFill" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor="rgba(205,132,64,0.22)" />
@@ -505,6 +566,7 @@ export default function YearComparisonPanel({ availableYears = [], initialLeftYe
                       tickMargin={14}
                     />
                     <YAxis
+                      width={58}
                       tick={{ fill: "rgba(255,255,255,0.46)", fontSize: 11 }}
                       axisLine={false}
                       tickLine={false}
@@ -513,7 +575,7 @@ export default function YearComparisonPanel({ availableYears = [], initialLeftYe
 
                     <RTooltip
                       cursor={{ stroke: "rgba(255,255,255,0.10)", strokeWidth: 1, strokeDasharray: "4 6" }}
-                      content={<CompareTooltip leftYear={leftYear} rightYear={rightYear} mode={mode} />}
+                      content={<CompareTooltip leftYear={leftYear} rightYear={rightYear} mode={mode} t={t} />}
                     />
 
                     <Area type="monotone" dataKey="leftValue" fill="url(#comparisonLeftFill)" stroke="none" isAnimationActive={false} />
@@ -541,7 +603,7 @@ export default function YearComparisonPanel({ availableYears = [], initialLeftYe
 
             <div className="comparisonSpreadRow">
               <div className="comparisonSpreadCard primary">
-                <div className="comparisonSpreadLabel">Selektierter Monats-Spread</div>
+                <div className="comparisonSpreadLabel">{t("yearComparison.spread.selected")}</div>
                 <div className="comparisonSpreadValue">
                   {selectedMonthComparison.hasAnyValue
                     ? `${selectedMonthComparison.spreadValue > 0 ? "+" : ""}${metricLabel(mode, selectedMonthComparison.spreadValue)}`
@@ -549,38 +611,43 @@ export default function YearComparisonPanel({ availableYears = [], initialLeftYe
                 </div>
                 <div className="comparisonSpreadSub">
                   {selectedMonthComparison.hasAnyValue
-                    ? `${selectedMonthComparison.leftHasValue ? metricLabel(mode, selectedMonthComparison.leftValue) : "–"} vs. ${selectedMonthComparison.rightHasValue ? metricLabel(mode, selectedMonthComparison.rightValue) : "–"} • ${selectedMonthComparison.label}`
-                    : "Für die selektierten Monate liegen noch keine Werte vor."}
+                    ? `${selectedMonthComparison.leftHasValue ? metricLabel(mode, selectedMonthComparison.leftValue) : "–"} vs. ${
+                        selectedMonthComparison.rightHasValue ? metricLabel(mode, selectedMonthComparison.rightValue) : "–"
+                      } • ${selectedMonthComparison.label}`
+                    : t("yearComparison.spread.noSelectedData")}
                 </div>
               </div>
               <div className="comparisonSpreadCard subtle">
-                <div className="comparisonSpreadLabel">Letzter aktiver Monats-Spread</div>
+                <div className="comparisonSpreadLabel">{t("yearComparison.spread.latest")}</div>
                 <div className="comparisonSpreadValue">
-                  {latestSpread
-                    ? `${latestSpread.spreadValue > 0 ? "+" : ""}${metricLabel(mode, latestSpread.spreadValue)}`
-                    : "–"}
+                  {latestSpread ? `${latestSpread.spreadValue > 0 ? "+" : ""}${metricLabel(mode, latestSpread.spreadValue)}` : "–"}
                 </div>
                 <div className="comparisonSpreadSub">
-                  {latestSpread ? `${latestSpread.label} • ${leftYear} vs. ${rightYear}` : "Noch keine Monatswerte"}
+                  {latestSpread ? `${latestSpread.label} • ${leftYear} vs. ${rightYear}` : t("yearComparison.spread.noMonthlyValues")}
                 </div>
               </div>
               <div className="comparisonSpreadCard subtle">
-                <div className="comparisonSpreadLabel">Effizienzbild</div>
+                <div className="comparisonSpreadLabel">{t("yearComparison.spread.efficiency")}</div>
                 <div className="comparisonSpreadValue">
                   {leftEfficiency?.overall_score != null && rightEfficiency?.overall_score != null
                     ? deltaMeta(leftEfficiency.overall_score, rightEfficiency.overall_score, 1, " pt").value
                     : "–"}
                 </div>
-                <div className="comparisonSpreadSub">{leftYear} gegen {rightYear} im Jahres-Score</div>
+                <div className="comparisonSpreadSub">{t("yearComparison.spread.efficiencySub", { leftYear, rightYear })}</div>
               </div>
             </div>
 
             <div className="metricNarrative">
-              <b>{leftYear}</b> liegt bei den Gesamtkosten bei <b>{euro(leftStats?.total_cost)}</b> und beim Medianpreis bei{" "}
-              <b>{leftStats?.medians?.price_per_kwh != null ? `${num(leftStats.medians.price_per_kwh, 3)} €/kWh` : "–"}</b>.
+              <b>
+                {t("yearComparison.narrative.base", {
+                  year: leftYear,
+                  cost: euro(leftStats?.total_cost),
+                  price: leftStats?.medians?.price_per_kwh != null ? `${num(leftStats.medians.price_per_kwh, 3)} €/kWh` : "–",
+                })}
+              </b>{" "}
               {chartScope === "month"
-                ? <> Der aktive Monatsfokus zeigt jetzt direkt <b>{selectedMonthComparison.label}</b> statt der kompletten Jahreskurve.</>
-                : <> Der Jahreschart macht zusätzlich sichtbar, in welchen Monaten sich die Jahre wirklich voneinander trennen, während die Selektion <b>{selectedMonthComparison.label}</b> einen direkten Monats-zu-Monats-Vergleich liefert.</>}
+                ? t("yearComparison.narrative.monthScope", { selection: selectedMonthComparison.label })
+                : t("yearComparison.narrative.yearScope", { selection: selectedMonthComparison.label })}
             </div>
           </>
         ) : null}

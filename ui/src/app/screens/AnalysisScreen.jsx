@@ -1,5 +1,6 @@
 import { Suspense, lazy } from "react";
 import LazySectionFallback from "../LazySectionFallback.jsx";
+import { useI18n } from "../../i18n/I18nProvider.jsx";
 
 const CompareMode = lazy(() => import("../analysisModes/CompareMode.jsx"));
 const EfficiencyMode = lazy(() => import("../analysisModes/EfficiencyMode.jsx"));
@@ -29,6 +30,8 @@ export default function AnalysisScreen({
   socWindowAnalysis,
   year,
 }) {
+  const { t } = useI18n();
+
   function renderAnalysisContent() {
     if (analysisMode === "signals") {
       return (
@@ -90,42 +93,42 @@ export default function AnalysisScreen({
     <>
       <section className="premiumModeBar">
         <div className="premiumModeIntro">
-          <div className="sectionKicker">Analyse</div>
-          <div className="premiumModeTitle">Tiefgang nur dann, wenn du ihn wirklich brauchst</div>
+          <div className="sectionKicker">{t("analysis.kicker")}</div>
+          <div className="premiumModeTitle">{t("analysis.title")}</div>
         </div>
 
         <div className="toggle premiumModeToggle" aria-label="Analyse Fokus">
           <button type="button" className={analysisMode === "compare" ? "toggleBtn active" : "toggleBtn"} onClick={() => onAnalysisModeChange("compare")}>
-            Vergleich
+            {t("analysis.modes.compare")}
           </button>
           <button
             type="button"
             className={analysisMode === "efficiency" ? "toggleBtn active" : "toggleBtn"}
             onClick={() => onAnalysisModeChange("efficiency")}
           >
-            Effizienz
+            {t("analysis.modes.efficiency")}
           </button>
           <button
             type="button"
             className={analysisMode === "signals" ? "toggleBtn active" : "toggleBtn"}
             onClick={() => onAnalysisModeChange("signals")}
           >
-            Signale
+            {t("analysis.modes.signals")}
           </button>
           <button
             type="button"
             className={analysisMode === "mobility" ? "toggleBtn active" : "toggleBtn"}
             onClick={() => onAnalysisModeChange("mobility")}
           >
-            Mobilität
+            {t("analysis.modes.mobility")}
           </button>
           <button type="button" className={analysisMode === "time" ? "toggleBtn active" : "toggleBtn"} onClick={() => onAnalysisModeChange("time")}>
-            Zeiträume
+            {t("analysis.modes.time")}
           </button>
         </div>
       </section>
 
-      <Suspense fallback={<LazySectionFallback label="Analysebereich wird geladen…" />}>
+      <Suspense fallback={<LazySectionFallback label={t("analysis.loading")} />}>
         {renderAnalysisContent()}
       </Suspense>
     </>

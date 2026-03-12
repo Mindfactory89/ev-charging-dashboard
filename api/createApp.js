@@ -9,13 +9,17 @@ const { registerHealthRoutes } = require('./routes/registerHealthRoutes');
 const { registerSessionRoutes } = require('./routes/registerSessionRoutes');
 
 function createApp(options = {}) {
-  const fastify = fastifyFactory({ logger: true, ...options });
-  const prisma = new PrismaClient();
+  const { prisma: providedPrisma, ...fastifyOptions } = options;
+  const fastify = fastifyFactory({ logger: true, ...fastifyOptions });
+  const prisma = providedPrisma || new PrismaClient();
+  const ownsPrisma = !providedPrisma;
 
   fastify.decorate('prisma', prisma);
 
   fastify.addHook('onClose', async () => {
-    await prisma.$disconnect();
+    if (ownsPrisma && typeof prisma?.$disconnect === 'function') {
+      await prisma.$disconnect();
+    }
   });
 
   fastify.addHook('onRequest', async (req, reply) => {
@@ -32,6 +36,21 @@ function createApp(options = {}) {
       reply.code(204).send();
       return;
     }
+  });
+
+  fastify.setErrorHandler((error, req, reply) => {
+    if (error?.validation) {
+      return reply.code(400).send({
+        ok: false,
+        error: error.message,
+      });
+    }
+
+    req.log.error(error);
+    return reply.code(error?.statusCode || 500).send({
+      ok: false,
+      error: 'Interner Serverfehler.',
+    });
   });
 
   registerHealthRoutes(fastify);

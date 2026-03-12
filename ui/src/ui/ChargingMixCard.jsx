@@ -1,20 +1,11 @@
 import React from "react";
+import { useI18n } from "../i18n/I18nProvider.jsx";
+import { euro, num } from "../app/formatters.js";
 import Tooltip from "./Tooltip.jsx";
 import { buildChargingMix } from "./sessionIntelligence.js";
 
-function num(value, digits = 1) {
-  const numValue = Number(value);
-  if (!Number.isFinite(numValue)) return "–";
-  return numValue.toLocaleString("de-DE", { maximumFractionDigits: digits });
-}
-
-function euro(value) {
-  const numValue = Number(value);
-  if (!Number.isFinite(numValue)) return "–";
-  return numValue.toLocaleString("de-DE", { style: "currency", currency: "EUR" });
-}
-
 export default function ChargingMixCard({ sessions = [], year = 2026 }) {
+  const { t } = useI18n();
   const mix = React.useMemo(() => buildChargingMix(sessions), [sessions]);
   const home = mix.byKey.home || null;
   const publicAc = mix.byKey.public_ac || null;
@@ -32,16 +23,16 @@ export default function ChargingMixCard({ sessions = [], year = 2026 }) {
       <div className="card glassStrong analysisPanel mobilityPanel">
         <div className="panelHeader">
           <div>
-            <div className="sectionKicker">Mobilität</div>
+            <div className="sectionKicker">{t("chargingMix.kicker")}</div>
             <div className="ttTitleRow panelTitleRow">
-              <div className="sectionTitle">Home vs. Public Intelligence ({year})</div>
+              <div className="sectionTitle">{t("chargingMix.title", { year })}</div>
               <Tooltip
                 placement="top"
                 openDelayMs={120}
                 closeDelayMs={220}
-                content="Zeigt dir, wie stark Wallbox, öffentliches AC und öffentliches DC dein Jahresprofil prägen und wo dein größter Kostenhebel liegt."
+                content={t("chargingMix.tooltipContent")}
               >
-                <button className="ttTrigger" type="button" aria-label="Erklärung: Home vs. Public Intelligence">
+                <button className="ttTrigger" type="button" aria-label={t("chargingMix.tooltipLabel")}>
                   i
                 </button>
               </Tooltip>
@@ -49,7 +40,7 @@ export default function ChargingMixCard({ sessions = [], year = 2026 }) {
           </div>
 
           <div className="pill ghostPill panelMetaPill">
-            {mix.rows.length ? `${mix.totalEnergyKwh.toLocaleString("de-DE", { maximumFractionDigits: 1 })} kWh Mix` : "Noch kein Segmentmix"}
+            {mix.rows.length ? t("chargingMix.meta", { value: num(mix.totalEnergyKwh, 1) }) : t("chargingMix.noMix")}
           </div>
         </div>
 
@@ -57,31 +48,35 @@ export default function ChargingMixCard({ sessions = [], year = 2026 }) {
           <>
             <div className="summaryGrid">
               <article className="summaryCard warm">
-                <div className="summaryLabel">Dominanter Kanal</div>
+                <div className="summaryLabel">{t("chargingMix.dominantChannel")}</div>
                 <div className="summaryValue">{mix.dominant?.shortLabel || "–"}</div>
                 <div className="summarySub">
-                  {mix.dominant ? `${num(mix.dominant.totalEnergyKwh, 1)} kWh • ${num(mix.dominant.count, 0)} Sessions` : "Noch keine Sessions"}
+                  {mix.dominant ? t("chargingMix.segmentMeta", {
+                    sessions: num(mix.dominant.count, 0),
+                    energy: num(mix.dominant.totalEnergyKwh, 1),
+                    cost: euro(mix.dominant.totalCost),
+                  }) : t("chargingMix.noSessions")}
                 </div>
               </article>
 
               <article className="summaryCard mint">
-                <div className="summaryLabel">Günstigster Kanal</div>
+                <div className="summaryLabel">{t("chargingMix.cheapestChannel")}</div>
                 <div className="summaryValue">{mix.cheapest?.shortLabel || "–"}</div>
                 <div className="summarySub">
-                  {mix.cheapest?.medianPricePerKwh != null ? `${num(mix.cheapest.medianPricePerKwh, 3)} €/kWh Median` : "Noch keine Preisbasis"}
+                  {mix.cheapest?.medianPricePerKwh != null ? `${num(mix.cheapest.medianPricePerKwh, 3)} €/kWh Median` : t("chargingMix.noPriceBasis")}
                 </div>
               </article>
 
               <article className="summaryCard frost">
-                <div className="summaryLabel">Home vs. Public</div>
+                <div className="summaryLabel">{t("chargingMix.homeVsPublic")}</div>
                 <div className="summaryValue">{`${homeSharePct}/${publicSharePct}`}</div>
-                <div className="summarySub">Anteil an der Jahresenergie in %</div>
+                <div className="summarySub">{t("chargingMix.homeVsPublicSub")}</div>
               </article>
 
               <article className="summaryCard">
-                <div className="summaryLabel">DC zu Home Hebel</div>
+                <div className="summaryLabel">{t("chargingMix.dcLever")}</div>
                 <div className="summaryValue">{dcToHomeDelta != null ? `${num(dcToHomeDelta, 3)} €/kWh` : "–"}</div>
-                <div className="summarySub">Median-Differenz zwischen Public DC und Wallbox</div>
+                <div className="summarySub">{t("chargingMix.dcLeverSub")}</div>
               </article>
             </div>
 
@@ -94,11 +89,15 @@ export default function ChargingMixCard({ sessions = [], year = 2026 }) {
                       <div>
                         <div className="mixSegmentLabel">{row.label}</div>
                         <div className="mixSegmentSub">
-                          {num(row.count, 0)} Sessions • {num(row.totalEnergyKwh, 1)} kWh • {euro(row.totalCost)}
+                          {t("chargingMix.segmentMeta", {
+                            sessions: num(row.count, 0),
+                            energy: num(row.totalEnergyKwh, 1),
+                            cost: euro(row.totalCost),
+                          })}
                         </div>
                       </div>
                       <div className="mixSegmentMeta">
-                        <span>{num(energyShare, 0)} % Anteil</span>
+                        <span>{t("chargingMix.shareLabel", { value: num(energyShare, 0) })}</span>
                         <span>{row.medianPricePerKwh != null ? `${num(row.medianPricePerKwh, 3)} €/kWh` : "–"}</span>
                       </div>
                     </div>
@@ -108,9 +107,9 @@ export default function ChargingMixCard({ sessions = [], year = 2026 }) {
                     </div>
 
                     <div className="mixSegmentStats">
-                      <span>{row.avgPowerKw != null ? `${num(row.avgPowerKw, 1)} kW Ø` : "Kein Ø kW"}</span>
-                      <span>{row.avgCostPer100Km != null ? `${num(row.avgCostPer100Km, 2)} €/100 km` : "Noch keine km-Daten"}</span>
-                      <span>{row.totalDistanceKm > 0 ? `${num(row.totalDistanceKm, 0)} km erfasst` : "Keine Fahrdistanz"}</span>
+                      <span>{row.avgPowerKw != null ? t("chargingMix.avgPowerMeta", { value: num(row.avgPowerKw, 1) }) : t("chargingMix.noAvgPower")}</span>
+                      <span>{row.avgCostPer100Km != null ? t("chargingMix.avgCostPer100Km", { value: num(row.avgCostPer100Km, 2) }) : t("chargingMix.noKmData")}</span>
+                      <span>{row.totalDistanceKm > 0 ? t("chargingMix.recordedKm", { value: num(row.totalDistanceKm, 0) }) : t("chargingMix.noDistance")}</span>
                     </div>
                   </article>
                 );
@@ -118,15 +117,15 @@ export default function ChargingMixCard({ sessions = [], year = 2026 }) {
             </div>
 
             <div className="metricNarrative">
-              <b>{mix.dominant?.label || "Der stärkste Kanal"}</b> prägt aktuell dein Jahresprofil.{" "}
-              {mix.cheapest ? `${mix.cheapest.label} ist derzeit dein ruhigster Preisanker. ` : ""}
+              <b>{t("chargingMix.narrative.base", { channel: mix.dominant?.label || t("chargingMix.dominantChannel") })}</b>{" "}
+              {mix.cheapest ? `${t("chargingMix.narrative.cheapest", { channel: mix.cheapest.label })} ` : ""}
               {dcToHomeDelta != null && dcToHomeDelta > 0
-                ? `Zwischen Public DC und Wallbox liegt aktuell ein Preishebel von rund ${num(dcToHomeDelta, 3)} €/kWh.`
-                : "Sobald genügend Segmente vorliegen, wird hier automatisch der stärkste Kostenhebel hervorgehoben."}
+                ? t("chargingMix.narrative.lever", { value: num(dcToHomeDelta, 3) })
+                : t("chargingMix.narrative.pending")}
             </div>
           </>
         ) : (
-          <div className="emptyStateCard">Noch keine Segmentdaten für {year} vorhanden.</div>
+          <div className="emptyStateCard">{t("chargingMix.empty", { year })}</div>
         )}
       </div>
     </section>

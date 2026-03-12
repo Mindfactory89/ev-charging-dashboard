@@ -9,6 +9,7 @@ const {
   buildStatsPayload,
   calcOutlierAnalytics,
 } = require('../lib/analytics');
+const { YEAR_QUERY_OPTIONAL_SCHEMA, YEAR_QUERY_REQUIRED_SCHEMA } = require('../lib/httpSchemas');
 const { optionalYearFilter, yearRange } = require('../lib/year');
 
 async function loadYearSessions(prisma, year) {
@@ -24,7 +25,11 @@ async function loadYearSessions(prisma, year) {
 }
 
 function registerAnalyticsRoutes(fastify) {
-  fastify.get('/api/stats', async (req, reply) => {
+  fastify.get('/api/stats', {
+    schema: {
+      querystring: YEAR_QUERY_OPTIONAL_SCHEMA,
+    },
+  }, async (req, reply) => {
     const { year, range, error } = optionalYearFilter(req.query?.year);
     if (error) return reply.code(400).send({ ok: false, error });
 
@@ -37,37 +42,61 @@ function registerAnalyticsRoutes(fastify) {
     return buildStatsPayload(sessions, year);
   });
 
-  fastify.get('/api/analytics/monthly', async (req, reply) => {
+  fastify.get('/api/analytics/monthly', {
+    schema: {
+      querystring: YEAR_QUERY_REQUIRED_SCHEMA,
+    },
+  }, async (req, reply) => {
     const { sessions, error } = await loadYearSessions(fastify.prisma, req.query?.year);
     if (error) return reply.code(400).send({ ok: false, error });
     return buildMonthlyAnalyticsPayload(sessions, req.query?.year);
   });
 
-  fastify.get('/api/analytics/seasons', async (req, reply) => {
+  fastify.get('/api/analytics/seasons', {
+    schema: {
+      querystring: YEAR_QUERY_REQUIRED_SCHEMA,
+    },
+  }, async (req, reply) => {
     const { sessions, error } = await loadYearSessions(fastify.prisma, req.query?.year);
     if (error) return reply.code(400).send({ ok: false, error });
     return buildSeasonAnalyticsPayload(sessions, req.query?.year);
   });
 
-  fastify.get('/api/analytics/efficiency', async (req, reply) => {
+  fastify.get('/api/analytics/efficiency', {
+    schema: {
+      querystring: YEAR_QUERY_REQUIRED_SCHEMA,
+    },
+  }, async (req, reply) => {
     const { sessions, error } = await loadYearSessions(fastify.prisma, req.query?.year);
     if (error) return reply.code(400).send({ ok: false, error });
     return buildEfficiencyAnalyticsPayload(sessions, req.query?.year);
   });
 
-  fastify.get('/api/analytics/outliers', async (req, reply) => {
+  fastify.get('/api/analytics/outliers', {
+    schema: {
+      querystring: YEAR_QUERY_REQUIRED_SCHEMA,
+    },
+  }, async (req, reply) => {
     const { sessions, error } = await loadYearSessions(fastify.prisma, req.query?.year);
     if (error) return reply.code(400).send({ ok: false, error });
     return calcOutlierAnalytics(sessions, req.query?.year);
   });
 
-  fastify.get('/api/analytics/soc-windows', async (req, reply) => {
+  fastify.get('/api/analytics/soc-windows', {
+    schema: {
+      querystring: YEAR_QUERY_REQUIRED_SCHEMA,
+    },
+  }, async (req, reply) => {
     const { sessions, error } = await loadYearSessions(fastify.prisma, req.query?.year);
     if (error) return reply.code(400).send({ ok: false, error });
     return buildSocWindowAnalyticsPayload(sessions, req.query?.year);
   });
 
-  fastify.get('/api/analytics/intelligence', async (req, reply) => {
+  fastify.get('/api/analytics/intelligence', {
+    schema: {
+      querystring: YEAR_QUERY_REQUIRED_SCHEMA,
+    },
+  }, async (req, reply) => {
     const { sessions, error } = await loadYearSessions(fastify.prisma, req.query?.year);
     if (error) return reply.code(400).send({ ok: false, error });
     return buildIntelligenceAnalyticsPayload(sessions, req.query?.year);

@@ -1,6 +1,8 @@
 'use strict';
 
-const DEFAULT_VISIBLE_YEARS = [2026, 2027, 2028];
+const sharedConfig = require('../../shared/domain/config.cjs');
+
+const DEFAULT_VISIBLE_YEARS = Array.isArray(sharedConfig?.visibleYears) ? sharedConfig.visibleYears : [2026, 2027, 2028];
 
 function yearRange(year) {
   const y = Number(year);

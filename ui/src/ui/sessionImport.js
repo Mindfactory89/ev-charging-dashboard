@@ -1,4 +1,6 @@
 import { formatTags, normalizeSessionText, normalizeTagsInput } from "./sessionMetadata.js";
+import { DEFAULT_VEHICLE } from "../app/constants.js";
+import { buildFieldAliasesForProfile, detectImportProfile, getImportProfile, getImportProfiles } from "./importProfiles.js";
 
 function splitCsvLine(line, separator) {
   const cells = [];
@@ -32,6 +34,26 @@ function splitCsvLine(line, separator) {
   return cells.map((cell) => cell.trim());
 }
 
+function stripByteOrderMark(text) {
+  return String(text || "").replace(/^\uFEFF/, "");
+}
+
+function splitCsvRecord(line, separator) {
+  const sanitizedLine = stripByteOrderMark(line).trim();
+  if (!sanitizedLine) return [];
+
+  const cells = splitCsvLine(sanitizedLine, separator);
+  if (cells.length > 1) return cells;
+
+  if (sanitizedLine.startsWith('"') && sanitizedLine.endsWith('"')) {
+    const unwrapped = sanitizedLine.slice(1, -1).replace(/""/g, '"');
+    const unwrappedCells = splitCsvLine(unwrapped, separator);
+    if (unwrappedCells.length > 1) return unwrappedCells;
+  }
+
+  return cells;
+}
+
 function detectSeparator(headerLine) {
   const commaCount = (headerLine.match(/,/g) || []).length;
   const semicolonCount = (headerLine.match(/;/g) || []).length;
@@ -41,48 +63,31 @@ function detectSeparator(headerLine) {
 function parseCsv(text) {
   const lines = String(text || "")
     .split(/\r?\n/)
-    .map((line) => line.trim())
+    .map((line) => stripByteOrderMark(line).trim())
     .filter(Boolean);
 
   if (!lines.length) return { headers: [], rows: [] };
 
   const separator = detectSeparator(lines[0]);
-  const headers = splitCsvLine(lines[0], separator);
-  const rows = lines.slice(1).map((line) => splitCsvLine(line, separator));
+  const headers = splitCsvRecord(lines[0], separator);
+  const rows = lines.slice(1).map((line) => splitCsvRecord(line, separator));
 
   return { headers, rows };
 }
 
-const FIELD_ALIASES = {
-  date: ["date", "datum", "session_date"],
-  provider: ["provider", "anbieter", "netzbetreiber"],
-  location: ["location", "ort", "standort", "station"],
-  vehicle: ["vehicle", "fahrzeug", "car"],
-  tags: ["tags", "schlagworte", "kategorien"],
-  connector: ["connector", "anschluss", "plug"],
-  soc_start: ["soc_start", "soc start", "socstart", "start_soc"],
-  soc_end: ["soc_end", "soc ende", "soc end", "socend", "end_soc"],
-  energy_kwh: ["energy_kwh", "energy", "kwh", "energie", "geladen_kwh"],
-  price_per_kwh: ["price_per_kwh", "preis_pro_kwh", "preis", "price"],
-  total_cost: ["total_cost", "cost", "kosten", "eur"],
-  duration_hhmm: ["duration_hhmm", "dauer", "duration", "zeit"],
-  duration_seconds: ["duration_seconds"],
-  odometer_km: ["odometer_km", "kilometer", "km", "odo_end_km", "kilometerstand"],
-  note: ["note", "notiz", "beschreibung"],
-};
-
 function normalizeHeader(header) {
-  return String(header || "")
+  return stripByteOrderMark(header)
     .trim()
     .toLowerCase()
     .replace(/\s+/g, "_");
 }
 
-function autoMapHeaders(headers) {
+function autoMapHeaders(headers, profileId = "generic") {
+  const fieldAliases = buildFieldAliasesForProfile(profileId);
   const normalizedHeaders = headers.map((header) => normalizeHeader(header));
   const mapping = {};
 
-  for (const [field, aliases] of Object.entries(FIELD_ALIASES)) {
+  for (const [field, aliases] of Object.entries(fieldAliases)) {
     const matchIndex = normalizedHeaders.findIndex((header) => aliases.includes(header));
     if (matchIndex >= 0) mapping[field] = headers[matchIndex];
   }
@@ -143,7 +148,23 @@ function buildExistingKeys(sessions = []) {
   );
 }
 
-function normalizeImportRecord(record, mapping) {
+function mergeProfileDefaults(payload, profile, fallbacks = {}) {
+  if (!profile?.defaults) return payload;
+
+  const mergedTags = normalizeTagsInput([payload.tags, profile.defaults.tags]).join(", ");
+
+  return {
+    ...payload,
+    provider: payload.provider || normalizeSessionText(profile.defaults.provider),
+    connector: payload.connector || normalizeSessionText(profile.defaults.connector),
+    tags: mergedTags || payload.tags,
+    vehicle: payload.vehicle || normalizeSessionText(fallbacks.vehicle),
+    soc_start: payload.soc_start ?? fallbacks.soc_start ?? null,
+    soc_end: payload.soc_end ?? fallbacks.soc_end ?? null,
+  };
+}
+
+function normalizeImportRecord(record, mapping, profile, fallbacks = {}) {
   const date = normalizeSessionText(readMappedValue(record, mapping, "date"));
   const energy = parseNumber(readMappedValue(record, mapping, "energy_kwh"));
   const explicitPrice = parseNumber(readMappedValue(record, mapping, "price_per_kwh"));
@@ -155,7 +176,7 @@ function normalizeImportRecord(record, mapping) {
         ? totalCost / energy
         : null;
 
-  const payload = {
+  const payload = mergeProfileDefaults({
     date,
     provider: normalizeSessionText(readMappedValue(record, mapping, "provider")),
     location: normalizeSessionText(readMappedValue(record, mapping, "location")),
@@ -171,7 +192,7 @@ function normalizeImportRecord(record, mapping) {
       parseDuration(readMappedValue(record, mapping, "duration_hhmm")),
     odometer_km: parseInteger(readMappedValue(record, mapping, "odometer_km")),
     note: normalizeSessionText(readMappedValue(record, mapping, "note")),
-  };
+  }, profile, fallbacks);
 
   const missing = [];
   for (const field of ["date", "energy_kwh", "price_per_kwh", "soc_start", "soc_end"]) {
@@ -191,15 +212,23 @@ function normalizeImportRecord(record, mapping) {
   };
 }
 
-export function buildImportPreview(text, sessions = []) {
+export function buildImportPreview(text, sessions = [], options = {}) {
   const { headers, rows } = parseCsv(text);
-  const mapping = autoMapHeaders(headers);
+  const detectedProfile = detectImportProfile(headers);
+  const activeProfile = getImportProfile(options?.profileId || detectedProfile?.id || "generic");
+  const genericProfile = getImportProfile("generic");
+  const mapping = autoMapHeaders(headers, activeProfile?.id || "generic");
   const existingKeys = buildExistingKeys(sessions);
   const seenImportKeys = new Set();
+  const fallbacks = {
+    soc_start: options?.fallbacks?.soc_start ?? 10,
+    soc_end: options?.fallbacks?.soc_end ?? 80,
+    vehicle: options?.fallbacks?.vehicle ?? DEFAULT_VEHICLE,
+  };
 
   const previewRows = rows.map((cells, index) => {
     const record = Object.fromEntries(headers.map((header, cellIndex) => [header, cells[cellIndex] ?? ""]));
-    const normalized = normalizeImportRecord(record, mapping);
+    const normalized = normalizeImportRecord(record, mapping, activeProfile, fallbacks);
     const duplicateExisting = existingKeys.has(normalized.dedupeKey);
     const duplicateImport = seenImportKeys.has(normalized.dedupeKey);
     seenImportKeys.add(normalized.dedupeKey);
@@ -218,6 +247,15 @@ export function buildImportPreview(text, sessions = []) {
   return {
     headers,
     mapping,
+    availableProfiles: getImportProfiles(),
+    profile: {
+      activeId: activeProfile?.id || "generic",
+      activeLabel: activeProfile?.label || genericProfile?.label || "generic",
+      activeDescription: activeProfile?.description || "",
+      detectedId: detectedProfile?.id || "generic",
+      detectedLabel: detectedProfile?.label || genericProfile?.label || "generic",
+    },
+    fallbacks,
     rows: previewRows,
     summary: {
       total: previewRows.length,

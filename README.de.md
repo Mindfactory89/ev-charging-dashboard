@@ -23,7 +23,7 @@ Fuer die Zukunft plane ich noch einiges 🚀
 - Schreib mir gern eine Nachricht, wenn du Ideen oder Feedback hast
 - Eroeffne gern einen Thread unter GitHub Discussions fuer Vorschlaege oder Verbesserungen
 
-Die App-Oberflaeche selbst wird noch Schritt fuer Schritt weiter uebersetzt 🌍
+Die App-Oberflaeche unterstuetzt jetzt bereits Deutsch und Englisch, und die Uebersetzungsstruktur kann Schritt fuer Schritt weiter ausgebaut werden 🌍
 
 ### Demo ansehen
 
@@ -38,6 +38,7 @@ Wenn du dir das Projekt erst einmal nur anschauen willst, ohne etwas zu installi
 
 - Jahresuebersicht, Monatsfokus, Forecasts und Vergleiche
 - Smart Insights, SoC-Analyse und Ausreisser-Erkennung
+- Zweisprachige UI in Deutsch und Englisch fuer Uebersicht, Analyse, Verlauf, Import und Session-Details
 - Session-Verwaltung mit Inline-Edit, Detail-Drawer, Undo und CSV-Export
 - Demo-Modus zum Testen ohne laufende API oder Datenbank
 - Realistischere Demo-Daten mit mehr Sessions, variierenden AC/DC-Preisen und EV-typischen Ladefenstern

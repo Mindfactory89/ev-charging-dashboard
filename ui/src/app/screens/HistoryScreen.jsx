@@ -1,6 +1,8 @@
 import AddSessionCard from "../../ui/AddSessionCard.jsx";
 import ImportSessionsCard from "../../ui/ImportSessionsCard.jsx";
 import SessionsCard from "../../ui/SessionsCard.jsx";
+import { useI18n } from "../../i18n/I18nProvider.jsx";
+import { monthLabel } from "../../ui/monthLabels.js";
 
 export default function HistoryScreen({
   addOpen,
@@ -8,29 +10,84 @@ export default function HistoryScreen({
   addSectionRef,
   closeAdd,
   demo,
+  drilldownSource,
   historyFilters,
   intelligence,
   onCreated,
   onClearHistoryFilters,
   onHistoryFiltersChange,
+  onReturnToSource,
   openAdd,
   sessionOutliersById,
   sessionScoresById,
   sessions,
   year,
 }) {
+  const { t } = useI18n();
+
+  function sourceLabel(source) {
+    if (source === "analysis") return t("history.source.analysis");
+    if (source === "overview") return t("history.source.overview");
+    return t("history.source.history");
+  }
+
+  const filterLabels = [
+    historyFilters?.month ? t("history.filters.month", { value: monthLabel(Number(historyFilters.month)) }) : null,
+    historyFilters?.provider ? t("history.filters.provider", { value: historyFilters.provider }) : null,
+    historyFilters?.location ? t("history.filters.location", { value: historyFilters.location }) : null,
+    historyFilters?.vehicle ? t("history.filters.vehicle", { value: historyFilters.vehicle }) : null,
+    historyFilters?.tag ? t("history.filters.tag", { value: historyFilters.tag }) : null,
+  ].filter(Boolean);
+  const hasHistoryContext = Boolean(drilldownSource) || filterLabels.length > 0;
+
   return (
     <>
       <section className="row">
         <div className="card glassStrong premiumDataIntro">
-          <div className="premiumDataIntroEyebrow">Verlauf</div>
-          <div className="premiumDataIntroTitle">Sessions pflegen ohne visuelle Unruhe</div>
-          <div className="premiumDataIntroText">
-            Tabelle, Inline-Edit und Composer sind hier bewusst separat gebündelt. So bleibt die Übersicht oben ruhig
-            und die operative Pflege unten schnell.
-          </div>
+          <div className="premiumDataIntroEyebrow">{t("history.intro.eyebrow")}</div>
+          <div className="premiumDataIntroTitle">{t("history.intro.title")}</div>
+          <div className="premiumDataIntroText">{t("history.intro.text")}</div>
         </div>
       </section>
+
+      {hasHistoryContext ? (
+        <section className="row">
+          <div className="card glassStrong historyBreadcrumbCard">
+            <div className="panelHeader">
+              <div>
+                <div className="sectionKicker">{t("history.drilldown.kicker")}</div>
+                <div className="sectionTitle sectionTitleSpaced">{t("history.drilldown.title", { year })}</div>
+              </div>
+
+              <div className="panelActions">
+                {drilldownSource ? (
+                  <button type="button" className="pill ghostPill" onClick={onReturnToSource}>
+                    {t("common.backTo", { target: sourceLabel(drilldownSource) })}
+                  </button>
+                ) : null}
+                {filterLabels.length ? (
+                  <button type="button" className="pill ghostPill" onClick={onClearHistoryFilters}>
+                    {t("common.clearFilters")}
+                  </button>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="historyBreadcrumbTrail">
+              {drilldownSource ? (
+                <span className="historyBreadcrumbPill">
+                  {t("history.drilldown.breadcrumb", { source: sourceLabel(drilldownSource) })}
+                </span>
+              ) : null}
+              {filterLabels.map((label) => (
+                <span key={label} className="historyFilterPill">
+                  {label}
+                </span>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       <section className="row">
         <SessionsCard
@@ -56,8 +113,8 @@ export default function HistoryScreen({
           <div className="addComposerInner">
             <div className="panelHeader">
               <div>
-                <div className="sectionKicker">Action</div>
-                <div className="sectionTitle sectionTitleSpaced">Ladevorgang hinzufügen</div>
+                <div className="sectionKicker">{t("history.composer.kicker")}</div>
+                <div className="sectionTitle sectionTitleSpaced">{t("history.composer.title")}</div>
               </div>
 
               <div className="panelActions">
@@ -68,12 +125,12 @@ export default function HistoryScreen({
                     onClick={onClearHistoryFilters}
                     style={{ cursor: "pointer" }}
                   >
-                    Filter löschen
+                    {t("common.clearFilters")}
                   </button>
                 ) : null}
                 {!addOpen ? (
                   <button type="button" className="pill pillWarm" onClick={openAdd} aria-expanded={addOpen} style={{ cursor: "pointer" }}>
-                    Öffnen ↓
+                    {t("common.open")} ↓
                   </button>
                 ) : (
                   <button
@@ -83,7 +140,7 @@ export default function HistoryScreen({
                     aria-expanded={addOpen}
                     style={{ cursor: "pointer" }}
                   >
-                    Einklappen
+                    {t("common.collapse")}
                   </button>
                 )}
               </div>
@@ -91,20 +148,17 @@ export default function HistoryScreen({
 
             {!addOpen ? (
               <div className="addComposerClosed">
-                <div className="addComposerLead">
-                  Neue Session direkt im Verlauf ergänzen. So bleibt die Übersicht oberhalb ruhig und die Pflege
-                  darunter fokussiert.
-                </div>
+                <div className="addComposerLead">{t("history.composer.lead")}</div>
                 <div className="addComposerMiniGrid">
                   <div className="summaryCard warm addComposerStatCard">
-                    <div className="summaryLabel">Live Sync</div>
-                    <div className="summaryValue">Sofort</div>
-                    <div className="summarySub">fließt direkt in Vergleich, Forecast und Score ein</div>
+                    <div className="summaryLabel">{t("history.composer.liveSyncLabel")}</div>
+                    <div className="summaryValue">{t("history.composer.liveSyncValue")}</div>
+                    <div className="summarySub">{t("history.composer.liveSyncSub")}</div>
                   </div>
                   <div className="summaryCard addComposerStatCard">
-                    <div className="summaryLabel">Pflegezone</div>
-                    <div className="summaryValue">Nur Verlauf</div>
-                    <div className="summarySub">Sessions pflegen, ohne die Analysefläche zu überladen</div>
+                    <div className="summaryLabel">{t("history.composer.maintenanceLabel")}</div>
+                    <div className="summaryValue">{t("history.composer.maintenanceValue")}</div>
+                    <div className="summarySub">{t("history.composer.maintenanceSub")}</div>
                   </div>
                 </div>
               </div>

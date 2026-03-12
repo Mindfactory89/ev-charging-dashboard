@@ -1,8 +1,11 @@
 import React from "react";
+import { useI18n } from "../i18n/I18nProvider.jsx";
+import { euro, num } from "../app/formatters.js";
 import { createSession } from "./api.js";
 import { deriveMobilityForSession } from "./sessionIntelligence.js";
 import { formatTags } from "./sessionMetadata.js";
 import { buildSessionMetadataOptions } from "./sessionMetadataOptions.js";
+import { CONNECTOR_OPTIONS, DEFAULT_VEHICLE } from "../app/constants.js";
 
 function pad2(n){ return String(n).padStart(2,"0"); }
 
@@ -17,19 +20,19 @@ function hhmmToSeconds(hhmm){
   return hh*3600 + mm*60;
 }
 
-const CONNECTOR_OPTIONS = ["CCS - DC", "CCS AC", "Wallbox AC"];
 const PROVIDER_LIST_ID = "add-session-provider-options";
 const LOCATION_LIST_ID = "add-session-location-options";
 const VEHICLE_LIST_ID = "add-session-vehicle-options";
 const TAG_LIST_ID = "add-session-tag-options";
 
 export default function AddSessionCard({ onCreated, demo = false, intelligence = null, sessions = [] }) {
+  const { t } = useI18n();
   const [date, setDate] = React.useState(() => {
     const d = new Date();
     return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
   });
 
-  const [connector, setConnector] = React.useState("CCS - DC");
+  const [connector, setConnector] = React.useState(CONNECTOR_OPTIONS[0] || "CCS - DC");
   const [socStart, setSocStart] = React.useState(14);
   const [socEnd, setSocEnd] = React.useState(80);
   const [energyKwh, setEnergyKwh] = React.useState("0.0");
@@ -38,7 +41,7 @@ export default function AddSessionCard({ onCreated, demo = false, intelligence =
   const [odometerKm, setOdometerKm] = React.useState("");
   const [provider, setProvider] = React.useState("");
   const [location, setLocation] = React.useState("");
-  const [vehicle, setVehicle] = React.useState("CUPRA Born 79 kWh");
+  const [vehicle, setVehicle] = React.useState(DEFAULT_VEHICLE);
   const [tags, setTags] = React.useState("");
   const [note, setNote] = React.useState("");
 
@@ -90,20 +93,20 @@ export default function AddSessionCard({ onCreated, demo = false, intelligence =
     const dur = hhmmToSeconds(durationHHMM);
     const odometer = odometerKm === "" ? null : Number(odometerKm);
 
-    if(!date) return setMsg("Bitte Datum auswählen.");
-    if(!Number.isFinite(energy) || energy <= 0) return setMsg("Energie (kWh) muss > 0 sein.");
-    if(!Number.isFinite(price) || price <= 0) return setMsg("Kosten pro kWh muss > 0 sein.");
-    if(dur == null || dur <= 0) return setMsg("Dauer bitte als HH:MM eingeben (z.B. 00:30 oder 01:43).");
-    if(odometer != null && (!Number.isFinite(odometer) || odometer < 0)) return setMsg("Kilometerstand muss eine positive Ganzzahl sein.");
+    if(!date) return setMsg(t("addSession.validation.date"));
+    if(!Number.isFinite(energy) || energy <= 0) return setMsg(t("addSession.validation.energy"));
+    if(!Number.isFinite(price) || price <= 0) return setMsg(t("addSession.validation.price"));
+    if(dur == null || dur <= 0) return setMsg(t("addSession.validation.duration"));
+    if(odometer != null && (!Number.isFinite(odometer) || odometer < 0)) return setMsg(t("addSession.validation.odometer"));
     if(odometer != null && mobilityPreview?.previousOdometerKm != null && odometer < mobilityPreview.previousOdometerKm) {
-      return setMsg(`Kilometerstand darf nicht kleiner als ${mobilityPreview.previousOdometerKm} km sein.`);
+      return setMsg(t("addSession.validation.odometerMin", { value: num(mobilityPreview.previousOdometerKm, 0) }));
     }
     if(odometer != null && mobilityPreview?.nextOdometerKm != null && odometer > mobilityPreview.nextOdometerKm) {
-      return setMsg(`Kilometerstand darf nicht größer als ${mobilityPreview.nextOdometerKm} km sein.`);
+      return setMsg(t("addSession.validation.odometerMax", { value: num(mobilityPreview.nextOdometerKm, 0) }));
     }
-    if(Number(socStart) < 0 || Number(socStart) > 100) return setMsg("SoC Start muss 0–100 sein.");
-    if(Number(socEnd) < 0 || Number(socEnd) > 100) return setMsg("SoC Ende muss 0–100 sein.");
-    if(Number(socEnd) < Number(socStart)) return setMsg("SoC Ende darf nicht kleiner als SoC Start sein.");
+    if(Number(socStart) < 0 || Number(socStart) > 100) return setMsg(t("addSession.validation.socStart"));
+    if(Number(socEnd) < 0 || Number(socEnd) > 100) return setMsg(t("addSession.validation.socEnd"));
+    if(Number(socEnd) < Number(socStart)) return setMsg(t("addSession.validation.socOrder"));
 
     setBusy(true);
     try{
@@ -122,11 +125,11 @@ export default function AddSessionCard({ onCreated, demo = false, intelligence =
         odometer_km: odometer != null ? Math.round(odometer) : null,
         note: note || null,
       });
-      setMsg("Ladevorgang gespeichert.");
+      setMsg(t("addSession.messages.saved"));
       setNote("");
       onCreated?.();
     }catch(err){
-      setMsg(`Fehler: ${String(err?.message || err)}`);
+      setMsg(t("addSession.messages.error", { error: String(err?.message || err) }));
     }finally{
       setBusy(false);
     }
@@ -136,102 +139,100 @@ export default function AddSessionCard({ onCreated, demo = false, intelligence =
     <div className="card glassStrong formCard">
       <div className="sectionHeader">
         <div>
-          <div className="sectionKicker">Eingabe</div>
-          <div className="sectionTitle">Ladevorgang hinzufügen</div>
+          <div className="sectionKicker">{t("addSession.kicker")}</div>
+          <div className="sectionTitle">{t("addSession.title")}</div>
         </div>
-        <div className="pill ghostPill">{demo ? "Manuell • Nur Demo" : "Manuell • Sofort in DB"}</div>
+        <div className="pill ghostPill">{demo ? t("addSession.metaDemo") : t("addSession.metaLive")}</div>
       </div>
 
       <div className="formPreviewGrid">
         <div className="formPreviewCard warm">
-          <div className="formPreviewLabel">Gesamtkosten</div>
+          <div className="formPreviewLabel">{t("addSession.preview.totalCost")}</div>
           <div className="formPreviewValue">
-            {Number.isFinite(previewCost)
-              ? previewCost.toLocaleString("de-DE", { style: "currency", currency: "EUR" })
-              : "–"}
+            {Number.isFinite(previewCost) ? euro(previewCost) : "–"}
           </div>
-          <div className="formPreviewSub">aus Energie × Preis</div>
+          <div className="formPreviewSub">{t("addSession.preview.totalCostSub")}</div>
         </div>
 
         <div className="formPreviewCard">
-          <div className="formPreviewLabel">SoC-Hub</div>
+          <div className="formPreviewLabel">{t("addSession.preview.socDelta")}</div>
           <div className="formPreviewValue">{Number.isFinite(previewSocDelta) ? `${previewSocDelta} %` : "–"}</div>
           <div className="formPreviewSub">{socStart} → {socEnd}</div>
         </div>
 
         <div className="formPreviewCard">
-          <div className="formPreviewLabel">Ø Ladeleistung</div>
+          <div className="formPreviewLabel">{t("addSession.preview.avgPower")}</div>
           <div className="formPreviewValue">
-            {Number.isFinite(previewPower) ? `${previewPower.toLocaleString("de-DE", { maximumFractionDigits: 1 })} kW` : "–"}
+            {Number.isFinite(previewPower) ? `${num(previewPower, 1)} kW` : "–"}
           </div>
-          <div className="formPreviewSub">aus kWh und Dauer</div>
+          <div className="formPreviewSub">{t("addSession.preview.avgPowerSub")}</div>
         </div>
 
         <div className="formPreviewCard cool">
-          <div className="formPreviewLabel">Mobilität</div>
-          <div className="formPreviewValue">{previewCostPer100Km != null ? `${previewCostPer100Km.toLocaleString("de-DE", { maximumFractionDigits: 2 })} €/100 km` : connector || "–"}</div>
+          <div className="formPreviewLabel">{t("addSession.preview.mobility")}</div>
+          <div className="formPreviewValue">{previewCostPer100Km != null ? `${num(previewCostPer100Km, 2)} €/100 km` : connector || "–"}</div>
           <div className="formPreviewSub">
             {previewDistanceKm != null
-              ? `${previewDistanceKm} km seit letzter Session`
+              ? t("addSession.preview.distanceSub", { distance: num(previewDistanceKm, 0) })
               : latestKnownOdometer != null
-                ? `vorher ${latestKnownOdometer} km`
-                : date || "Kein Datum"}
+                ? t("addSession.preview.previousOdometerSub", { value: num(latestKnownOdometer, 0) })
+                : date || t("addSession.preview.noDateSub")}
           </div>
         </div>
       </div>
 
       <form className="formGrid" onSubmit={submit}>
         <label className="field fieldBig">
-          <span>Datum</span>
+          <span>{t("addSession.fields.date")}</span>
           <input className="input" type="date" value={date} onChange={(e)=>setDate(e.target.value)} />
         </label>
 
         <label className="field">
-          <span>Anbieter</span>
+          <span>{t("addSession.fields.provider")}</span>
           <input
             className="input"
             list={metadataOptions.providers.length ? PROVIDER_LIST_ID : undefined}
             value={provider}
             onChange={(e)=>setProvider(e.target.value)}
-            placeholder="z.B. Ionity"
+            placeholder={t("addSession.placeholders.provider")}
           />
         </label>
 
         <label className="field">
-          <span>Ort / Standort</span>
+          <span>{t("addSession.fields.location")}</span>
           <input
             className="input"
             list={metadataOptions.locations.length ? LOCATION_LIST_ID : undefined}
             value={location}
             onChange={(e)=>setLocation(e.target.value)}
-            placeholder="z.B. Brohltal Ost"
+            placeholder={t("addSession.placeholders.location")}
           />
         </label>
 
         <label className="field">
-          <span>Fahrzeug</span>
+          <span>{t("addSession.fields.vehicle")}</span>
           <input
             className="input"
             list={metadataOptions.vehicles.length ? VEHICLE_LIST_ID : undefined}
             value={vehicle}
             onChange={(e)=>setVehicle(e.target.value)}
-            placeholder="z.B. CUPRA Born 79 kWh"
+            placeholder={t("addSession.placeholders.vehicle")}
           />
         </label>
 
         <label className="field">
-          <span>Tags</span>
+          <span>{t("addSession.fields.tags")}</span>
           <input
             className="input"
             list={metadataOptions.tags.length ? TAG_LIST_ID : undefined}
             value={tags}
             onChange={(e)=>setTags(e.target.value)}
-            placeholder="reise, hpc, urlaub"
+            placeholder={t("addSession.placeholders.tags")}
           />
         </label>
 
         <label className="field">
-          <span>Anschluss</span>
+          <span>{t("addSession.fields.connector")}</span>
           <select className="input" value={connector} onChange={(e)=>setConnector(e.target.value)}>
             {CONNECTOR_OPTIONS.map((option) => (
               <option key={option} value={option}>
@@ -242,58 +243,61 @@ export default function AddSessionCard({ onCreated, demo = false, intelligence =
         </label>
 
         <label className="field">
-          <span>SoC Start</span>
+          <span>{t("addSession.fields.socStart")}</span>
           <select className="input" value={socStart} onChange={(e)=>setSocStart(e.target.value)}>
             {socOptions.map(v => <option key={v} value={v}>{v}</option>)}
           </select>
         </label>
 
         <label className="field">
-          <span>SoC Ende</span>
+          <span>{t("addSession.fields.socEnd")}</span>
           <select className="input" value={socEnd} onChange={(e)=>setSocEnd(e.target.value)}>
             {socOptions.map(v => <option key={v} value={v}>{v}</option>)}
           </select>
         </label>
 
         <label className="field">
-          <span>Energie (kWh)</span>
-          <input className="input" value={energyKwh} onChange={(e)=>setEnergyKwh(e.target.value)} placeholder="68.675" />
+          <span>{t("addSession.fields.energy")}</span>
+          <input className="input" value={energyKwh} onChange={(e)=>setEnergyKwh(e.target.value)} placeholder={t("addSession.placeholders.energy")} />
         </label>
 
         <label className="field">
-          <span>Kosten pro kWh (€)</span>
-          <input className="input" value={pricePerKwh} onChange={(e)=>setPricePerKwh(e.target.value)} placeholder="0.59" />
+          <span>{t("addSession.fields.pricePerKwh")}</span>
+          <input className="input" value={pricePerKwh} onChange={(e)=>setPricePerKwh(e.target.value)} placeholder={t("addSession.placeholders.pricePerKwh")} />
         </label>
 
         <label className="field">
-          <span>Dauer (HH:MM)</span>
-          <input className="input" value={durationHHMM} onChange={(e)=>setDurationHHMM(e.target.value)} placeholder="00:30" />
+          <span>{t("addSession.fields.duration")}</span>
+          <input className="input" value={durationHHMM} onChange={(e)=>setDurationHHMM(e.target.value)} placeholder={t("addSession.placeholders.duration")} />
         </label>
 
         <label className="field">
-          <span>Aktueller Kilometerstand nach der Ladung</span>
-          <input className="input" type="number" min="0" value={odometerKm} onChange={(e)=>setOdometerKm(e.target.value)} placeholder="18390" />
+          <span>{t("addSession.fields.odometer")}</span>
+          <input className="input" type="number" min="0" value={odometerKm} onChange={(e)=>setOdometerKm(e.target.value)} placeholder={t("addSession.placeholders.odometer")} />
         </label>
 
         <label className="field fieldWide">
-          <span>Notiz (optional)</span>
+          <span>{t("addSession.fields.note")}</span>
           <textarea
             className="input inputArea"
             value={note}
             onChange={(e)=>setNote(e.target.value)}
-            placeholder="z.B. Wetter, spontane Zwischenladung, Staupause, Urlaubstrip…"
+            placeholder={t("addSession.placeholders.note")}
           />
         </label>
 
         <div className="field fieldWide formActionRow">
           <div className="formHint">
             {demo
-              ? "Wird nur lokal in der Demo gehalten. Der aktuelle KM-Stand wird als neuer Endstand gespeichert; die Distanz ergibt sich aus der Differenz zum vorherigen Eintrag."
-              : "Wird direkt in PostgreSQL gespeichert. Der aktuelle KM-Stand wird als neuer Endstand gespeichert; die Distanz ergibt sich aus der Differenz zum vorherigen Eintrag."}
-            {latestKnownOdometer != null ? ` Letzter bekannter Kilometerstand: ${latestKnownOdometer} km.` : " Der erste eingetragene KM-Stand dient nur als Referenz und erzeugt noch keine Fahrdistanz."}
+              ? t("addSession.hint.demo")
+              : t("addSession.hint.live")}
+            {" "}
+            {latestKnownOdometer != null
+              ? t("addSession.hint.latestOdometer", { value: num(latestKnownOdometer, 0) })
+              : t("addSession.hint.firstOdometer")}
           </div>
           <button className="btnPrimary" type="submit" disabled={busy}>
-            {busy ? "Speichern…" : "Speichern"}
+            {busy ? t("addSession.saveBusy") : t("common.save")}
           </button>
           {msg ? <div className="formMsg">{msg}</div> : null}
         </div>

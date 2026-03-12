@@ -1,8 +1,8 @@
 # ui/Dockerfile
 
 # --- Build stage ---
-FROM node:20-alpine AS build
-WORKDIR /app
+FROM node:22-alpine AS build
+WORKDIR /app/ui
 
 ARG VITE_API_BASE=""
 ENV VITE_API_BASE=${VITE_API_BASE}
@@ -16,15 +16,16 @@ ENV VITE_VEHICLE_PROFILE=${VITE_VEHICLE_PROFILE}
 ARG VITE_DEMO_HOST_PREFIX=""
 ENV VITE_DEMO_HOST_PREFIX=${VITE_DEMO_HOST_PREFIX}
 
-COPY package*.json ./
+COPY ui/package*.json ./
 RUN npm ci
 
-COPY . .
+COPY ui ./
+COPY shared /app/shared
 RUN npm run build
 
 # --- Runtime stage ---
 FROM nginx:alpine
-COPY --from=build /app/dist /usr/share/nginx/html
+COPY --from=build /app/ui/dist /usr/share/nginx/html
 
 # SPA fallback (React Router friendly)
 RUN printf 'server {\n\

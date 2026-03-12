@@ -1,17 +1,11 @@
+import { formatCurrency, formatDate, formatNumber, getActiveLocale, translate } from "../i18n/runtime.js";
+
 export function euro(value) {
-  const numeric = Number(value);
-  if (!Number.isFinite(numeric)) return "–";
-  return new Intl.NumberFormat("de-DE", {
-    style: "currency",
-    currency: "EUR",
-    maximumFractionDigits: 2,
-  }).format(numeric);
+  return formatCurrency(value, { maximumFractionDigits: 2 });
 }
 
 export function num(value, digits = 1) {
-  const numeric = Number(value);
-  if (!Number.isFinite(numeric)) return "–";
-  return numeric.toLocaleString("de-DE", { maximumFractionDigits: digits });
+  return formatNumber(value, { maximumFractionDigits: digits });
 }
 
 export function minutesFromSeconds(seconds) {
@@ -31,13 +25,7 @@ export function sessionPricePerKwh(session) {
 }
 
 export function datumDE(value) {
-  try {
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "–";
-    return date.toLocaleDateString("de-DE");
-  } catch {
-    return "–";
-  }
+  return formatDate(value);
 }
 
 export function calcTrend(currentVal, prevVal) {
@@ -68,10 +56,11 @@ export function scoreTone(score) {
 }
 
 export function scoreLabel(score) {
+  const locale = getActiveLocale();
   const numeric = Number(score);
-  if (!Number.isFinite(numeric)) return "Keine Daten";
-  if (numeric >= 80) return "Sehr effizient";
-  if (numeric >= 65) return "Effizient";
-  if (numeric >= 50) return "Solide";
-  return "Optimierungspotenzial";
+  if (!Number.isFinite(numeric)) return translate(locale, "formatters.noData");
+  if (numeric >= 80) return translate(locale, "formatters.efficiency.top");
+  if (numeric >= 65) return translate(locale, "formatters.efficiency.good");
+  if (numeric >= 50) return translate(locale, "formatters.efficiency.solid");
+  return translate(locale, "formatters.efficiency.low");
 }

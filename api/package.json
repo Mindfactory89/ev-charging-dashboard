@@ -4,9 +4,11 @@
   "private": true,
   "type": "commonjs",
   "scripts": {
+    "lint": "node ./scripts/lint.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate deploy",
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node --test"
   },
   "dependencies": {
     "@prisma/client": "^5.19.1",

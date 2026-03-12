@@ -4067,6 +4067,10 @@ body::before{
   box-shadow: none;
 }
 
+.sessionsPanel .tableCell{
+  min-width: 0;
+}
+
 .sessionsPanel .tableRow:last-child{
   border-bottom: 0;
 }
@@ -4402,6 +4406,141 @@ body::before{
   flex-wrap: wrap;
 }
 
+.lazySectionCard{
+  overflow: hidden;
+}
+
+.lazySectionHeader{
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.lazySectionEyebrow{
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.46);
+}
+
+.lazySectionLabel{
+  color: rgba(255,255,255,0.88);
+  font-size: 16px;
+  font-weight: 650;
+}
+
+.lazySectionSkeleton{
+  margin-top: 18px;
+}
+
+.lazySectionSkeletonHero,
+.lazySectionSkeletonCard,
+.lazySectionSkeletonBars span{
+  position: relative;
+  overflow: hidden;
+  background: rgba(255,255,255,0.05);
+}
+
+.lazySectionSkeletonHero::after,
+.lazySectionSkeletonCard::after,
+.lazySectionSkeletonBars span::after{
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+  animation: lazyShimmer 1.25s ease-in-out infinite;
+}
+
+.lazySectionSkeletonHero{
+  height: 170px;
+  border-radius: 26px;
+}
+
+.lazySectionSkeletonGrid{
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.lazySectionSkeletonCard{
+  height: 88px;
+  border-radius: 20px;
+}
+
+.lazySectionSkeletonBars{
+  margin-top: 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.lazySectionSkeletonBars span{
+  display: block;
+  height: 12px;
+  border-radius: 999px;
+}
+
+.lazySectionSkeletonBars span:nth-child(1){ width: 82%; }
+.lazySectionSkeletonBars span:nth-child(2){ width: 68%; }
+.lazySectionSkeletonBars span:nth-child(3){ width: 54%; }
+
+@keyframes lazyShimmer {
+  100% { transform: translateX(100%); }
+}
+
+.historyBreadcrumbCard{
+  gap: 16px;
+}
+
+.historyBreadcrumbTrail{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.historyBreadcrumbPill,
+.historyFilterPill{
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 620;
+}
+
+.historyBreadcrumbPill{
+  border: 1px solid rgba(126,192,255,0.20);
+  background: rgba(126,192,255,0.08);
+  color: rgba(214,232,255,0.88);
+}
+
+.historyFilterPill{
+  border: 1px solid rgba(205,132,64,0.18);
+  background: rgba(205,132,64,0.08);
+  color: rgba(255,232,212,0.90);
+}
+
+.sessionImportProfileBar{
+  margin-top: 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 16px 18px;
+  border-radius: 22px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background:
+    radial-gradient(420px 160px at 0% 0%, rgba(126,192,255,0.08), transparent 60%),
+    linear-gradient(180deg, rgba(255,255,255,0.04), rgba(10,10,14,0.58));
+}
+
+.sessionImportProfileCopy{
+  min-width: 0;
+}
+
 .sessionsPanel .tableEditRow{
   margin-top: 8px;
   border-color: rgba(255,255,255,0.08);
@@ -4411,9 +4550,69 @@ body::before{
 }
 
 @media (max-width: 900px){
-  .sessionsPanel .tableHead,
   .sessionsPanel .tableRow{
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+    padding: 16px;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 24px;
+    background:
+      radial-gradient(420px 160px at 0% 0%, rgba(255,255,255,0.04), transparent 62%),
+      linear-gradient(180deg, rgba(255,255,255,0.03), rgba(10,10,14,0.72));
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.03),
+      0 18px 34px rgba(0,0,0,0.18);
+  }
+
+  .sessionsPanel .tableHead{
+    display: none;
+  }
+
+  .sessionsPanel .tableBody{
+    max-height: none;
+    gap: 0;
+    padding: 12px;
+  }
+
+  .sessionsPanel .tableCell{
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 7px;
+  }
+
+  .sessionsPanel .tableCell::before{
+    content: attr(data-label);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.42);
+  }
+
+  .sessionsPanel .tableCellLead::before{
+    display: none;
+  }
+
+  .sessionsPanel .tableCostCell{
+    align-items: stretch;
+  }
+
+  .sessionsPanel .tableCostStack{
+    width: 100%;
+  }
+
+  .sessionsPanel .rowActions{
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .sessionsPanel .rowDetailBtn,
+  .sessionsPanel .rowEditBtn,
+  .sessionsPanel .rowDeleteBtn{
+    flex: 1 1 120px;
+    justify-content: center;
   }
 }
 
@@ -4465,8 +4664,20 @@ body::before{
     padding-inline: 14px;
   }
 
+  .sessionsPanel .tableRow{
+    padding: 14px;
+  }
+
   .sessionsPanel .tableRow.editing{
-    padding-inline: 12px;
+    padding: 14px;
+  }
+
+  .lazySectionSkeletonGrid{
+    grid-template-columns: 1fr;
+  }
+
+  .historyBreadcrumbTrail{
+    gap: 8px;
   }
 }
 
@@ -4902,6 +5113,12 @@ body::before{
     0 14px 32px rgba(0,0,0,0.14);
 }
 
+.monthlyChartShell.chartWrap,
+.chartWrap.compact.monthlyChartShell{
+  padding: 24px 24px 16px;
+  min-height: 356px;
+}
+
 .premiumFeatureStats{
   margin-top: 18px;
   padding: 0;
@@ -4949,6 +5166,232 @@ body::before{
   font-size: clamp(24px, 2vw, 31px);
 }
 
+.comparisonPanelHeader{
+  align-items: flex-start;
+}
+
+.comparisonPanelLead{
+  margin-top: 12px;
+  max-width: 62ch;
+  font-size: 13px;
+  line-height: 1.55;
+  color: rgba(255,255,255,0.58);
+}
+
+.comparisonScopePill{
+  align-self: flex-start;
+}
+
+.comparisonControlDeck{
+  margin-top: 22px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(220px, 0.7fr) minmax(0, 1.08fr);
+  gap: 16px;
+}
+
+.comparisonYearCard,
+.comparisonBridgeCard{
+  min-height: 176px;
+  padding: 18px 18px 16px;
+  border-radius: 28px;
+  border: 1px solid rgba(255,255,255,0.07);
+  background:
+    radial-gradient(520px 180px at 0% 0%, rgba(255,255,255,0.035), transparent 60%),
+    linear-gradient(180deg, rgba(255,255,255,0.03), rgba(8,9,12,0.68));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.03),
+    0 16px 36px rgba(0,0,0,0.16);
+}
+
+.comparisonYearCard.left{
+  border-color: rgba(205,132,64,0.14);
+}
+
+.comparisonYearCard.right{
+  border-color: rgba(126,192,255,0.14);
+}
+
+.comparisonYearCardHeader{
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.comparisonYearEyebrow,
+.comparisonBridgeLabel{
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.44);
+}
+
+.comparisonYearValue,
+.comparisonBridgeValue{
+  margin-top: 10px;
+  font-size: clamp(28px, 3vw, 40px);
+  line-height: 0.95;
+  font-weight: 760;
+  letter-spacing: -0.05em;
+  color: rgba(255,255,255,0.96);
+}
+
+.comparisonBridgeValue span{
+  color: rgba(255,255,255,0.34);
+  font-size: 0.66em;
+  letter-spacing: -0.01em;
+}
+
+.comparisonYearBadge{
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+  font-size: 11px;
+  font-weight: 650;
+  color: rgba(255,255,255,0.74);
+}
+
+.comparisonYearCard.left .comparisonYearBadge{
+  border-color: rgba(205,132,64,0.22);
+  color: rgba(244,214,184,0.92);
+}
+
+.comparisonYearCard.right .comparisonYearBadge{
+  border-color: rgba(126,192,255,0.22);
+  color: rgba(214,232,255,0.92);
+}
+
+.comparisonSelectGrid{
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.comparisonBridgeCard{
+  text-align: center;
+  justify-content: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background:
+    radial-gradient(280px 160px at 50% 0%, rgba(205,132,64,0.08), transparent 60%),
+    radial-gradient(260px 160px at 50% 100%, rgba(126,192,255,0.06), transparent 62%),
+    linear-gradient(180deg, rgba(255,255,255,0.03), rgba(8,9,12,0.68));
+}
+
+.comparisonBridgeSub{
+  margin-top: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(255,255,255,0.60);
+}
+
+.comparisonBridgeMeta{
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.comparisonBridgeMeta span{
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.035);
+  font-size: 11px;
+  color: rgba(255,255,255,0.74);
+}
+
+.comparisonMetricBoard{
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.comparisonMetricBoard > .emptyStateCard{
+  grid-column: 1 / -1;
+}
+
+.comparisonMetricCard{
+  position: relative;
+  overflow: hidden;
+  min-height: 132px;
+  padding: 18px 18px 16px;
+  border-radius: 26px;
+  border: 1px solid rgba(255,255,255,0.07);
+  background:
+    radial-gradient(520px 180px at 0% 0%, rgba(255,255,255,0.04), transparent 58%),
+    linear-gradient(180deg, rgba(255,255,255,0.035), rgba(8,9,12,0.72));
+  box-shadow: 0 18px 44px rgba(0,0,0,0.22);
+}
+
+.comparisonMetricCard.hero{
+  grid-column: span 3;
+  min-height: 154px;
+}
+
+.comparisonMetricCard.compact{
+  grid-column: span 2;
+}
+
+.comparisonMetricCard.warm{
+  background:
+    radial-gradient(520px 180px at 0% 0%, rgba(205,132,64,0.13), transparent 62%),
+    linear-gradient(180deg, rgba(255,255,255,0.05), rgba(8,9,12,0.72));
+}
+
+.comparisonMetricCard.frost{
+  background:
+    radial-gradient(520px 180px at 0% 0%, rgba(126,192,255,0.12), transparent 62%),
+    linear-gradient(180deg, rgba(255,255,255,0.05), rgba(8,9,12,0.72));
+}
+
+.comparisonMetricCard.mint{
+  background:
+    radial-gradient(520px 180px at 0% 0%, rgba(132,218,174,0.12), transparent 62%),
+    linear-gradient(180deg, rgba(255,255,255,0.05), rgba(8,9,12,0.72));
+}
+
+.comparisonMetricCard.danger{
+  background:
+    radial-gradient(520px 180px at 0% 0%, rgba(255,138,138,0.12), transparent 62%),
+    linear-gradient(180deg, rgba(255,255,255,0.05), rgba(8,9,12,0.72));
+}
+
+.comparisonMetricLabel{
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.48);
+}
+
+.comparisonMetricValue{
+  margin-top: 14px;
+  font-size: clamp(24px, 2.4vw, 40px);
+  line-height: 0.95;
+  font-weight: 760;
+  letter-spacing: -0.05em;
+  color: rgba(255,255,255,0.96);
+}
+
+.comparisonMetricSub{
+  margin-top: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(255,255,255,0.58);
+}
+
 .comparisonChartHeader{
   margin-top: 24px;
   align-items: center;
@@ -4966,13 +5409,31 @@ body::before{
 
 .comparisonChartShell{
   overflow: hidden;
-  padding: 14px 16px 8px;
+  padding: 18px 22px 12px;
+  min-height: 360px;
   border-radius: 28px;
   border-color: rgba(255,255,255,0.06);
   background:
     radial-gradient(620px 200px at 0% 0%, rgba(205,132,64,0.07), transparent 60%),
     radial-gradient(520px 180px at 100% 0%, rgba(126,192,255,0.06), transparent 62%),
     linear-gradient(180deg, rgba(255,255,255,0.022), rgba(8,9,12,0.68));
+}
+
+.comparisonToolbar{
+  margin-top: 28px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.comparisonToolbarControls{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .comparisonLegendRow{
@@ -5058,6 +5519,126 @@ body::before{
 .comparisonSpreadSub{
   font-size: 12px;
   color: rgba(255,255,255,0.50);
+}
+
+.whatIfPanel .panelHeader{
+  align-items: flex-start;
+}
+
+.whatIfRouteDeck{
+  margin-top: 22px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 72px minmax(0, 1fr) minmax(260px, 0.92fr);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.whatIfSegmentCard,
+.whatIfShiftCard{
+  min-height: 190px;
+  padding: 18px;
+  border-radius: 28px;
+  border: 1px solid rgba(255,255,255,0.07);
+  background:
+    radial-gradient(420px 180px at 0% 0%, rgba(255,255,255,0.04), transparent 60%),
+    linear-gradient(180deg, rgba(255,255,255,0.03), rgba(8,9,12,0.70));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.03),
+    0 18px 42px rgba(0,0,0,0.18);
+}
+
+.whatIfSegmentCard.tone-warm{
+  border-color: rgba(205,132,64,0.18);
+  background:
+    radial-gradient(420px 180px at 0% 0%, rgba(205,132,64,0.12), transparent 62%),
+    linear-gradient(180deg, rgba(255,255,255,0.03), rgba(8,9,12,0.70));
+}
+
+.whatIfSegmentCard.tone-frost{
+  border-color: rgba(126,192,255,0.18);
+  background:
+    radial-gradient(420px 180px at 0% 0%, rgba(126,192,255,0.12), transparent 62%),
+    linear-gradient(180deg, rgba(255,255,255,0.03), rgba(8,9,12,0.70));
+}
+
+.whatIfSegmentCard.tone-mint{
+  border-color: rgba(132,218,174,0.18);
+  background:
+    radial-gradient(420px 180px at 0% 0%, rgba(132,218,174,0.12), transparent 62%),
+    linear-gradient(180deg, rgba(255,255,255,0.03), rgba(8,9,12,0.70));
+}
+
+.whatIfSegmentEyebrow{
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.46);
+}
+
+.fieldTight{
+  margin-top: 12px;
+}
+
+.whatIfSegmentStats{
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.whatIfSegmentStatLabel{
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.42);
+}
+
+.whatIfSegmentStatValue{
+  margin-top: 8px;
+  font-size: 20px;
+  line-height: 1.05;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  color: rgba(255,255,255,0.94);
+}
+
+.whatIfRouteBridge{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 24px;
+  border: 1px solid rgba(255,255,255,0.06);
+  background:
+    radial-gradient(220px 120px at 50% 0%, rgba(255,255,255,0.05), transparent 60%),
+    linear-gradient(180deg, rgba(255,255,255,0.02), rgba(8,9,12,0.60));
+}
+
+.whatIfRouteBridge span{
+  font-size: 28px;
+  line-height: 1;
+  color: rgba(255,255,255,0.42);
+}
+
+.whatIfShiftCard{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background:
+    radial-gradient(360px 160px at 0% 0%, rgba(205,132,64,0.10), transparent 62%),
+    linear-gradient(180deg, rgba(255,255,255,0.03), rgba(8,9,12,0.70));
+}
+
+.whatIfShiftValue{
+  margin-top: 14px;
+  font-size: clamp(30px, 2.8vw, 44px);
+  line-height: 0.95;
+  font-weight: 760;
+  letter-spacing: -0.05em;
+  color: rgba(255,255,255,0.96);
+}
+
+.whatIfNarrative{
+  margin-top: 18px;
 }
 
 .sessionsPanel .tableEditRow{
@@ -5196,12 +5777,37 @@ body::before{
 }
 
 @media (max-width: 980px){
+  .comparisonControlDeck{
+    grid-template-columns: 1fr;
+  }
+
+  .comparisonBridgeCard{
+    order: -1;
+  }
+
+  .comparisonMetricBoard{
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .comparisonMetricCard.hero,
+  .comparisonMetricCard.compact{
+    grid-column: span 1;
+  }
+
   .comparisonSpreadRow{
     grid-template-columns: 1fr;
   }
 
   .editPreviewGrid{
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .whatIfRouteDeck{
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .whatIfRouteBridge{
+    display: none;
   }
 }
 
@@ -5215,6 +5821,12 @@ body::before{
     flex-wrap: wrap;
   }
 
+  .monthlyChartShell.chartWrap,
+  .chartWrap.compact.monthlyChartShell{
+    padding: 20px 18px 14px;
+    min-height: 344px;
+  }
+
   .premiumFeatureStats{
     grid-template-columns: 1fr;
   }
@@ -5222,9 +5834,27 @@ body::before{
   .comparisonLegendRow{
     margin-bottom: 10px;
   }
+
+  .comparisonToolbar{
+    margin-top: 22px;
+  }
+
+  .comparisonToolbarControls{
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .comparisonChartShell{
+    padding: 16px 14px 10px;
+    min-height: 344px;
+  }
 }
 
 @media (max-width: 640px){
+  .comparisonMetricBoard{
+    grid-template-columns: 1fr;
+  }
+
   .comparisonSelectors{
     width: 100%;
   }
@@ -5244,6 +5874,17 @@ body::before{
 
   .addComposerMiniGrid{
     grid-template-columns: 1fr;
+  }
+
+  .comparisonSelectGrid,
+  .whatIfSegmentStats,
+  .whatIfRouteDeck{
+    grid-template-columns: 1fr;
+  }
+
+  .whatIfShiftCard,
+  .whatIfSegmentCard{
+    min-height: 0;
   }
 }
 

@@ -1,34 +1,26 @@
-import { parseSessionDate, WEEKDAY_LABELS } from "./loadRhythm.js";
+import { getWeekdayLabels, parseSessionDate } from "./loadRhythm.js";
 import { monthLabel } from "./monthLabels.js";
-
-const SEGMENT_DEFINITIONS = {
-  home: {
-    key: "home",
-    label: "Wallbox Zuhause",
-    shortLabel: "Wallbox",
-    tone: "mint",
-  },
-  public_ac: {
-    key: "public_ac",
-    label: "Public AC",
-    shortLabel: "AC öffentlich",
-    tone: "frost",
-  },
-  public_dc: {
-    key: "public_dc",
-    label: "Public DC",
-    shortLabel: "DC öffentlich",
-    tone: "warm",
-  },
-};
+import { getActiveLocale, translate } from "../i18n/runtime.js";
 
 const DRIVING_EFFICIENCY_TIERS = [
-  { maxEnergyPer100Km: 15.0, label: "Sehr effizient", emoji: "😄", tone: "mint" },
-  { maxEnergyPer100Km: 16.5, label: "Effizient", emoji: "🙂", tone: "frost" },
-  { maxEnergyPer100Km: 18.0, label: "Ausgewogen", emoji: "😐", tone: "neutral" },
-  { maxEnergyPer100Km: 19.5, label: "Optimierbar", emoji: "😕", tone: "warm" },
-  { maxEnergyPer100Km: Number.POSITIVE_INFINITY, label: "Verbrauch hoch", emoji: "😬", tone: "danger" },
+  { maxEnergyPer100Km: 15.0, key: "veryEfficient", emoji: "😄", tone: "mint" },
+  { maxEnergyPer100Km: 16.5, key: "efficient", emoji: "🙂", tone: "frost" },
+  { maxEnergyPer100Km: 18.0, key: "balanced", emoji: "😐", tone: "neutral" },
+  { maxEnergyPer100Km: 19.5, key: "optimizable", emoji: "😕", tone: "warm" },
+  { maxEnergyPer100Km: Number.POSITIVE_INFINITY, key: "highConsumption", emoji: "😬", tone: "danger" },
 ];
+
+function t(key, values = {}, locale = getActiveLocale()) {
+  return translate(locale, key, values);
+}
+
+function translatedTier(tier, locale = getActiveLocale()) {
+  if (!tier) return null;
+  return {
+    ...tier,
+    label: t(`mobilityProfile.tiers.${tier.key}`, {}, locale),
+  };
+}
 
 function round(value, digits = 2) {
   const num = Number(value);
@@ -43,7 +35,10 @@ function clamp(value, min, max) {
 
 function drivingEfficiencyTier(avgEnergyPer100Km) {
   if (!Number.isFinite(avgEnergyPer100Km) || avgEnergyPer100Km <= 0) return null;
-  return DRIVING_EFFICIENCY_TIERS.find((tier) => avgEnergyPer100Km <= tier.maxEnergyPer100Km) || DRIVING_EFFICIENCY_TIERS[DRIVING_EFFICIENCY_TIERS.length - 1];
+  return (
+    DRIVING_EFFICIENCY_TIERS.find((tier) => avgEnergyPer100Km <= tier.maxEnergyPer100Km) ||
+    DRIVING_EFFICIENCY_TIERS[DRIVING_EFFICIENCY_TIERS.length - 1]
+  );
 }
 
 function median(values = [], digits = 2) {
@@ -132,7 +127,8 @@ export function classifyChargingSegment(session) {
     connector.includes("wallbox") ||
     connector.includes("home") ||
     provider.includes("wallbox") ||
-    location.includes("zuhause")
+    location.includes("zuhause") ||
+    location.includes("home")
   ) {
     return "home";
   }
@@ -201,7 +197,7 @@ export function deriveMobilityForSession(sessions = [], candidateSession = null)
   return buildDrivingTimeline(merged).find((session) => String(session.id) === String(candidateSession.id)) || null;
 }
 
-function formatSegmentRow(base) {
+function formatSegmentRow(base, locale = getActiveLocale()) {
   const count = Number(base.count || 0);
   const totalEnergyKwh = round(base.totalEnergyKwh, 1);
   const totalCost = round(base.totalCost, 2);
@@ -213,7 +209,7 @@ function formatSegmentRow(base) {
   const avgEnergyPer100Km = totalDistanceKm > 0 ? round((totalEnergyKwh / totalDistanceKm) * 100, 1) : null;
 
   return {
-    ...SEGMENT_DEFINITIONS[base.key],
+    ...segmentDefinitions(locale)[base.key],
     count,
     totalEnergyKwh,
     totalCost,
@@ -229,8 +225,9 @@ function formatSegmentRow(base) {
 }
 
 export function buildChargingMix(sessions = []) {
+  const locale = getActiveLocale();
   const rowsWithDriving = buildDrivingTimeline(sessions);
-  const buckets = Object.keys(SEGMENT_DEFINITIONS).reduce((acc, key) => {
+  const buckets = Object.keys(segmentDefinitions(locale)).reduce((acc, key) => {
     acc[key] = {
       key,
       count: 0,
@@ -265,7 +262,7 @@ export function buildChargingMix(sessions = []) {
   });
 
   const rows = Object.values(buckets)
-    .map((bucket) => formatSegmentRow(bucket))
+    .map((bucket) => formatSegmentRow(bucket, locale))
     .filter((row) => row.count > 0)
     .sort((left, right) => {
       if (right.totalEnergyKwh !== left.totalEnergyKwh) return right.totalEnergyKwh - left.totalEnergyKwh;
@@ -299,10 +296,11 @@ export function buildChargingMix(sessions = []) {
 
 export function buildWeekdayHeatmap(sessions = [], filters = {}) {
   const { year = null } = filters;
+  const weekdayLabels = getWeekdayLabels();
   const monthRows = Array.from({ length: 12 }, (_, index) => ({
     month: index + 1,
     label: monthLabel(index + 1),
-    cells: WEEKDAY_LABELS.map((label, weekday) => ({
+    cells: weekdayLabels.map((label, weekday) => ({
       weekday,
       label,
       count: 0,
@@ -341,7 +339,7 @@ export function buildWeekdayHeatmap(sessions = [], filters = {}) {
     });
   });
 
-  const topWeekday = WEEKDAY_LABELS.map((label, weekday) => ({
+  const topWeekday = weekdayLabels.map((label, weekday) => ({
     weekday,
     label,
     count: weekdayTotals.get(label) || 0,
@@ -403,6 +401,7 @@ export function buildMobilityStats(sessions = []) {
 }
 
 export function buildDrivingEfficiencyProfile(sessions = []) {
+  const locale = getActiveLocale();
   const mobility = buildMobilityStats(sessions);
   const mix = buildChargingMix(sessions);
   const rows = mobility.coveredSessions;
@@ -418,31 +417,31 @@ export function buildDrivingEfficiencyProfile(sessions = []) {
   const highSocShare = sessions.length > 0 ? sessions.filter((session) => Number(session?.soc_end) >= 85).length / sessions.length : 0;
   const dcShare = mix.totalEnergyKwh > 0 ? Number(mix.byKey.public_dc?.totalEnergyKwh || 0) / mix.totalEnergyKwh : 0;
   const homeShare = mix.totalEnergyKwh > 0 ? Number(mix.byKey.home?.totalEnergyKwh || 0) / mix.totalEnergyKwh : 0;
-  const tier = drivingEfficiencyTier(avgEnergy);
+  const tier = translatedTier(drivingEfficiencyTier(avgEnergy), locale);
 
-  let label = "Keine Daten";
+  let label = t("mobilityProfile.statuses.noData", {}, locale);
   let tone = "neutral";
   let summaryHint = null;
-  let narrative = "Sobald genug Sessions mit Kilometerstand vorhanden sind, wird hier dein reales Fahrprofil beschrieben.";
-  let coverageBadge = "Noch keine Bewertung";
+  let narrative = t("mobilityProfile.narrative.pending", {}, locale);
+  let coverageBadge = t("mobilityProfile.statuses.noRating", {}, locale);
 
   if (tier) {
     const decoratedTierLabel = `${tier.emoji} ${tier.label}`;
     coverageBadge =
       mobility.coveragePct < 40
-        ? "Vorläufig"
+        ? t("mobilityProfile.statuses.provisional", {}, locale)
         : mobility.coveragePct < 70
-          ? "Tendenz"
-          : "Stabil";
+          ? t("mobilityProfile.statuses.tendency", {}, locale)
+          : t("mobilityProfile.statuses.stable", {}, locale);
 
     if (mobility.coveragePct < 40) {
-      label = "Noch zu wenig Daten";
+      label = t("mobilityProfile.statuses.notEnoughData", {}, locale);
       tone = "neutral";
-      summaryHint = `Tendenz: ${decoratedTierLabel}`;
+      summaryHint = t("mobilityProfile.statuses.trend", { label: decoratedTierLabel }, locale);
     } else if (mobility.coveragePct < 70) {
-      label = `Tendenz: ${decoratedTierLabel}`;
+      label = t("mobilityProfile.statuses.trend", { label: decoratedTierLabel }, locale);
       tone = tier.tone;
-      summaryHint = "Mit mehr Kilometerdaten wird die Einordnung belastbarer.";
+      summaryHint = t("mobilityProfile.statuses.dataHint", {}, locale);
     } else {
       label = decoratedTierLabel;
       tone = tier.tone;
@@ -450,12 +449,21 @@ export function buildDrivingEfficiencyProfile(sessions = []) {
 
     const coverageNarrative =
       mobility.coveragePct < 40
-        ? `Die Einordnung ist noch vorläufig, weil erst ${round(mobility.coveragePct, 0)} % deiner Sessions eine belastbare KM-Basis haben.`
+        ? t("mobilityProfile.narrative.lowCoverage", { coverage: round(mobility.coveragePct, 0) }, locale)
         : mobility.coveragePct < 70
-          ? `Die Tendenz ist sichtbar, mit ${round(mobility.coveragePct, 0)} % Abdeckung aber noch nicht voll stabil.`
-          : `Die Einordnung basiert auf einer soliden KM-Abdeckung von ${round(mobility.coveragePct, 0)} %.`;
+          ? t("mobilityProfile.narrative.mediumCoverage", { coverage: round(mobility.coveragePct, 0) }, locale)
+          : t("mobilityProfile.narrative.highCoverage", { coverage: round(mobility.coveragePct, 0) }, locale);
 
-    narrative = `${decoratedTierLabel} beschreibt aktuell dein Fahrprofil auf Basis von ${round(mobility.totalDistanceKm, 0)} km und ${round(avgEnergy, 1)} kWh pro 100 km. ${coverageNarrative}`;
+    narrative = t(
+      "mobilityProfile.narrative.base",
+      {
+        label: decoratedTierLabel,
+        distance: round(mobility.totalDistanceKm, 0),
+        energy: round(avgEnergy, 1),
+        coverageNarrative,
+      },
+      locale
+    );
   }
 
   const score = Number.isFinite(avgEnergy) && avgEnergy > 0 ? Math.round(clamp(100 - (avgEnergy - 14) * 12, 34, 96)) : null;
@@ -463,32 +471,32 @@ export function buildDrivingEfficiencyProfile(sessions = []) {
   const chips = [];
 
   if (Number.isFinite(avgEnergy) && avgEnergy >= 18.5) {
-    tips.push("Auf Langstrecke sind 110–120 km/h meist der stärkste Hebel für spürbar weniger Verbrauch.");
+    tips.push(t("mobilityProfile.tips.highConsumption", {}, locale));
   }
   if (shortTripShare >= 0.35) {
-    tips.push("Viele Kurzstrecken treiben den Jahresverbrauch. Vorklimatisierung vor dem Losfahren hilft besonders im Winter.");
-    chips.push({ icon: "🏙️", label: "Kurzstrecke", tone: "warm" });
+    tips.push(t("mobilityProfile.tips.shortTrips", {}, locale));
+    chips.push({ icon: "🏙️", label: t("mobilityProfile.chips.shortTrips", {}, locale), tone: "warm" });
   }
   if (winterShare >= 0.3) {
-    tips.push("Winterbetrieb ist bei dir stark sichtbar. Reifendruck und vorausschauendes Heizen senken den Kälteaufschlag.");
-    chips.push({ icon: "❄️", label: "Winter", tone: "frost" });
+    tips.push(t("mobilityProfile.tips.winter", {}, locale));
+    chips.push({ icon: "❄️", label: t("mobilityProfile.chips.winter", {}, locale), tone: "frost" });
   }
   if (dcShare >= 0.35) {
-    tips.push("Dein Profil hat einen hohen DC-Anteil. Mehr ruhige AC- oder Heimladungen verbessern meist Kosten- und Effizienzbild gleichzeitig.");
-    chips.push({ icon: "⚡", label: "Viel DC", tone: "danger" });
+    tips.push(t("mobilityProfile.tips.highDc", {}, locale));
+    chips.push({ icon: "⚡", label: t("mobilityProfile.chips.highDc", {}, locale), tone: "danger" });
   }
   if (highSocShare >= 0.4) {
-    tips.push("Viele Sessions enden über 85 %. Für Alltag und Zeitgewinn bleibt 10–80 % oft das effizientere Fenster.");
-    chips.push({ icon: "🔋", label: "Oft über 85 %", tone: "warm" });
+    tips.push(t("mobilityProfile.tips.highSoc", {}, locale));
+    chips.push({ icon: "🔋", label: t("mobilityProfile.chips.highSoc", {}, locale), tone: "warm" });
   }
   if (homeShare >= 0.45) {
-    chips.push({ icon: "🏠", label: "Viel Heimladen", tone: "mint" });
+    chips.push({ icon: "🏠", label: t("mobilityProfile.chips.homeCharging", {}, locale), tone: "mint" });
   }
   if (!tips.length && Number.isFinite(avgEnergy) && avgEnergy > 0) {
-    tips.push("Dein aktuelles Profil ist bereits ruhig. Konstanz bei Tempo, Reifendruck und Vorklimatisierung ist jetzt der größte Hebel.");
+    tips.push(t("mobilityProfile.tips.calmProfile", {}, locale));
   }
   if (!chips.length && tier) {
-    chips.push({ icon: "🧭", label: "Konstantes Profil", tone: tier.tone === "danger" ? "warm" : tier.tone });
+    chips.push({ icon: "🧭", label: t("mobilityProfile.chips.consistent", {}, locale), tone: tier.tone === "danger" ? "warm" : tier.tone });
   }
 
   return {
@@ -505,15 +513,17 @@ export function buildDrivingEfficiencyProfile(sessions = []) {
 }
 
 export function buildShiftScenario(sessions = [], options = {}) {
-  const { shiftPct = 20, targetKey = "home" } = options;
+  const { shiftPct = 20, sourceKey = "public_dc", targetKey = "home" } = options;
   const mix = buildChargingMix(sessions);
-  const source = mix.byKey.public_dc || null;
+  const source = mix.byKey[sourceKey] || null;
   const target = mix.byKey[targetKey] || null;
 
-  if (!source || !target) {
+  if (!source || !target || sourceKey === targetKey) {
     return {
       ok: false,
       mix,
+      source,
+      target,
       annualSavings: null,
       shiftEnergyKwh: null,
       deltaPricePerKwh: null,
@@ -533,6 +543,8 @@ export function buildShiftScenario(sessions = [], options = {}) {
   return {
     ok: true,
     mix,
+    sourceKey,
+    targetKey,
     source,
     target,
     shiftPct: safeShiftPct,
@@ -545,5 +557,25 @@ export function buildShiftScenario(sessions = [], options = {}) {
 }
 
 export function segmentDefinitions() {
-  return SEGMENT_DEFINITIONS;
+  const locale = getActiveLocale();
+  return {
+    home: {
+      key: "home",
+      label: t("chargingSegments.home.label", {}, locale),
+      shortLabel: t("chargingSegments.home.shortLabel", {}, locale),
+      tone: "mint",
+    },
+    public_ac: {
+      key: "public_ac",
+      label: t("chargingSegments.publicAc.label", {}, locale),
+      shortLabel: t("chargingSegments.publicAc.shortLabel", {}, locale),
+      tone: "frost",
+    },
+    public_dc: {
+      key: "public_dc",
+      label: t("chargingSegments.publicDc.label", {}, locale),
+      shortLabel: t("chargingSegments.publicDc.shortLabel", {}, locale),
+      tone: "warm",
+    },
+  };
 }

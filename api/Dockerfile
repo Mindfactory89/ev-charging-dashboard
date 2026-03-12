@@ -1,6 +1,6 @@
 FROM node:20-bookworm-slim
 
-WORKDIR /app
+WORKDIR /app/api
 
 # System deps for Prisma + SSL
 RUN apt-get update \
@@ -8,11 +8,12 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 # Dependencies
-COPY package.json package-lock.json ./
+COPY api/package.json api/package-lock.json ./
 RUN npm ci
 
 # App source
-COPY . .
+COPY api ./
+COPY shared /app/shared
 
 # Prisma client
 RUN npx prisma generate

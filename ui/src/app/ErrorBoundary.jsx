@@ -1,6 +1,7 @@
 import React from "react";
+import { useI18n } from "../i18n/I18nProvider.jsx";
 
-export default class ErrorBoundary extends React.Component {
+class ErrorBoundaryContainer extends React.Component {
   constructor(props) {
     super(props);
     this.state = { err: null, info: null };
@@ -24,15 +25,15 @@ export default class ErrorBoundary extends React.Component {
       return (
         <div className="app">
           <div className="card glassStrong" style={{ padding: 16, border: "1px solid rgba(255,120,120,0.45)" }}>
-            <div className="sectionKicker">Fehler</div>
+            <div className="sectionKicker">{this.props.t("errorBoundary.kicker")}</div>
             <div className="sectionTitle" style={{ marginTop: 6 }}>
-              UI ist abgestürzt
+              {this.props.t("errorBoundary.title")}
             </div>
 
             <div style={{ marginTop: 10, fontSize: 13, color: "rgba(255,255,255,0.9)", lineHeight: 1.5 }}>
-              <b>Message:</b> {msg}
+              <b>{this.props.t("errorBoundary.messageLabel")}</b> {msg}
               <div style={{ marginTop: 8, opacity: 0.8 }}>
-                Kopier mir diese Box + Console-Log hier rein, dann fixen wir es sauber.
+                {this.props.t("errorBoundary.help")}
               </div>
             </div>
 
@@ -49,8 +50,8 @@ export default class ErrorBoundary extends React.Component {
                 whiteSpace: "pre-wrap",
               }}
             >
-              {stack || "(no stack)"}
-              {comp ? `\n\n--- component stack ---\n${comp}` : ""}
+              {stack || this.props.t("errorBoundary.noStack")}
+              {comp ? `\n\n${this.props.t("errorBoundary.componentStack")}\n${comp}` : ""}
             </pre>
           </div>
         </div>
@@ -59,4 +60,9 @@ export default class ErrorBoundary extends React.Component {
 
     return this.props.children;
   }
+}
+
+export default function ErrorBoundary(props) {
+  const { t } = useI18n();
+  return <ErrorBoundaryContainer {...props} t={t} />;
 }

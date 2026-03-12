@@ -1,32 +1,30 @@
 import React from "react";
+import { useI18n } from "../i18n/I18nProvider.jsx";
 import Tooltip from "./Tooltip.jsx";
-import { WEEKDAY_LABELS } from "./loadRhythm.js";
+import { getWeekdayLabels } from "./loadRhythm.js";
 import { buildWeekdayHeatmap } from "./sessionIntelligence.js";
-
-function num(value, digits = 1) {
-  const numValue = Number(value);
-  if (!Number.isFinite(numValue)) return "–";
-  return numValue.toLocaleString("de-DE", { maximumFractionDigits: digits });
-}
+import { num } from "../app/formatters.js";
 
 export default function WeekdayHeatmapCard({ sessions = [], year = 2026 }) {
+  const { locale, t } = useI18n();
   const heatmap = React.useMemo(() => buildWeekdayHeatmap(sessions, { year }), [sessions, year]);
+  const weekdayLabels = React.useMemo(() => getWeekdayLabels(), [locale]);
 
   return (
     <section className="row">
       <div className="card glassStrong analysisPanel heatmapPanel">
         <div className="panelHeader">
           <div>
-            <div className="sectionKicker">Rhythmus</div>
+            <div className="sectionKicker">{t("weekdayHeatmap.kicker")}</div>
             <div className="ttTitleRow panelTitleRow">
-              <div className="sectionTitle">Wochentag-Heatmap ({year})</div>
+              <div className="sectionTitle">{t("weekdayHeatmap.title", { year })}</div>
               <Tooltip
                 placement="top"
                 openDelayMs={120}
                 closeDelayMs={220}
-                content="Zeigt, in welchen Monaten und an welchen Wochentagen du am häufigsten geladen hast. Dunklere Felder bedeuten mehr Sessions."
+                content={t("weekdayHeatmap.tooltipContent")}
               >
-                <button className="ttTrigger" type="button" aria-label="Erklärung: Wochentag-Heatmap">
+                <button className="ttTrigger" type="button" aria-label={t("weekdayHeatmap.tooltipLabel")}>
                   i
                 </button>
               </Tooltip>
@@ -34,7 +32,7 @@ export default function WeekdayHeatmapCard({ sessions = [], year = 2026 }) {
           </div>
 
           <div className="pill ghostPill panelMetaPill">
-            {heatmap.strongestCell ? `${heatmap.strongestCell.monthLabel} · ${heatmap.strongestCell.label}` : "Noch keine Heatmap"}
+            {heatmap.strongestCell ? `${heatmap.strongestCell.monthLabel} · ${heatmap.strongestCell.label}` : t("weekdayHeatmap.noHeatmap")}
           </div>
         </div>
 
@@ -42,30 +40,36 @@ export default function WeekdayHeatmapCard({ sessions = [], year = 2026 }) {
           <>
             <div className="summaryGrid">
               <article className="summaryCard warm">
-                <div className="summaryLabel">Stärkster Wochentag</div>
+                <div className="summaryLabel">{t("weekdayHeatmap.strongestWeekday")}</div>
                 <div className="summaryValue">{heatmap.topWeekday?.label || "–"}</div>
-                <div className="summarySub">{heatmap.topWeekday ? `${num(heatmap.topWeekday.count, 0)} Sessions über das Jahr` : "Noch kein Muster"}</div>
+                <div className="summarySub">
+                  {heatmap.topWeekday ? t("weekdayHeatmap.yearSessions", { count: num(heatmap.topWeekday.count, 0) }) : t("weekdayHeatmap.noPattern")}
+                </div>
               </article>
 
               <article className="summaryCard frost">
-                <div className="summaryLabel">Busiest Month</div>
+                <div className="summaryLabel">{t("weekdayHeatmap.busiestMonth")}</div>
                 <div className="summaryValue">{heatmap.topMonth?.label || "–"}</div>
-                <div className="summarySub">{heatmap.topMonth ? `${num(heatmap.topMonth.count, 0)} Ladevorgänge` : "Noch kein Fokusmonat"}</div>
+                <div className="summarySub">
+                  {heatmap.topMonth ? t("weekdayHeatmap.chargingEvents", { count: num(heatmap.topMonth.count, 0) }) : t("weekdayHeatmap.noFocusMonth")}
+                </div>
               </article>
 
               <article className="summaryCard mint">
-                <div className="summaryLabel">Stärkste Zelle</div>
+                <div className="summaryLabel">{t("weekdayHeatmap.strongestCell")}</div>
                 <div className="summaryValue">{heatmap.strongestCell?.label || "–"}</div>
                 <div className="summarySub">
-                  {heatmap.strongestCell ? `${heatmap.strongestCell.monthLabel} • ${num(heatmap.strongestCell.count, 0)} Sessions` : "Noch keine Zellspitze"}
+                  {heatmap.strongestCell
+                    ? `${heatmap.strongestCell.monthLabel} • ${t("weekdayHeatmap.cellSessions", { count: num(heatmap.strongestCell.count, 0) })}`
+                    : t("weekdayHeatmap.noCellPeak")}
                 </div>
               </article>
             </div>
 
             <div className="heatmapShell">
               <div className="heatmapGrid heatmapHeader">
-                <div className="heatmapMonthCell">Monat</div>
-                {WEEKDAY_LABELS.map((label) => (
+                <div className="heatmapMonthCell">{t("weekdayHeatmap.monthHeader")}</div>
+                {weekdayLabels.map((label) => (
                   <div key={`weekday-${label}`} className="heatmapWeekdayCell">
                     {label.slice(0, 2)}
                   </div>
@@ -103,14 +107,17 @@ export default function WeekdayHeatmapCard({ sessions = [], year = 2026 }) {
             </div>
 
             <div className="metricNarrative">
-              <b>{heatmap.topWeekday?.label || "Der häufigste Tag"}</b> prägt dein Jahresmuster.{" "}
+              <b>{heatmap.topWeekday?.label || t("weekdayHeatmap.narrativeFallback")}</b> {t("weekdayHeatmap.narrativeLead")}{" "}
               {heatmap.strongestCell
-                ? `Die dichteste Kombination liegt aktuell in ${heatmap.strongestCell.monthLabel} am ${heatmap.strongestCell.label}.`
-                : "Mit mehr Sessions wird hier automatisch die stärkste Kombination aus Monat und Wochentag beschrieben."}
+                ? t("weekdayHeatmap.narrativeStrongestCell", {
+                    month: heatmap.strongestCell.monthLabel,
+                    day: heatmap.strongestCell.label,
+                  })
+                : t("weekdayHeatmap.narrativePending")}
             </div>
           </>
         ) : (
-          <div className="emptyStateCard">Noch keine Sessions für eine Wochentag-Heatmap in {year} vorhanden.</div>
+          <div className="emptyStateCard">{t("weekdayHeatmap.empty", { year })}</div>
         )}
       </div>
     </section>
