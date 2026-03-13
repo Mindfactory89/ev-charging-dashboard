@@ -26,7 +26,7 @@ export default function MonthlyPanel({ activeMonths, monthlyCsvUrl, monthlySorte
           </button>
         </div>
 
-        <div className="chartPanel">
+        <div className="chartPanel monthlyPanelChartPanel">
           {activeMonths.length ? (
             <MonthlyChart months={monthlySorted} />
           ) : (

@@ -113,8 +113,8 @@ export default function MonthlyChart({ months, onMonthSelect }) {
 
   return (
     <div className="card glassStrong monthlyChartCard">
-      <div className="sectionHeader">
-        <div>
+      <div className="sectionHeader monthlyChartHeader">
+        <div className="monthlyChartIntro">
           <div className="sectionKicker">{t("monthlyChart.kicker")}</div>
 
           <div className="ttTitleRow">

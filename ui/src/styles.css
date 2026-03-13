@@ -5075,14 +5075,36 @@ body::before{
 }
 
 .monthlyChartCard .sectionHeader{
-  padding: 0;
+  padding: 16px 18px 4px;
+}
+
+.monthlyChartHeader{
+  align-items: flex-end;
+  row-gap: 14px;
+}
+
+.monthlyChartIntro{
+  flex: 1 1 280px;
+  min-width: 0;
+}
+
+.monthlyChartCard .ttTitleRow{
+  flex-wrap: wrap;
+  row-gap: 8px;
 }
 
 .monthlyChartCard .sectionTitle{
   font-size: 17px;
+  max-width: 24ch;
+  line-height: 1.08;
+  text-wrap: balance;
 }
 
 .monthlyChartToggle{
+  flex: 0 1 auto;
+  justify-content: flex-end;
+  margin-left: auto;
+  margin-top: 2px;
   padding: 7px;
   gap: 8px;
   border-radius: 18px;
@@ -5102,7 +5124,7 @@ body::before{
 }
 
 .monthlyChartShell{
-  margin-top: 16px;
+  margin-top: 10px;
   border-radius: 28px;
   border-color: rgba(255,255,255,0.06);
   background:
@@ -5117,6 +5139,10 @@ body::before{
 .chartWrap.compact.monthlyChartShell{
   padding: 24px 24px 16px;
   min-height: 356px;
+}
+
+.monthlyPanelChartPanel{
+  margin-top: 18px;
 }
 
 .premiumFeatureStats{
@@ -5811,20 +5837,44 @@ body::before{
   }
 }
 
+@media (max-width: 980px){
+  .monthlyChartHeader{
+    align-items: stretch;
+  }
+
+  .monthlyChartToggle{
+    width: 100%;
+    margin-left: 0;
+    margin-top: 0;
+    justify-content: stretch;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .monthlyChartToggle .toggleItem{
+    min-width: 0;
+    justify-content: center;
+  }
+
+  .monthlyChartToggle .toggleBtn{
+    width: 100%;
+  }
+}
+
 @media (max-width: 760px){
   .premiumSecondaryGrid{
     gap: 18px;
   }
 
-  .monthlyChartToggle{
-    width: 100%;
-    flex-wrap: wrap;
+  .monthlyChartCard .sectionHeader{
+    padding: 14px 16px 2px;
   }
 
   .monthlyChartShell.chartWrap,
   .chartWrap.compact.monthlyChartShell{
-    padding: 20px 18px 14px;
-    min-height: 344px;
+    padding: 18px 16px 14px;
+    min-height: 336px;
   }
 
   .premiumFeatureStats{
@@ -5847,6 +5897,12 @@ body::before{
   .comparisonChartShell{
     padding: 16px 14px 10px;
     min-height: 344px;
+  }
+}
+
+@media (max-width: 580px){
+  .monthlyChartToggle{
+    grid-template-columns: 1fr;
   }
 }
 
