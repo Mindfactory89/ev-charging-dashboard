@@ -235,21 +235,6 @@ Helpful notes:
 - current bot commands: `/start`, `/new`, `/cancel`, `/whoami`
 - for optional fields you can use the inline "Without value" button or simply send the matching number
 
-#### GitHub And Privacy
-
-The Telegram bot implementation can be committed to GitHub and deployed normally as long as your private values stay inside `.env`.
-
-- `.env`, `.env.local`, and other real env files are excluded from Git via `.gitignore`
-- only code, tests, Docker files, and examples like `.env.example` should be committed
-- your `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ALLOWED_CHAT_IDS`, and real server values should live only in your local or VPS `.env`
-- your charging session data lives in PostgreSQL and is not versioned by a Git commit
-- the deploy workflow also skips syncing `.env` by default so secrets stay private on the target machine
-
-Important:
-
-- before committing, make sure no real tokens or chat IDs ended up in the README, code snippets, or screenshots
-- if a token was ever visible in a chat, commit, or screenshot, rotate it with `@BotFather`
-
 ### Deploy Helper
 
 For a simple VPS workflow, the repo ships with a small sync-and-deploy helper.
