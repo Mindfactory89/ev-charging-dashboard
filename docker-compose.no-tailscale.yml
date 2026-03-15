@@ -23,6 +23,8 @@ services:
       DATABASE_URL: "postgresql://${POSTGRES_USER:-mobility}:${POSTGRES_PASSWORD:-change_me_strong_password}@db:5432/${POSTGRES_DB:-mobility}?schema=public"
       PORT: "3000"
       NODE_ENV: "production"
+      TELEGRAM_BOT_TOKEN: "${TELEGRAM_BOT_TOKEN:-}"
+      TELEGRAM_ALLOWED_CHAT_IDS: "${TELEGRAM_ALLOWED_CHAT_IDS:-}"
     depends_on:
       db:
         condition: service_healthy

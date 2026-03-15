@@ -191,6 +191,8 @@ Important variables:
 - `VITE_MOBILE_API_BASE`
 - `VITE_VEHICLE_PROFILE`
 - `VITE_DEMO_HOST_PREFIX`
+- `TELEGRAM_BOT_TOKEN`
+- `TELEGRAM_ALLOWED_CHAT_IDS`
 - `SSH_DEPLOY_HOST`
 - `SSH_DEPLOY_USER`
 - `SSH_DEPLOY_PATH`
@@ -202,6 +204,51 @@ Notes:
 - `VITE_VEHICLE_PROFILE` only changes the visual hero/profile presentation. Built-in IDs are `cupra-born`, `cupra-tavascan`, `cupra-raval`, and `generic-ev`.
 - `docker-compose.yml` requires an explicit `TAILSCALE_IP`.
 - Demo mode can be activated with `?demo=1` or via `VITE_DEMO_HOST_PREFIX`.
+
+### Telegram Bot For Private Session Entry
+
+If you want to add charging sessions while away from home, you can optionally enable a private Telegram bot.
+
+- The bot uses long polling and only needs outbound access to Telegram
+- Your dashboard does not need to become publicly reachable
+- Write access is limited to chats listed in `TELEGRAM_ALLOWED_CHAT_IDS`
+- The bot walks through a guided chat form, shows inline buttons for choice-based steps, and writes the entry into the database afterwards
+
+Example `.env` values:
+
+```bash
+TELEGRAM_BOT_TOKEN=123456:replace-with-botfather-token
+TELEGRAM_ALLOWED_CHAT_IDS=123456789
+```
+
+Typical setup flow:
+
+- create a bot with `@BotFather` and paste the token into `TELEGRAM_BOT_TOKEN`
+- add your private chat ID to `TELEGRAM_ALLOWED_CHAT_IDS`
+- restart the API or run `docker compose up -d --build --no-deps api`
+- send `/start` or `Neue Session` in Telegram
+
+Helpful notes:
+
+- you can add multiple chat IDs as a comma-separated list
+- unknown chat IDs are logged by the API so you can allow new devices later
+- current bot commands: `/start`, `/new`, `/cancel`, `/whoami`
+- for optional fields you can use the inline "Without value" button or simply send the matching number
+
+#### GitHub And Privacy
+
+The Telegram bot implementation can be committed to GitHub and deployed normally as long as your private values stay inside `.env`.
+
+- `.env`, `.env.local`, and other real env files are excluded from Git via `.gitignore`
+- only code, tests, Docker files, and examples like `.env.example` should be committed
+- your `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ALLOWED_CHAT_IDS`, and real server values should live only in your local or VPS `.env`
+- your charging session data lives in PostgreSQL and is not versioned by a Git commit
+- the deploy workflow also skips syncing `.env` by default so secrets stay private on the target machine
+
+Important:
+
+- before committing, make sure no real tokens or chat IDs ended up in the README, code snippets, or screenshots
+- if a token was ever visible in a chat, commit, or screenshot, rotate it with `@BotFather`
 
 ### Deploy Helper
 

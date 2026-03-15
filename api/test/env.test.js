@@ -8,10 +8,14 @@ test('readRuntimeConfig accepts postgres database urls and valid ports', () => {
     DATABASE_URL: 'postgresql://user:password@127.0.0.1:5432/mobility?schema=public',
     PORT: '18800',
     NODE_ENV: 'production',
+    TELEGRAM_BOT_TOKEN: '123:abc',
+    TELEGRAM_ALLOWED_CHAT_IDS: '12345,67890',
   });
 
   assert.equal(config.port, 18800);
   assert.equal(config.nodeEnv, 'production');
+  assert.equal(config.telegram.enabled, true);
+  assert.deepEqual(config.telegram.allowedChatIds, ['12345', '67890']);
 });
 
 test('readRuntimeConfig rejects missing database url', () => {
@@ -29,5 +33,17 @@ test('readRuntimeConfig rejects invalid port ranges', () => {
         PORT: '70000',
       }),
     /PORT muss eine ganze Zahl/
+  );
+});
+
+test('readRuntimeConfig rejects partial telegram configuration', () => {
+  assert.throws(
+    () =>
+      readRuntimeConfig({
+        DATABASE_URL: 'postgresql://user:password@127.0.0.1:5432/mobility?schema=public',
+        PORT: '3000',
+        TELEGRAM_BOT_TOKEN: '123:abc',
+      }),
+    /TELEGRAM_ALLOWED_CHAT_IDS/
   );
 });

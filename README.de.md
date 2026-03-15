@@ -191,6 +191,8 @@ Wichtige Variablen:
 - `VITE_MOBILE_API_BASE`
 - `VITE_VEHICLE_PROFILE`
 - `VITE_DEMO_HOST_PREFIX`
+- `TELEGRAM_BOT_TOKEN`
+- `TELEGRAM_ALLOWED_CHAT_IDS`
 - `SSH_DEPLOY_HOST`
 - `SSH_DEPLOY_USER`
 - `SSH_DEPLOY_PATH`
@@ -202,6 +204,51 @@ Hinweise:
 - `VITE_VEHICLE_PROFILE` aendert nur die visuelle Hero-/Profil-Darstellung. Eingebaute IDs sind `cupra-born`, `cupra-tavascan`, `cupra-raval` und `generic-ev`.
 - `docker-compose.yml` erwartet eine explizite `TAILSCALE_IP`.
 - Der Demo-Modus kann mit `?demo=1` oder ueber `VITE_DEMO_HOST_PREFIX` aktiviert werden.
+
+### Telegram Bot fuer private Session-Erfassung
+
+Wenn du unterwegs Sessions erfassen willst, kannst du optional einen privaten Telegram-Bot aktivieren.
+
+- Der Bot nutzt Long Polling und braucht nur ausgehende Verbindungen zu Telegram
+- Dein Dashboard muss dafuer nicht oeffentlich erreichbar sein
+- Schreibzugriff bekommen nur Chats aus `TELEGRAM_ALLOWED_CHAT_IDS`
+- Der Bot fuehrt dich per Chat durch ein Eingabeformular, zeigt Inline-Buttons fuer Auswahlfelder und schreibt den Eintrag anschliessend in die Datenbank
+
+Beispiel fuer `.env`:
+
+```bash
+TELEGRAM_BOT_TOKEN=123456:replace-with-botfather-token
+TELEGRAM_ALLOWED_CHAT_IDS=123456789
+```
+
+Typischer Ablauf:
+
+- Bot bei `@BotFather` anlegen und Token in `TELEGRAM_BOT_TOKEN` eintragen
+- eigene private Chat-ID in `TELEGRAM_ALLOWED_CHAT_IDS` hinterlegen
+- API neu starten oder `docker compose up -d --build --no-deps api` ausfuehren
+- im Telegram-Chat `/start` oder `Neue Session` senden
+
+Praktische Hinweise:
+
+- mehrere Chat-IDs koennen komma-separiert eingetragen werden
+- unbekannte Chat-IDs werden im API-Log protokolliert, damit du neue Geraete spaeter freischalten kannst
+- verfuegbare Bot-Befehle aktuell: `/start`, `/new`, `/cancel`, `/whoami`
+- bei optionalen Feldern kannst du ueber Inline-Buttons direkt "Ohne Angabe" auswaehlen oder alternativ einfach die passende Zahl senden
+
+#### GitHub und Privatsphaere
+
+Die Bot-Implementierung kann ganz normal nach GitHub committed und von dort deployed werden, solange deine privaten Werte in `.env` bleiben.
+
+- `.env`, `.env.local` und andere echte Env-Dateien sind per `.gitignore` von Git ausgeschlossen
+- ins Repository gehoeren nur Code, Tests, Docker-Dateien und Beispiele wie `.env.example`
+- dein `TELEGRAM_BOT_TOKEN`, deine `TELEGRAM_ALLOWED_CHAT_IDS` und deine echten Serverdaten gehoeren nur in die lokale oder die VPS-`.env`
+- deine eingetragenen Ladevorgaenge liegen in PostgreSQL und werden nicht durch einen Git-Commit mit versioniert
+- der Deploy-Workflow synct standardmaessig ebenfalls keine `.env` mit, damit Secrets auf dem Zielsystem privat bleiben
+
+Wichtig:
+
+- vor einem Commit immer pruefen, dass keine echten Tokens oder Chat-IDs in README, Code-Snippets oder Screenshots gelandet sind
+- wenn ein Token doch einmal in einem Chat, Commit oder Screenshot sichtbar war, solltest du ihn bei `@BotFather` rotieren
 
 ### Deploy-Helfer
 
