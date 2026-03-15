@@ -235,21 +235,6 @@ Praktische Hinweise:
 - verfuegbare Bot-Befehle aktuell: `/start`, `/new`, `/cancel`, `/whoami`
 - bei optionalen Feldern kannst du ueber Inline-Buttons direkt "Ohne Angabe" auswaehlen oder alternativ einfach die passende Zahl senden
 
-#### GitHub und Privatsphaere
-
-Die Bot-Implementierung kann ganz normal nach GitHub committed und von dort deployed werden, solange deine privaten Werte in `.env` bleiben.
-
-- `.env`, `.env.local` und andere echte Env-Dateien sind per `.gitignore` von Git ausgeschlossen
-- ins Repository gehoeren nur Code, Tests, Docker-Dateien und Beispiele wie `.env.example`
-- dein `TELEGRAM_BOT_TOKEN`, deine `TELEGRAM_ALLOWED_CHAT_IDS` und deine echten Serverdaten gehoeren nur in die lokale oder die VPS-`.env`
-- deine eingetragenen Ladevorgaenge liegen in PostgreSQL und werden nicht durch einen Git-Commit mit versioniert
-- der Deploy-Workflow synct standardmaessig ebenfalls keine `.env` mit, damit Secrets auf dem Zielsystem privat bleiben
-
-Wichtig:
-
-- vor einem Commit immer pruefen, dass keine echten Tokens oder Chat-IDs in README, Code-Snippets oder Screenshots gelandet sind
-- wenn ein Token doch einmal in einem Chat, Commit oder Screenshot sichtbar war, solltest du ihn bei `@BotFather` rotieren
-
 ### Deploy-Helfer
 
 Fuer einen einfachen VPS-Workflow bringt das Repo einen kleinen Sync-und-Deploy-Helfer mit.
