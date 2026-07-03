@@ -1,4 +1,4 @@
-import importProfilesConfig from "../../../shared/domain/importProfiles.cjs";
+import importProfilesConfig from "../../../shared/domain/importProfiles.json" with { type: "json" };
 import { getActiveLocale, translate } from "../i18n/runtime.js";
 
 function uniqueValues(values = []) {

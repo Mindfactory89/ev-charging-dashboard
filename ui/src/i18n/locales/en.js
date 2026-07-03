@@ -51,6 +51,7 @@ export default {
   },
   app: {
     dashboardTitle: "eMobility Dashboard",
+    skipMain: "Skip to main content",
     addSessionTitle: "Add charging session",
     addSessionAria: "Add charging session",
     addSessionButton: "+ Session",
@@ -61,6 +62,7 @@ export default {
       analysis: "Analysis",
       history: "History",
     },
+    screenNavLabel: "Dashboard sections",
     screenMeta: {
       overview: "Hero, focus chart, and a few strong signals.",
       analysis: "Deep analysis without a card wall.",
@@ -154,6 +156,7 @@ export default {
   overview: {
     focusKicker: "Focus area",
     focusTitle: "One dominant area instead of a card wall",
+    modeAria: "Overview focus",
     modes: {
       cost: "Cost",
       behavior: "Charging behavior",
@@ -1030,6 +1033,7 @@ export default {
   analysis: {
     kicker: "Analysis",
     title: "Depth only when you actually need it",
+    modeAria: "Analysis focus",
     modes: {
       compare: "Compare",
       efficiency: "Efficiency",

@@ -97,14 +97,20 @@ export default function AnalysisScreen({
           <div className="premiumModeTitle">{t("analysis.title")}</div>
         </div>
 
-        <div className="toggle premiumModeToggle" aria-label="Analyse Fokus">
-          <button type="button" className={analysisMode === "compare" ? "toggleBtn active" : "toggleBtn"} onClick={() => onAnalysisModeChange("compare")}>
+        <div className="toggle premiumModeToggle" role="group" aria-label={t("analysis.modeAria")}>
+          <button
+            type="button"
+            className={analysisMode === "compare" ? "toggleBtn active" : "toggleBtn"}
+            onClick={() => onAnalysisModeChange("compare")}
+            aria-pressed={analysisMode === "compare"}
+          >
             {t("analysis.modes.compare")}
           </button>
           <button
             type="button"
             className={analysisMode === "efficiency" ? "toggleBtn active" : "toggleBtn"}
             onClick={() => onAnalysisModeChange("efficiency")}
+            aria-pressed={analysisMode === "efficiency"}
           >
             {t("analysis.modes.efficiency")}
           </button>
@@ -112,6 +118,7 @@ export default function AnalysisScreen({
             type="button"
             className={analysisMode === "signals" ? "toggleBtn active" : "toggleBtn"}
             onClick={() => onAnalysisModeChange("signals")}
+            aria-pressed={analysisMode === "signals"}
           >
             {t("analysis.modes.signals")}
           </button>
@@ -119,10 +126,16 @@ export default function AnalysisScreen({
             type="button"
             className={analysisMode === "mobility" ? "toggleBtn active" : "toggleBtn"}
             onClick={() => onAnalysisModeChange("mobility")}
+            aria-pressed={analysisMode === "mobility"}
           >
             {t("analysis.modes.mobility")}
           </button>
-          <button type="button" className={analysisMode === "time" ? "toggleBtn active" : "toggleBtn"} onClick={() => onAnalysisModeChange("time")}>
+          <button
+            type="button"
+            className={analysisMode === "time" ? "toggleBtn active" : "toggleBtn"}
+            onClick={() => onAnalysisModeChange("time")}
+            aria-pressed={analysisMode === "time"}
+          >
             {t("analysis.modes.time")}
           </button>
         </div>

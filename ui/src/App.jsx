@@ -15,7 +15,7 @@ import DashboardHeroStage from "./app/DashboardHeroStage.jsx";
 import ErrorBoundary from "./app/ErrorBoundary.jsx";
 import LazySectionFallback from "./app/LazySectionFallback.jsx";
 import RuntimeFeedbackHost from "./app/RuntimeFeedbackHost.jsx";
-import { floatingAddButtonStyle, YEARS } from "./app/constants.js";
+import { YEARS } from "./app/constants.js";
 import {
   calcTrend,
   datumDE,
@@ -431,19 +431,19 @@ export default function App() {
       : currentPrev.prev
         ? trendPctLabel(calcTrend(currentPrev.current?.cost, currentPrev.prev?.cost)?.pct) ?? "–"
         : "–";
+  const screenOptions = [
+    { id: "overview", label: t("app.screens.overview"), meta: t("app.screenMeta.overview") },
+    { id: "analysis", label: t("app.screens.analysis"), meta: t("app.screenMeta.analysis") },
+    { id: "verlauf", label: t("app.screens.history"), meta: t("app.screenMeta.history") },
+  ];
+  const activeScreenOption = screenOptions.find((option) => option.id === activeScreen) ?? screenOptions[0];
 
   return (
     <ErrorBoundary>
       <div className="app">
-        <button
-          type="button"
-          onClick={openAdd}
-          title={t("app.addSessionTitle")}
-          aria-label={t("app.addSessionAria")}
-          style={floatingAddButtonStyle}
-        >
-          {t("app.addSessionButton")}
-        </button>
+        <a className="skipLink" href="#main-content">
+          {t("app.skipMain")}
+        </a>
 
         <DashboardHeader
           availableYears={effectiveAvailableYears}
@@ -457,40 +457,43 @@ export default function App() {
           year={year}
         />
 
-        <main className="layout premiumLayout">
+        <button
+          type="button"
+          onClick={openAdd}
+          title={t("app.addSessionTitle")}
+          aria-label={t("app.addSessionAria")}
+          className="floatingAddButton"
+          aria-expanded={addOpen}
+          aria-controls="add-session-composer"
+        >
+          {t("app.addSessionButton")}
+        </button>
+
+        <main id="main-content" className="layout premiumLayout" tabIndex={-1} aria-busy={loading || refreshing ? "true" : "false"}>
           {err ? <div className="errorBox">{err}</div> : null}
 
-          <section className="premiumScreenBar">
-            <div className="toggle premiumScreenToggle" aria-label="Dashboard Bereiche">
-              <button
-                type="button"
-                className={activeScreen === "overview" ? "toggleBtn active" : "toggleBtn"}
-                onClick={() => setActiveScreen("overview")}
-              >
-                {t("app.screens.overview")}
-              </button>
-              <button
-                type="button"
-                className={activeScreen === "analysis" ? "toggleBtn active" : "toggleBtn"}
-                onClick={() => setActiveScreen("analysis")}
-              >
-                {t("app.screens.analysis")}
-              </button>
-              <button
-                type="button"
-                className={activeScreen === "verlauf" ? "toggleBtn active" : "toggleBtn"}
-                onClick={() => setActiveScreen("verlauf")}
-              >
-                {t("app.screens.history")}
-              </button>
+          <section className="premiumScreenBar" aria-label={t("app.screenNavLabel")}>
+            <div className="toggle premiumScreenToggle" role="navigation" aria-label={t("app.screenNavLabel")}>
+              {screenOptions.map((option) => {
+                const isActive = activeScreen === option.id;
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    className={isActive ? "toggleBtn active" : "toggleBtn"}
+                    onClick={() => setActiveScreen(option.id)}
+                    aria-current={isActive ? "page" : undefined}
+                    aria-pressed={isActive}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
             </div>
 
-            <div className="premiumScreenMeta">
-              {activeScreen === "overview"
-                ? t("app.screenMeta.overview")
-                : activeScreen === "analysis"
-                  ? t("app.screenMeta.analysis")
-                  : t("app.screenMeta.history")}
+            <div className="premiumScreenMeta" aria-live="polite">
+              <span className="screenMetaCurrent">{activeScreenOption.label}</span>
+              <span>{activeScreenOption.meta}</span>
             </div>
           </section>
 

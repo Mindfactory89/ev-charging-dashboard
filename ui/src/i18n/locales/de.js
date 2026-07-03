@@ -51,6 +51,7 @@ export default {
   },
   app: {
     dashboardTitle: "eMobility Dashboard",
+    skipMain: "Zum Hauptinhalt springen",
     addSessionTitle: "Ladevorgang hinzufügen",
     addSessionAria: "Ladevorgang hinzufügen",
     addSessionButton: "+ Ladevorgang",
@@ -61,6 +62,7 @@ export default {
       analysis: "Analyse",
       history: "Verlauf",
     },
+    screenNavLabel: "Dashboard Bereiche",
     screenMeta: {
       overview: "Hero, Fokus-Chart und wenige starke Signale.",
       analysis: "Tiefe Auswertung ohne Kartenwand.",
@@ -154,6 +156,7 @@ export default {
   overview: {
     focusKicker: "Fokusfläche",
     focusTitle: "Eine dominante Fläche statt Kartenwand",
+    modeAria: "Übersicht Fokus",
     modes: {
       cost: "Kosten",
       behavior: "Ladeverhalten",
@@ -1030,6 +1033,7 @@ export default {
   analysis: {
     kicker: "Analyse",
     title: "Tiefgang nur dann, wenn du ihn wirklich brauchst",
+    modeAria: "Analyse Fokus",
     modes: {
       compare: "Vergleich",
       efficiency: "Effizienz",

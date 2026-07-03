@@ -32,7 +32,7 @@ export default function DashboardHeader({
       </div>
 
       <div className="premiumTopControls">
-        <div className="filters premiumYearRail">
+        <div className="filters premiumYearRail" role="group" aria-label={t("header.year")}>
           <div className="chipLabel">{t("header.year")}</div>
           <div className="chipRow">
             {availableYears.map((itemYear) => (
@@ -41,6 +41,8 @@ export default function DashboardHeader({
                 type="button"
                 className={year === itemYear ? "chip" : "chip ghost"}
                 onClick={() => onSelectYear(itemYear)}
+                aria-label={`${t("header.year")} ${itemYear}`}
+                aria-pressed={year === itemYear}
               >
                 {itemYear}
               </button>
@@ -48,7 +50,7 @@ export default function DashboardHeader({
           </div>
         </div>
 
-        <div className="filters premiumYearRail">
+        <div className="filters premiumYearRail" role="group" aria-label={t("language.label")}>
           <div className="chipLabel">{t("language.label")}</div>
           <div className="chipRow">
             {supportedLocales.map((itemLocale) => (
@@ -57,6 +59,8 @@ export default function DashboardHeader({
                 type="button"
                 className={locale === itemLocale ? "chip" : "chip ghost"}
                 onClick={() => setLocale(itemLocale)}
+                aria-label={`${t("language.label")} ${t(`language.options.${itemLocale}`)}`}
+                aria-pressed={locale === itemLocale}
               >
                 {t(`language.options.${itemLocale}`)}
               </button>

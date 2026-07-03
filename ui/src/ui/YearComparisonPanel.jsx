@@ -484,26 +484,56 @@ export default function YearComparisonPanel({ availableYears = [], initialLeftYe
               </div>
 
               <div className="comparisonToolbarControls">
-                <div className="toggle" aria-label={t("yearComparison.scopeAria")}>
-                  <button type="button" className={chartScope === "year" ? "toggleBtn active" : "toggleBtn"} onClick={() => setChartScope("year")}>
+                <div className="toggle" role="group" aria-label={t("yearComparison.scopeAria")}>
+                  <button
+                    type="button"
+                    className={chartScope === "year" ? "toggleBtn active" : "toggleBtn"}
+                    onClick={() => setChartScope("year")}
+                    aria-pressed={chartScope === "year"}
+                  >
                     {t("yearComparison.toggles.year")}
                   </button>
-                  <button type="button" className={chartScope === "month" ? "toggleBtn active" : "toggleBtn"} onClick={() => setChartScope("month")}>
+                  <button
+                    type="button"
+                    className={chartScope === "month" ? "toggleBtn active" : "toggleBtn"}
+                    onClick={() => setChartScope("month")}
+                    aria-pressed={chartScope === "month"}
+                  >
                     {t("yearComparison.toggles.month")}
                   </button>
                 </div>
 
-                <div className="toggle" aria-label={t("yearComparison.modeAria")}>
-                  <button type="button" className={mode === "cost" ? "toggleBtn active" : "toggleBtn"} onClick={() => setMode("cost")}>
+                <div className="toggle" role="group" aria-label={t("yearComparison.modeAria")}>
+                  <button
+                    type="button"
+                    className={mode === "cost" ? "toggleBtn active" : "toggleBtn"}
+                    onClick={() => setMode("cost")}
+                    aria-pressed={mode === "cost"}
+                  >
                     {t("yearComparison.toggles.cost")}
                   </button>
-                  <button type="button" className={mode === "energy" ? "toggleBtn active" : "toggleBtn"} onClick={() => setMode("energy")}>
+                  <button
+                    type="button"
+                    className={mode === "energy" ? "toggleBtn active" : "toggleBtn"}
+                    onClick={() => setMode("energy")}
+                    aria-pressed={mode === "energy"}
+                  >
                     {t("yearComparison.toggles.energy")}
                   </button>
-                  <button type="button" className={mode === "price" ? "toggleBtn active" : "toggleBtn"} onClick={() => setMode("price")}>
+                  <button
+                    type="button"
+                    className={mode === "price" ? "toggleBtn active" : "toggleBtn"}
+                    onClick={() => setMode("price")}
+                    aria-pressed={mode === "price"}
+                  >
                     {t("yearComparison.toggles.price")}
                   </button>
-                  <button type="button" className={mode === "sessions" ? "toggleBtn active" : "toggleBtn"} onClick={() => setMode("sessions")}>
+                  <button
+                    type="button"
+                    className={mode === "sessions" ? "toggleBtn active" : "toggleBtn"}
+                    onClick={() => setMode("sessions")}
+                    aria-pressed={mode === "sessions"}
+                  >
                     {t("yearComparison.toggles.sessions")}
                   </button>
                 </div>

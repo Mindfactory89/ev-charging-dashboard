@@ -150,14 +150,20 @@ export default function OverviewScreen({
           <div className="premiumModeTitle">{t("overview.focusTitle")}</div>
         </div>
 
-        <div className="toggle premiumModeToggle" aria-label="Übersicht Fokus">
-          <button type="button" className={overviewMode === "cost" ? "toggleBtn active" : "toggleBtn"} onClick={() => onOverviewModeChange("cost")}>
+        <div className="toggle premiumModeToggle" role="group" aria-label={t("overview.modeAria")}>
+          <button
+            type="button"
+            className={overviewMode === "cost" ? "toggleBtn active" : "toggleBtn"}
+            onClick={() => onOverviewModeChange("cost")}
+            aria-pressed={overviewMode === "cost"}
+          >
             {t("overview.modes.cost")}
           </button>
           <button
             type="button"
             className={overviewMode === "behavior" ? "toggleBtn active" : "toggleBtn"}
             onClick={() => onOverviewModeChange("behavior")}
+            aria-pressed={overviewMode === "behavior"}
           >
             {t("overview.modes.behavior")}
           </button>
@@ -165,6 +171,7 @@ export default function OverviewScreen({
             type="button"
             className={overviewMode === "compare" ? "toggleBtn active" : "toggleBtn"}
             onClick={() => onOverviewModeChange("compare")}
+            aria-pressed={overviewMode === "compare"}
           >
             {t("overview.modes.compare")}
           </button>
@@ -172,6 +179,7 @@ export default function OverviewScreen({
             type="button"
             className={overviewMode === "forecast" ? "toggleBtn active" : "toggleBtn"}
             onClick={() => onOverviewModeChange("forecast")}
+            aria-pressed={overviewMode === "forecast"}
           >
             {t("overview.modes.forecast")}
           </button>

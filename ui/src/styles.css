@@ -5,6 +5,8 @@
   --border: rgba(255,255,255,0.10);
   --text: rgba(255,255,255,0.92);
   --muted: rgba(255,255,255,0.60);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --floating-action-offset: calc(22px + var(--safe-bottom));
 
   /* Cupra Copper */
   --cupra: rgba(205,132,64,0.95);
@@ -25,6 +27,25 @@ body{
 }
 
 a{ color:inherit; text-decoration:none; }
+
+.skipLink{
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 200;
+  transform: translateY(-150%);
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(205,132,64,0.36);
+  background: rgba(8,9,12,0.94);
+  color: rgba(255,255,255,0.94);
+  box-shadow: 0 18px 52px rgba(0,0,0,0.42);
+  transition: transform 160ms ease;
+}
+
+.skipLink:focus-visible{
+  transform: translateY(0);
+}
 
 .app{ max-width: 1200px; margin: 0 auto; padding: 22px 18px 26px; }
 .layout{ display:flex; flex-direction:column; gap: 16px; }
@@ -67,6 +88,30 @@ a{ color:inherit; text-decoration:none; }
   color: rgba(255,255,255,0.80);
 }
 .chip:hover{ filter: brightness(1.06); }
+
+.floatingAddButton{
+  position: fixed;
+  right: calc(22px + env(safe-area-inset-right, 0px));
+  bottom: var(--floating-action-offset);
+  z-index: 60;
+  min-height: 48px;
+  min-width: 48px;
+  padding: 12px 16px;
+  border-radius: 999px;
+  color: white;
+  background: linear-gradient(180deg, rgba(24,24,30,0.90), rgba(12,12,16,0.88));
+  border: 1px solid rgba(255,255,255,0.10);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.05), 0 22px 56px rgba(0,0,0,0.50);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  cursor: pointer;
+  font-weight: 650;
+  letter-spacing: 0.15px;
+}
+
+#add-session-composer{
+  scroll-margin-top: 24px;
+}
 
 .premiumLayout{
   gap: 28px;
@@ -117,10 +162,20 @@ a{ color:inherit; text-decoration:none; }
 }
 
 .premiumScreenMeta{
+  display: grid;
+  gap: 2px;
   max-width: 360px;
   font-size: 13.5px;
   line-height: 1.55;
   color: rgba(255,255,255,0.58);
+}
+
+.screenMetaCurrent{
+  font-size: 11px;
+  font-weight: 760;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.84);
 }
 
 .premiumScreenToggle{
@@ -6062,11 +6117,60 @@ body.touch-shell .tableWrap{
 }
 
 @media (max-width: 760px){
+  :root{
+    --floating-action-offset: calc(18px + var(--safe-bottom));
+  }
+
   .app{
     padding-top: calc(16px + var(--safe-top));
     padding-right: calc(14px + var(--safe-right));
-    padding-bottom: calc(18px + var(--safe-bottom));
+    padding-bottom: calc(86px + var(--safe-bottom));
     padding-left: calc(14px + var(--safe-left));
+  }
+
+  .premiumScreenBar{
+    position: sticky;
+    top: 0;
+    z-index: 42;
+    margin-inline: calc(-14px - var(--safe-left)) calc(-14px - var(--safe-right));
+    padding: 10px calc(14px + var(--safe-right)) 10px calc(14px + var(--safe-left));
+    border-top: 1px solid rgba(255,255,255,0.07);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    background:
+      linear-gradient(180deg, rgba(8,9,12,0.94), rgba(8,9,12,0.78)),
+      rgba(8,9,12,0.88);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+  }
+
+  .premiumScreenMeta{
+    max-width: none;
+  }
+
+  .floatingAddButton{
+    right: calc(16px + var(--safe-right));
+    bottom: var(--floating-action-offset);
+  }
+
+  #add-session-composer{
+    scroll-margin-top: 158px;
+  }
+}
+
+@media (pointer: coarse){
+  .chip,
+  .toggleBtn,
+  .rowDetailBtn,
+  .rowEditBtn,
+  .rowDeleteBtn,
+  .runtimeToastClose{
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .ttTrigger{
+    min-width: 44px;
+    min-height: 44px;
   }
 }
 

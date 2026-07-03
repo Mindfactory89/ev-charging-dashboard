@@ -106,7 +106,7 @@ export default function HistoryScreen({
         <ImportSessionsCard onImported={onCreated} sessions={sessions} />
       </section>
 
-      <section className="row" ref={addSectionRef} style={{ marginTop: 18 }}>
+      <section id="add-session-composer" className="row" ref={addSectionRef} style={{ marginTop: 18 }}>
         <div className={`card glassStrong addComposer ${addOpen ? "open" : "closed"}`}>
           <div className="addComposerGlow" aria-hidden="true" />
 
@@ -114,7 +114,9 @@ export default function HistoryScreen({
             <div className="panelHeader">
               <div>
                 <div className="sectionKicker">{t("history.composer.kicker")}</div>
-                <div className="sectionTitle sectionTitleSpaced">{t("history.composer.title")}</div>
+                <div ref={addPanelRef} tabIndex={-1} className="sectionTitle sectionTitleSpaced">
+                  {t("history.composer.title")}
+                </div>
               </div>
 
               <div className="panelActions">
@@ -129,7 +131,14 @@ export default function HistoryScreen({
                   </button>
                 ) : null}
                 {!addOpen ? (
-                  <button type="button" className="pill pillWarm" onClick={openAdd} aria-expanded={addOpen} style={{ cursor: "pointer" }}>
+                  <button
+                    type="button"
+                    className="pill pillWarm"
+                    onClick={openAdd}
+                    aria-expanded={addOpen}
+                    aria-controls="add-session-composer"
+                    style={{ cursor: "pointer" }}
+                  >
                     {t("common.open")} ↓
                   </button>
                 ) : (
@@ -138,6 +147,7 @@ export default function HistoryScreen({
                     className="pill ghostPill"
                     onClick={closeAdd}
                     aria-expanded={addOpen}
+                    aria-controls="add-session-composer"
                     style={{ cursor: "pointer" }}
                   >
                     {t("common.collapse")}
@@ -163,7 +173,7 @@ export default function HistoryScreen({
                 </div>
               </div>
             ) : (
-              <div ref={addPanelRef} tabIndex={-1} className="addComposerFrame">
+              <div className="addComposerFrame">
                 <AddSessionCard onCreated={onCreated} demo={demo} intelligence={intelligence} sessions={sessions} />
               </div>
             )}
