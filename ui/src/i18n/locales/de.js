@@ -286,6 +286,9 @@ export default {
     activeBands: "{{count}} SoC-Bänder aktiv",
     noSocData: "Keine SoC-Daten",
     empty: "Keine Ladeleistungskurve für {{year}} vorhanden.",
+    bandContextAria: "Preis und Abdeckung je SoC-Band",
+    priceShort: "Preis",
+    coverageShort: "Abdeckung",
     tooltip: {
       averagePower: "Ø Leistung",
       sessions: "Ladevorgänge",

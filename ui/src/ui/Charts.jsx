@@ -40,6 +40,30 @@ function PremiumTooltip({ active, payload, label, t }) {
   );
 }
 
+function SeriesEndMarker({ cx, cy, index, value, payload, dataKey, dataLength, label, formatter, tone = "copper", dy = 0 }) {
+  const rawValue = value ?? payload?.[dataKey];
+  if (index !== dataLength - 1 || rawValue == null) return null;
+  const numeric = Number(rawValue);
+  const x = Number(cx);
+  const y = Number(cy);
+  if (!Number.isFinite(numeric) || !Number.isFinite(x) || !Number.isFinite(y)) return null;
+
+  return (
+    <g className="chartEndMarker">
+      <circle cx={x} cy={y} r={3.5} className={`chartEndDot ${tone}`} />
+      <text
+        x={x + 12}
+        y={y + dy}
+        className={`chartEndLabel ${tone}`}
+        dominantBaseline="middle"
+        textAnchor="start"
+      >
+        {label} {formatter(numeric)}
+      </text>
+    </g>
+  );
+}
+
 export default function Charts({ sessions = [] }) {
   const { formatDate, t } = useI18n();
   const chartSummaryId = React.useId();
@@ -106,7 +130,7 @@ export default function Charts({ sessions = [] }) {
             data={data}
             accessibilityLayer
             aria-describedby={chartSummaryId}
-            margin={{ top: 20, right: 20, left: 12, bottom: 2 }}
+            margin={{ top: 20, right: 106, left: 12, bottom: 2 }}
           >
             <defs>
               <linearGradient id="energyFill" x1="0" y1="0" x2="0" y2="1">
@@ -160,7 +184,17 @@ export default function Charts({ sessions = [] }) {
               dataKey="energie"
               stroke="rgba(205,132,64,0.90)"
               strokeWidth={2.8}
-              dot={false}
+              dot={(props) => (
+                <SeriesEndMarker
+                  {...props}
+                  dataKey="energie"
+                  dataLength={data.length}
+                  label={t("charts.tooltipEnergy")}
+                  formatter={kwh}
+                  tone="copper"
+                  dy={-8}
+                />
+              )}
               activeDot={{ r: 5, fill: "rgba(205,132,64,1)", stroke: "rgba(255,255,255,0.82)", strokeWidth: 1.5 }}
             />
             <Line
@@ -169,7 +203,17 @@ export default function Charts({ sessions = [] }) {
               dataKey="kosten"
               stroke="rgba(196,212,255,0.82)"
               strokeWidth={2.1}
-              dot={false}
+              dot={(props) => (
+                <SeriesEndMarker
+                  {...props}
+                  dataKey="kosten"
+                  dataLength={data.length}
+                  label={t("charts.tooltipCost")}
+                  formatter={euro}
+                  tone="frost"
+                  dy={12}
+                />
+              )}
               opacity={0.92}
               activeDot={{ r: 4.5, fill: "rgba(196,212,255,0.94)", stroke: "rgba(14,14,20,0.95)", strokeWidth: 1.2 }}
             />

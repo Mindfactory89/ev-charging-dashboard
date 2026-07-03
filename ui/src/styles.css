@@ -2146,6 +2146,40 @@ body::before{
   flex-shrink: 0;
 }
 
+.chartEndLabel{
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0;
+  paint-order: stroke;
+  stroke: rgba(6,7,10,0.82);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+  fill: rgba(255,255,255,0.86);
+  pointer-events: none;
+}
+
+.chartEndLabel.copper{
+  fill: rgba(232,170,104,0.94);
+}
+
+.chartEndLabel.frost{
+  fill: rgba(214,224,255,0.92);
+}
+
+.chartEndDot{
+  stroke: rgba(8,9,13,0.86);
+  stroke-width: 1.4px;
+  pointer-events: none;
+}
+
+.chartEndDot.copper{
+  fill: rgba(205,132,64,0.96);
+}
+
+.chartEndDot.frost{
+  fill: rgba(196,212,255,0.94);
+}
+
 .chartLegendDot.copper,
 .chartTooltipSwatch.copper{ background: rgba(205,132,64,0.96); box-shadow: 0 0 10px rgba(205,132,64,0.35); }
 .chartLegendDot.frost,
@@ -3069,6 +3103,41 @@ body::before{
 
 .premiumCurvePanel{
   min-height: 280px;
+}
+
+.powerBandStrip{
+  display: flex;
+  gap: 10px;
+  margin: 2px 4px 2px;
+  padding: 6px 2px 2px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.powerBandChip{
+  display: grid;
+  gap: 5px;
+  min-width: 132px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.075);
+  background:
+    radial-gradient(240px 90px at 0% 0%, rgba(255,255,255,0.035), transparent 58%),
+    rgba(255,255,255,0.025);
+  color: rgba(255,255,255,0.56);
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.powerBandChip strong{
+  color: rgba(255,255,255,0.86);
+  font-weight: 720;
+}
+
+.powerBandLabel{
+  color: rgba(255,255,255,0.86);
+  font-size: 12px;
+  font-weight: 720;
 }
 
 @keyframes sessionToastIn{
@@ -6231,6 +6300,11 @@ body.touch-shell .tableWrap{
 }
 
 .heatmapCell{
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
   min-height: 42px;
   border-radius: 16px;
   border: 1px solid rgba(255,255,255,0.06);
@@ -6240,6 +6314,13 @@ body.touch-shell .tableWrap{
   color: rgba(255,255,255,0.82);
   font-size: 12px;
   font-weight: 640;
+}
+
+.heatmapCellMeta{
+  font-size: 9.5px;
+  line-height: 1;
+  font-weight: 620;
+  color: rgba(255,255,255,0.48);
 }
 
 .heatmapCell.idle{
@@ -6397,10 +6478,40 @@ body.touch-shell .tableWrap{
   .heatmapShell{
     padding: 12px;
     overflow: auto;
+    overscroll-behavior-inline: contain;
   }
 
   .heatmapGrid{
     min-width: 620px;
+  }
+
+  .heatmapHeader{
+    position: sticky;
+    top: 0;
+    z-index: 4;
+    padding-bottom: 2px;
+    background:
+      linear-gradient(180deg, rgba(9,10,14,0.96), rgba(9,10,14,0.78));
+  }
+
+  .heatmapMonthCell{
+    position: sticky;
+    left: 0;
+    z-index: 3;
+    padding-left: 8px;
+    border-radius: 12px;
+    background: rgba(9,10,14,0.88);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .heatmapHeader .heatmapMonthCell{
+    z-index: 5;
+  }
+
+  .powerBandStrip{
+    margin-inline: 0;
+    padding-bottom: 4px;
   }
 
   .sessionDrawer{

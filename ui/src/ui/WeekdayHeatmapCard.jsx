@@ -103,6 +103,7 @@ export default function WeekdayHeatmapCard({ sessions = [], year = 2026 }) {
                           })}
                         >
                           <span>{cell.count > 0 ? num(cell.count, 0) : "–"}</span>
+                          {cell.count > 0 ? <small className="heatmapCellMeta">{num(cell.energyKwh, 0)} kWh</small> : null}
                         </button>
                       </Tooltip>
                     );

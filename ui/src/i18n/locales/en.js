@@ -286,6 +286,9 @@ export default {
     activeBands: "{{count}} active SoC bands",
     noSocData: "No SoC data",
     empty: "No charging power curve is available for {{year}}.",
+    bandContextAria: "Price and coverage by SoC band",
+    priceShort: "Price",
+    coverageShort: "Coverage",
     tooltip: {
       averagePower: "Avg power",
       sessions: "Sessions",
