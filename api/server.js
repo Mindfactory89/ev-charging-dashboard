@@ -5,7 +5,10 @@ const { readRuntimeConfig } = require('./lib/env');
 const { createTelegramBot } = require('./lib/telegramBot');
 
 const runtimeConfig = readRuntimeConfig(process.env);
-const app = createApp();
+const app = createApp({
+  releaseConfig: runtimeConfig.release,
+  corsConfig: runtimeConfig.cors,
+});
 const telegramBot = createTelegramBot({
   telegramConfig: runtimeConfig.telegram,
   prisma: app.prisma,

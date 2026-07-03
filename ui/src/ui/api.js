@@ -17,8 +17,10 @@ import {
 import {
   createSessionRemote,
   deleteSessionRemote,
+  checkReleaseUpdateRemote,
   getDashboardBundleRemote,
   getEfficiencyRemote,
+  getReleaseInstallStatusRemote,
   getMonthlyCsvUrlRemote,
   getMonthlyRemote,
   getOutliersRemote,
@@ -27,6 +29,7 @@ import {
   getSessionsCsvUrlRemote,
   getSessionsRemote,
   getStatsRemote,
+  installReleaseUpdateRemote,
   updateSessionRemote,
 } from "./apiRemote.js";
 import { getApiBaseError, isDemoMode } from "./apiRuntime.js";
@@ -2230,6 +2233,34 @@ export async function updateSession(id, payload) {
 
 export async function restoreSession(payload) {
   return createSession(payload);
+}
+
+export async function checkReleaseUpdate() {
+  if (isDemoMode) {
+    return {
+      ok: true,
+      demo: true,
+      current: { version: "demo", commit: null },
+      latest: null,
+      updateAvailable: null,
+      installEnabled: false,
+    };
+  }
+
+  return checkReleaseUpdateRemote();
+}
+
+export async function installReleaseUpdate(tagName, installToken) {
+  if (isDemoMode) throw new Error("Release installation is not available in demo mode.");
+  return installReleaseUpdateRemote(tagName, installToken);
+}
+
+export async function getReleaseInstallStatus() {
+  if (isDemoMode) {
+    return { ok: true, install: { status: "idle", targetVersion: null, startedAt: null } };
+  }
+
+  return getReleaseInstallStatusRemote();
 }
 
 export function getMonthlyCsvUrl(year = 2026) {

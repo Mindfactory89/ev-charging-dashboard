@@ -15,6 +15,12 @@ DEPLOY_HEALTH_TIMEOUT="${DEPLOY_HEALTH_TIMEOUT:-120}"
 DEPLOY_HEALTH_INTERVAL="${DEPLOY_HEALTH_INTERVAL:-3}"
 DEPLOY_META_FILENAME="${DEPLOY_META_FILENAME:-.deploy-meta}"
 
+shell_quote() {
+  printf "'"
+  printf "%s" "$1" | sed "s/'/'\\\\''/g"
+  printf "'"
+}
+
 if [[ -z "${USER_NAME}" || -z "${HOST}" ]]; then
   cat >&2 <<'EOF'
 Usage:
@@ -53,12 +59,16 @@ deploy_meta_epoch="$(date +%s)"
 if [[ -d "${LOCAL_PATH}/.git" ]]; then
   deploy_meta_branch="$(git -C "${LOCAL_PATH}" branch --show-current 2>/dev/null || true)"
   deploy_meta_commit="$(git -C "${LOCAL_PATH}" rev-parse --short HEAD 2>/dev/null || true)"
+  deploy_meta_version="$(git -C "${LOCAL_PATH}" describe --tags --exact-match HEAD 2>/dev/null || true)"
+  if [[ -z "${deploy_meta_version}" ]]; then
+    deploy_meta_version="$(git -C "${LOCAL_PATH}" describe --tags --abbrev=0 2>/dev/null || true)"
+  fi
   if [[ -n "$(git -C "${LOCAL_PATH}" status --porcelain --untracked-files=no 2>/dev/null || true)" ]]; then
     deploy_meta_dirty="1"
   fi
 fi
 
-if [[ -f "${LOCAL_PATH}/ui/package.json" ]]; then
+if [[ -z "${deploy_meta_version}" && -f "${LOCAL_PATH}/ui/package.json" ]]; then
   deploy_meta_version="$(sed -n 's/^[[:space:]]*"version":[[:space:]]*"\([^"]*\)".*/\1/p' "${LOCAL_PATH}/ui/package.json" | head -n 1)"
 fi
 
@@ -101,8 +111,16 @@ rsync -avz --delete \
 
 if [[ "${RUN_REMOTE_DEPLOY}" == "1" ]]; then
   echo "Running remote docker compose deploy for services: ${SERVICES}"
+  remote_deploy_env=(
+    "REMOTE_PATH=$(shell_quote "${REMOTE_PATH}")"
+    "SERVICES=$(shell_quote "${SERVICES}")"
+    "DEPLOY_HEALTH_TIMEOUT=$(shell_quote "${DEPLOY_HEALTH_TIMEOUT}")"
+    "DEPLOY_HEALTH_INTERVAL=$(shell_quote "${DEPLOY_HEALTH_INTERVAL}")"
+    "MOBILITY_CURRENT_VERSION=$(shell_quote "${deploy_meta_version}")"
+    "MOBILITY_CURRENT_COMMIT=$(shell_quote "${deploy_meta_commit}")"
+  )
   ssh "${USER_NAME}@${HOST}" \
-    "REMOTE_PATH='${REMOTE_PATH}' SERVICES='${SERVICES}' DEPLOY_HEALTH_TIMEOUT='${DEPLOY_HEALTH_TIMEOUT}' DEPLOY_HEALTH_INTERVAL='${DEPLOY_HEALTH_INTERVAL}' bash -s" <<'EOF'
+    "${remote_deploy_env[*]} bash -s" <<'EOF'
 set -euo pipefail
 
 cd "${REMOTE_PATH}"
@@ -150,8 +168,9 @@ EOF
 fi
 
 if [[ "${RUN_REMOTE_DEPLOY}" == "1" ]]; then
+  remote_meta_path="$(shell_quote "${REMOTE_PATH%/}/${DEPLOY_META_FILENAME}")"
   ssh "${USER_NAME}@${HOST}" \
-    "cat > '${REMOTE_PATH%/}/${DEPLOY_META_FILENAME}'" <<EOF
+    "cat > ${remote_meta_path}" <<EOF
 project=mobility
 deployed_at=${deploy_meta_timestamp}
 deployed_at_epoch=${deploy_meta_epoch}

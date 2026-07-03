@@ -40,6 +40,20 @@ export function deleteSessionRemote(id) {
   return deleteJson(`/api/sessions/${encodeURIComponent(id)}`);
 }
 
+export function checkReleaseUpdateRemote() {
+  return fetchApiJson('/api/release/check');
+}
+
+export function installReleaseUpdateRemote(tagName, installToken) {
+  return postJson('/api/release/install', { tagName }, {
+    'X-Mobility-Release-Token': installToken || '',
+  });
+}
+
+export function getReleaseInstallStatusRemote() {
+  return fetchApiJson('/api/release/install/status');
+}
+
 export function getMonthlyCsvUrlRemote(year = 2026) {
   return buildOptionalApiUrl(`/api/export/monthly.csv?year=${encodeURIComponent(year)}`);
 }

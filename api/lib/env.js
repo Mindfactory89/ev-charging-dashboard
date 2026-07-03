@@ -89,11 +89,28 @@ function readTelegramConfig(env, errors) {
   };
 }
 
+function readReleaseConfig(env) {
+  return {
+    repo: normalizeString(env.MOBILITY_RELEASE_REPO, 'Mindfactory89/ev-charging-dashboard') || 'Mindfactory89/ev-charging-dashboard',
+    currentVersion: normalizeString(env.MOBILITY_CURRENT_VERSION),
+    currentCommit: normalizeString(env.MOBILITY_CURRENT_COMMIT),
+    installCommand: normalizeString(env.MOBILITY_UPDATE_INSTALL_COMMAND),
+  };
+}
+
+function readCorsConfig(env) {
+  return {
+    allowedOrigins: normalizeString(env.MOBILITY_ALLOWED_ORIGINS),
+  };
+}
+
 function readRuntimeConfig(env = process.env) {
   const errors = [];
   const databaseUrl = readDatabaseUrl(env, errors);
   const port = readPort(env, errors);
   const telegram = readTelegramConfig(env, errors);
+  const release = readReleaseConfig(env);
+  const cors = readCorsConfig(env);
 
   if (errors.length) {
     throw createRuntimeConfigError(errors);
@@ -104,6 +121,8 @@ function readRuntimeConfig(env = process.env) {
     databaseUrl,
     nodeEnv: normalizeString(env.NODE_ENV, 'development') || 'development',
     telegram,
+    release,
+    cors,
   };
 }
 

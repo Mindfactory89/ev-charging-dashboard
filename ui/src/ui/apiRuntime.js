@@ -75,12 +75,13 @@ export async function fetchApiJson(path) {
   return asJson(response);
 }
 
-export async function postJson(path, payload) {
+export async function postJson(path, payload, extraHeaders = {}) {
   const response = await fetch(buildApiUrl(path), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json",
+      ...extraHeaders,
     },
     body: JSON.stringify(payload),
   });

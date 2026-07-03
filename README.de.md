@@ -193,6 +193,11 @@ Wichtige Variablen:
 - `VITE_DEMO_HOST_PREFIX`
 - `TELEGRAM_BOT_TOKEN`
 - `TELEGRAM_ALLOWED_CHAT_IDS`
+- `MOBILITY_ALLOWED_ORIGINS`
+- `MOBILITY_RELEASE_REPO`
+- `MOBILITY_CURRENT_VERSION`
+- `MOBILITY_CURRENT_COMMIT`
+- `MOBILITY_UPDATE_INSTALL_COMMAND`
 - `SSH_DEPLOY_HOST`
 - `SSH_DEPLOY_USER`
 - `SSH_DEPLOY_PATH`
@@ -204,6 +209,7 @@ Hinweise:
 - `VITE_VEHICLE_PROFILE` aendert nur die visuelle Hero-/Profil-Darstellung. Eingebaute IDs sind `cupra-born`, `cupra-tavascan`, `cupra-raval` und `generic-ev`.
 - `docker-compose.yml` erwartet eine explizite `TAILSCALE_IP`.
 - Der Demo-Modus kann mit `?demo=1` oder ueber `VITE_DEMO_HOST_PREFIX` aktiviert werden.
+- Das Dashboard kann im Header GitHub Releases pruefen. Direktinstallation bleibt deaktiviert, bis `MOBILITY_UPDATE_INSTALL_COMMAND` bewusst auf einer vertrauenswuerdigen Host-Laufzeit gesetzt wird.
 
 ### Telegram Bot fuer private Session-Erfassung
 

@@ -6,13 +6,22 @@ const { registerAnalyticsRoutes } = require('./routes/registerAnalyticsRoutes');
 const { registerDashboardRoutes } = require('./routes/registerDashboardRoutes');
 const { registerExportRoutes } = require('./routes/registerExportRoutes');
 const { registerHealthRoutes } = require('./routes/registerHealthRoutes');
+const { registerReleaseRoutes } = require('./routes/registerReleaseRoutes');
 const { registerSessionRoutes } = require('./routes/registerSessionRoutes');
+const { createCorsConfig, resolveCorsOrigin } = require('./lib/cors');
 
 function createApp(options = {}) {
-  const { prisma: providedPrisma, ...fastifyOptions } = options;
+  const {
+    prisma: providedPrisma,
+    releaseConfig,
+    fetchImpl,
+    corsConfig: providedCorsConfig,
+    ...fastifyOptions
+  } = options;
   const fastify = fastifyFactory({ logger: true, ...fastifyOptions });
   const prisma = providedPrisma || new PrismaClient();
   const ownsPrisma = !providedPrisma;
+  const corsConfig = createCorsConfig(providedCorsConfig);
 
   fastify.decorate('prisma', prisma);
 
@@ -23,17 +32,20 @@ function createApp(options = {}) {
   });
 
   fastify.addHook('onRequest', async (req, reply) => {
-    reply.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-    reply.header('Vary', 'Origin');
+    const corsOrigin = resolveCorsOrigin(req, corsConfig);
+    if (corsOrigin) {
+      reply.header('Access-Control-Allow-Origin', corsOrigin);
+      reply.header('Vary', 'Origin');
+    }
     reply.header('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS');
-    reply.header('Access-Control-Allow-Headers', 'Content-Type, Accept');
+    reply.header('Access-Control-Allow-Headers', 'Content-Type, Accept, X-Mobility-Release-Token');
     if (req.url.startsWith('/api/')) {
       reply.header('Cache-Control', 'no-store, no-cache, must-revalidate');
       reply.header('Pragma', 'no-cache');
       reply.header('Expires', '0');
     }
     if (req.method === 'OPTIONS') {
-      reply.code(204).send();
+      reply.code(req.headers.origin && !corsOrigin ? 403 : 204).send();
       return;
     }
   });
@@ -58,6 +70,7 @@ function createApp(options = {}) {
   registerDashboardRoutes(fastify);
   registerAnalyticsRoutes(fastify);
   registerExportRoutes(fastify);
+  registerReleaseRoutes(fastify, { releaseConfig, fetchImpl });
 
   return fastify;
 }

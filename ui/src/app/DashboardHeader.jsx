@@ -1,5 +1,6 @@
 import { datumDE, num } from "./formatters.js";
 import { useI18n } from "../i18n/I18nProvider.jsx";
+import ReleaseUpdateControl from "./ReleaseUpdateControl.jsx";
 
 export default function DashboardHeader({
   availableYears = [],
@@ -66,6 +67,11 @@ export default function DashboardHeader({
               </button>
             ))}
           </div>
+        </div>
+
+        <div className="filters premiumYearRail releaseUpdateRail" role="group" aria-label={t("releaseUpdate.label")}>
+          <div className="chipLabel">{t("releaseUpdate.label")}</div>
+          <ReleaseUpdateControl demo={demo} />
         </div>
 
         <div className="premiumHeaderMeta">

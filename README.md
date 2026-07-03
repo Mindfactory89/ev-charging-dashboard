@@ -193,6 +193,11 @@ Important variables:
 - `VITE_DEMO_HOST_PREFIX`
 - `TELEGRAM_BOT_TOKEN`
 - `TELEGRAM_ALLOWED_CHAT_IDS`
+- `MOBILITY_ALLOWED_ORIGINS`
+- `MOBILITY_RELEASE_REPO`
+- `MOBILITY_CURRENT_VERSION`
+- `MOBILITY_CURRENT_COMMIT`
+- `MOBILITY_UPDATE_INSTALL_COMMAND`
 - `SSH_DEPLOY_HOST`
 - `SSH_DEPLOY_USER`
 - `SSH_DEPLOY_PATH`
@@ -204,6 +209,7 @@ Notes:
 - `VITE_VEHICLE_PROFILE` only changes the visual hero/profile presentation. Built-in IDs are `cupra-born`, `cupra-tavascan`, `cupra-raval`, and `generic-ev`.
 - `docker-compose.yml` requires an explicit `TAILSCALE_IP`.
 - Demo mode can be activated with `?demo=1` or via `VITE_DEMO_HOST_PREFIX`.
+- The dashboard can check GitHub releases from the header. Direct install is disabled unless `MOBILITY_UPDATE_INSTALL_COMMAND` is explicitly configured on a trusted host runtime.
 
 ### Telegram Bot For Private Session Entry
 
