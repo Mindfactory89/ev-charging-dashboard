@@ -55,6 +55,8 @@ export default function App() {
 
   const addSectionRef = useRef(null);
   const addPanelRef = useRef(null);
+  const nextHistoryModeRef = useRef("replace");
+  const applyingPopStateRef = useRef(false);
 
   const {
     availableYears,
@@ -73,16 +75,83 @@ export default function App() {
   } = useDashboardData(year);
 
   useEffect(() => {
+    if (applyingPopStateRef.current) {
+      applyingPopStateRef.current = false;
+      writePersistedUiState({
+        year,
+        activeScreen,
+        overviewMode,
+        analysisMode,
+        historyFilters,
+      });
+      return;
+    }
+
+    const historyMode = nextHistoryModeRef.current;
+    nextHistoryModeRef.current = "replace";
+
     writePersistedUiState({
       year,
       activeScreen,
       overviewMode,
       analysisMode,
       historyFilters,
+      historyMode,
     });
   }, [activeScreen, analysisMode, historyFilters, overviewMode, year]);
 
+  useEffect(() => {
+    function onPopState() {
+      const nextUiState = readPersistedUiState();
+      applyingPopStateRef.current = true;
+      nextHistoryModeRef.current = "replace";
+      setYear(nextUiState.year);
+      setActiveScreen(nextUiState.activeScreen);
+      setOverviewMode(nextUiState.overviewMode);
+      setAnalysisMode(nextUiState.analysisMode);
+      setHistoryFilters(nextUiState.historyFilters);
+      setHistoryDrilldownSource(null);
+      setAddOpen(false);
+      window.setTimeout(() => {
+        applyingPopStateRef.current = false;
+      }, 0);
+    }
+
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  const markHistoryPush = useCallback(() => {
+    nextHistoryModeRef.current = "push";
+  }, []);
+
+  const selectYear = useCallback((nextYear) => {
+    markHistoryPush();
+    setYear(nextYear);
+  }, [markHistoryPush]);
+
+  const selectScreen = useCallback((nextScreen) => {
+    markHistoryPush();
+    setActiveScreen(nextScreen);
+  }, [markHistoryPush]);
+
+  const selectOverviewMode = useCallback((nextMode) => {
+    markHistoryPush();
+    setOverviewMode(nextMode);
+  }, [markHistoryPush]);
+
+  const selectAnalysisMode = useCallback((nextMode) => {
+    markHistoryPush();
+    setAnalysisMode(nextMode);
+  }, [markHistoryPush]);
+
+  const updateHistoryFilters = useCallback((nextFilters) => {
+    markHistoryPush();
+    setHistoryFilters(nextFilters);
+  }, [markHistoryPush]);
+
   const openAdd = useCallback(() => {
+    markHistoryPush();
     setActiveScreen("verlauf");
     setAddOpen(true);
     requestAnimationFrame(() => {
@@ -91,26 +160,29 @@ export default function App() {
         setTimeout(() => addPanelRef.current?.focus?.(), 350);
       });
     });
-  }, []);
+  }, [markHistoryPush]);
 
   const closeAdd = useCallback(() => setAddOpen(false), []);
 
   const openHistoryDrilldown = useCallback((filters = {}) => {
+    markHistoryPush();
     setHistoryDrilldownSource(activeScreen === "verlauf" ? null : activeScreen);
     setActiveScreen("verlauf");
     setAddOpen(false);
     setHistoryFilters(mergeHistoryFilters(clearHistoryFilters(), filters));
-  }, [activeScreen]);
+  }, [activeScreen, markHistoryPush]);
 
   const clearHistoryDrilldown = useCallback(() => {
+    markHistoryPush();
     setHistoryDrilldownSource(null);
     setHistoryFilters(clearHistoryFilters());
-  }, []);
+  }, [markHistoryPush]);
 
   const returnToHistorySource = useCallback(() => {
     if (!historyDrilldownSource) return;
+    markHistoryPush();
     setActiveScreen(historyDrilldownSource);
-  }, [historyDrilldownSource]);
+  }, [historyDrilldownSource, markHistoryPush]);
 
   const latestSession = useMemo(() => {
     if (!Array.isArray(sessions) || sessions.length === 0) return null;
@@ -452,7 +524,7 @@ export default function App() {
           latestSession={latestSession}
           loading={loading}
           refreshing={refreshing}
-          onSelectYear={setYear}
+          onSelectYear={selectYear}
           sessionsCount={sessions.length}
           year={year}
         />
@@ -481,7 +553,7 @@ export default function App() {
                     key={option.id}
                     type="button"
                     className={isActive ? "toggleBtn active" : "toggleBtn"}
-                    onClick={() => setActiveScreen(option.id)}
+                    onClick={() => selectScreen(option.id)}
                     aria-current={isActive ? "page" : undefined}
                     aria-pressed={isActive}
                   >
@@ -528,7 +600,7 @@ export default function App() {
                 monthlySorted={monthlySorted}
                 noYearData={noYearData}
                 onOpenHistoryDrilldown={openHistoryDrilldown}
-                onOverviewModeChange={setOverviewMode}
+                onOverviewModeChange={selectOverviewMode}
                 overviewMode={overviewMode}
                 priceSummary={priceSummary}
                 sessions={sessions}
@@ -551,7 +623,7 @@ export default function App() {
                 monthlyCsvUrl={monthlyCsvUrl}
                 monthlySorted={monthlySorted}
                 onDrilldownHistory={openHistoryDrilldown}
-                onAnalysisModeChange={setAnalysisMode}
+                onAnalysisModeChange={selectAnalysisMode}
                 onDownloadMonthlyCsv={onDownloadMonthlyCsv}
                 onDownloadSeasonCsv={onDownloadSeasonCsv}
                 outliers={outliers}
@@ -578,7 +650,7 @@ export default function App() {
               intelligence={intelligence}
               drilldownSource={historyDrilldownSource}
               onClearHistoryFilters={clearHistoryDrilldown}
-              onHistoryFiltersChange={setHistoryFilters}
+              onHistoryFiltersChange={updateHistoryFilters}
               onReturnToSource={returnToHistorySource}
               sessionOutliersById={sessionOutliersById}
               sessionScoresById={sessionScoresById}

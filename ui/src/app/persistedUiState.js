@@ -101,8 +101,19 @@ export function writePersistedUiState(state) {
       else params.delete(key);
     }
 
-    const nextUrl = `${window.location.pathname}?${params.toString()}${window.location.hash || ""}`;
-    window.history.replaceState(null, "", nextUrl);
+    const query = params.toString();
+    const nextUrl = `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash || ""}`;
+    const currentUrl = `${window.location.pathname}${window.location.search || ""}${window.location.hash || ""}`;
+    const historyMode = state?.historyMode === "push" ? "push" : "replace";
+
+    if (nextUrl === currentUrl) return;
+
+    if (historyMode === "push" && typeof window.history.pushState === "function") {
+      window.history.pushState({ mobilityDashboard: true }, "", nextUrl);
+      return;
+    }
+
+    window.history.replaceState({ mobilityDashboard: true }, "", nextUrl);
   } catch {}
 }
 
