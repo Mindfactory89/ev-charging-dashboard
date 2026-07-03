@@ -95,7 +95,12 @@ export default function WeekdayHeatmapCard({ sessions = [], year = 2026 }) {
                           style={{
                             ["--heat-intensity"]: `${Math.max(0.08, intensity)}`,
                           }}
-                          aria-label={`${monthRow.label} ${cell.label}: ${num(cell.count, 0)} Sessions`}
+                          aria-label={t("weekdayHeatmap.cellAria", {
+                            month: monthRow.label,
+                            day: cell.label,
+                            sessions: num(cell.count, 0),
+                            energy: num(cell.energyKwh, 1),
+                          })}
                         >
                           <span>{cell.count > 0 ? num(cell.count, 0) : "–"}</span>
                         </button>

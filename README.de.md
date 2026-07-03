@@ -43,7 +43,7 @@ Wenn du dir das Projekt erst einmal nur anschauen willst, ohne etwas zu installi
 - Demo-Modus zum Testen ohne laufende API oder Datenbank
 - Realistischere Demo-Daten mit mehr Sessions, variierenden AC/DC-Preisen und EV-typischen Ladefenstern
 - Visuelle Fahrzeugprofile fuer CUPRA Born, CUPRA Tavascan, CUPRA Raval und Generic EV
-- Versionierter VPS-Backup-Workflow mit automatischen Pre-Deploy-Snapshots, taeglichen Backups und Restore-Helfern
+- Versionierter VPS-Backup-Workflow mit automatischen Pre-Deploy-Snapshots, Mittwoch/Samstag-Backups und Restore-Helfern
 
 ### Screenshots 📸
 
@@ -251,13 +251,13 @@ HOST=your.server.ip USER_NAME=deploy ./scripts/backup-vps.sh
 
 `deploy-to-vps.sh` legt dieses Backup jetzt standardmaessig vor dem Sync an, solange du nicht explizit `CREATE_REMOTE_BACKUP=0` setzt.
 
-Einen taeglichen VPS-Backup-Job per Cron kannst du so installieren:
+Einen VPS-Backup-Job fuer Mittwoch und Samstag per Cron kannst du so installieren:
 
 ```bash
 HOST=your.server.ip USER_NAME=deploy ./scripts/install-vps-backup-cron.sh
 ```
 
-Standard: taeglich um `03:20` Serverzeit, mit `RETENTION=5`.
+Standard: Mittwoch und Samstag um `03:20`, mit `RETENTION=4`.
 
 Ein ausgewaehltes VPS-Backup kannst du so wiederherstellen:
 
@@ -276,7 +276,7 @@ HOST=your.server.ip USER_NAME=deploy ./scripts/install-vps-backup-login-info.sh
 Der Backup-Workflow deckt jetzt ab:
 
 - automatische Pre-Deploy-Snapshots vor jedem VPS-Sync
-- taegliche VPS-lokale Backups mit Retention-Bereinigung
+- VPS-lokale Backups mittwochs und samstags mit 4er-Rotation
 - einen Restore-Helfer fuer einen ausgewaehlten Zeitstempel
 - eine SSH-Login-Uebersicht mit letztem Backup-Namen, Alter, naechstem Lauf und Download-Befehl
 

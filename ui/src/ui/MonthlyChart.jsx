@@ -36,7 +36,7 @@ function PremiumTooltip({ active, payload, label, mode, t }) {
     <div className="chartTooltip">
       <div className="chartTooltipLabel">{label}</div>
       <div className="chartTooltipRow">
-        <span className={`chartTooltipSwatch ${mode === "preis" ? "sky" : mode === "vorgaenge" ? "mint" : mode === "kosten" ? "frost" : "copper"}`} />
+        <span className={`chartTooltipSwatch ${mode === "price" ? "sky" : mode === "sessions" ? "mint" : mode === "cost" ? "frost" : "copper"}`} />
         <span className="chartTooltipName">{title}</span>
         <span className="chartTooltipValue">{valueLabel(mode, value)}</span>
       </div>
@@ -46,6 +46,7 @@ function PremiumTooltip({ active, payload, label, mode, t }) {
 
 export default function MonthlyChart({ months, onMonthSelect }) {
   const { t } = useI18n();
+  const chartSummaryId = React.useId();
   const [mode, setMode] = React.useState("energy");
 
   const data = (months || []).map((m) => ({
@@ -73,6 +74,25 @@ export default function MonthlyChart({ months, onMonthSelect }) {
     price: t("monthlyChart.tips.price"),
   };
 
+  const dataKeyByMode = {
+    energy: "energie",
+    cost: "kosten",
+    sessions: "vorgaenge",
+    price: "preis",
+  };
+  const activeDataKey = dataKeyByMode[mode];
+  const maxRow = activeDataKey
+    ? data.reduce((best, row) => (Number(row[activeDataKey] || 0) > Number(best?.[activeDataKey] || 0) ? row : best), null)
+    : null;
+  const chartSummary = data.length && maxRow
+    ? t("monthlyChart.chartSummary", {
+        title,
+        months: num(data.length, 0),
+        value: valueLabel(mode, maxRow[activeDataKey]),
+        month: maxRow.name,
+      })
+    : t("monthlyChart.chartEmptySummary", { title });
+
   const strokeByMode = {
     energy: "rgba(205,132,64,0.95)",
     cost: "rgba(196,212,255,0.86)",
@@ -92,6 +112,7 @@ export default function MonthlyChart({ months, onMonthSelect }) {
       <button
         type="button"
         className={mode === id ? "toggleBtn active" : "toggleBtn"}
+        aria-pressed={mode === id}
         onClick={() => setMode(id)}
       >
         {label}
@@ -140,9 +161,12 @@ export default function MonthlyChart({ months, onMonthSelect }) {
       </div>
 
       <div className="chartWrap compact monthlyChartShell">
+        <p id={chartSummaryId} className="srOnly">{chartSummary}</p>
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
             data={data}
+            accessibilityLayer
+            aria-describedby={chartSummaryId}
             margin={{ top: 24, right: 22, left: 14, bottom: 4 }}
             onClick={(state) => onMonthSelect?.(state?.activePayload?.[0]?.payload?.month)}
           >

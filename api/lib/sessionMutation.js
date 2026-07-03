@@ -2,6 +2,8 @@
 
 const { normalizeOptionalText, normalizeTagsInput } = require('./sessionMetadata');
 
+const REQUIRED_FIELDS = ['date', 'connector', 'soc_start', 'soc_end', 'energy_kwh', 'price_per_kwh'];
+
 function hhmmToSeconds(hhmm) {
   const source = String(hhmm ?? '').trim();
   const [hh, mm] = source.split(':').map((value) => Number(value));
@@ -27,94 +29,168 @@ function parseOptionalNonNegativeInteger(value) {
   return parsed;
 }
 
-function parseSessionMutation(body) {
-  const payload = body || {};
-
-  const required = ['date', 'connector', 'soc_start', 'soc_end', 'energy_kwh', 'price_per_kwh'];
-  for (const key of required) {
+function validateRequiredFields(payload) {
+  for (const key of REQUIRED_FIELDS) {
     if (payload[key] === undefined || payload[key] === null || payload[key] === '') {
       return { error: `Fehlendes Feld: ${key}` };
     }
   }
 
-  const date = new Date(payload.date);
+  return { error: null };
+}
+
+function parseDate(value) {
+  const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
     return { error: 'Ungültiges Datum.' };
   }
 
-  const connector = String(payload.connector).replace(/\s+/g, ' ').trim();
+  return { value: date };
+}
+
+function normalizeConnector(value) {
+  const connector = String(value).replace(/\s+/g, ' ').trim();
   if (!connector) {
     return { error: 'Anschluss darf nicht leer sein.' };
   }
 
-  const provider = normalizeOptionalText(payload.provider);
-  const location = normalizeOptionalText(payload.location);
-  const vehicle = normalizeOptionalText(payload.vehicle);
-  const tags = normalizeTagsInput(payload.tags);
+  return { value: connector };
+}
 
+function parseSocRange(payload) {
   const soc_start = parseBoundedInteger(payload.soc_start, 0, 100);
   const soc_end = parseBoundedInteger(payload.soc_end, 0, 100);
+
   if (soc_start == null || soc_end == null) {
     return { error: 'SoC Start/Ende muss zwischen 0 und 100 liegen.' };
   }
+
   if (soc_end < soc_start) {
     return { error: 'SoC Ende darf nicht kleiner als SoC Start sein.' };
   }
 
-  const energy = parseFiniteNumber(payload.energy_kwh);
-  if (energy == null || energy <= 0) {
-    return { error: 'Energie (kWh) muss größer als 0 sein.' };
+  return { value: { soc_start, soc_end } };
+}
+
+function parsePositiveNumber(value, errorMessage) {
+  const parsed = parseFiniteNumber(value);
+  if (parsed == null || parsed <= 0) {
+    return { error: errorMessage };
   }
 
-  const price = parseFiniteNumber(payload.price_per_kwh);
-  if (price == null || price <= 0) {
-    return { error: 'Preis pro kWh muss größer als 0 sein.' };
-  }
+  return { value: parsed };
+}
 
-  let duration_seconds = null;
+function parseDurationSeconds(payload) {
   if (payload.duration_hhmm != null && payload.duration_hhmm !== '') {
-    duration_seconds = hhmmToSeconds(payload.duration_hhmm);
-    if (duration_seconds == null || duration_seconds <= 0) {
+    const durationSeconds = hhmmToSeconds(payload.duration_hhmm);
+    if (durationSeconds == null || durationSeconds <= 0) {
       return { error: 'Dauer muss als HH:MM angegeben werden.' };
     }
-  } else if (payload.duration_seconds != null && payload.duration_seconds !== '') {
-    duration_seconds = parseFiniteNumber(payload.duration_seconds);
-    if (duration_seconds == null || duration_seconds <= 0) {
+
+    return { value: Math.round(durationSeconds) };
+  }
+
+  if (payload.duration_seconds != null && payload.duration_seconds !== '') {
+    const durationSeconds = parseFiniteNumber(payload.duration_seconds);
+    if (durationSeconds == null || durationSeconds <= 0) {
       return { error: 'Dauer in Sekunden muss größer als 0 sein.' };
     }
+
+    return { value: Math.round(durationSeconds) };
   }
 
-  if (duration_seconds != null) {
-    duration_seconds = Math.round(duration_seconds);
-  }
+  return { value: null };
+}
 
+function parseOdometerRange(payload) {
   const odo_start_km = parseOptionalNonNegativeInteger(payload.odo_start_km);
   const odo_end_km = parseOptionalNonNegativeInteger(payload.odo_end_km ?? payload.odometer_km);
+
   if (Number.isNaN(odo_start_km) || Number.isNaN(odo_end_km)) {
     return { error: 'Kilometerstände müssen positive Ganzzahlen sein.' };
   }
+
   if (odo_start_km != null && odo_end_km != null && odo_end_km < odo_start_km) {
     return { error: 'Kilometer Ende darf nicht kleiner als Kilometer Start sein.' };
   }
 
+  return { value: { odo_start_km, odo_end_km } };
+}
+
+function buildSessionMutationData(payload, parsed) {
   return {
-    data: {
-      date,
-      connector,
-      provider,
-      location,
-      vehicle,
-      tags,
-      soc_start,
-      soc_end,
-      energy_kwh: energy,
-      price_per_kwh: price,
-      total_cost: Number((energy * price).toFixed(2)),
-      duration_seconds,
-      note: payload.note ? String(payload.note) : null,
-      odo_start_km,
-      odo_end_km,
-    },
+    date: parsed.date,
+    connector: parsed.connector,
+    provider: normalizeOptionalText(payload.provider),
+    location: normalizeOptionalText(payload.location),
+    vehicle: normalizeOptionalText(payload.vehicle),
+    tags: normalizeTagsInput(payload.tags),
+    soc_start: parsed.soc.soc_start,
+    soc_end: parsed.soc.soc_end,
+    energy_kwh: parsed.energy,
+    price_per_kwh: parsed.price,
+    total_cost: Number((parsed.energy * parsed.price).toFixed(2)),
+    duration_seconds: parsed.duration_seconds,
+    note: payload.note ? String(payload.note) : null,
+    odo_start_km: parsed.odometer.odo_start_km,
+    odo_end_km: parsed.odometer.odo_end_km,
+  };
+}
+
+function parseSessionMutation(body) {
+  const payload = body || {};
+
+  const requiredFields = validateRequiredFields(payload);
+  if (requiredFields.error) {
+    return { error: requiredFields.error };
+  }
+
+  const date = parseDate(payload.date);
+  if (date.error) {
+    return { error: date.error };
+  }
+
+  const connector = normalizeConnector(payload.connector);
+  if (connector.error) {
+    return { error: connector.error };
+  }
+
+  const soc = parseSocRange(payload);
+  if (soc.error) {
+    return { error: soc.error };
+  }
+
+  const energy = parsePositiveNumber(payload.energy_kwh, 'Energie (kWh) muss größer als 0 sein.');
+  if (energy.error) {
+    return { error: energy.error };
+  }
+
+  const price = parsePositiveNumber(payload.price_per_kwh, 'Preis pro kWh muss größer als 0 sein.');
+  if (price.error) {
+    return { error: price.error };
+  }
+
+  const durationSeconds = parseDurationSeconds(payload);
+  if (durationSeconds.error) {
+    return { error: durationSeconds.error };
+  }
+
+  const odometer = parseOdometerRange(payload);
+  if (odometer.error) {
+    return { error: odometer.error };
+  }
+
+  return {
+    data: buildSessionMutationData(payload, {
+      date: date.value,
+      connector: connector.value,
+      soc: soc.value,
+      energy: energy.value,
+      price: price.value,
+      duration_seconds: durationSeconds.value,
+      odometer: odometer.value,
+    }),
   };
 }
 

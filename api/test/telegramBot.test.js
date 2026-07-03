@@ -151,6 +151,102 @@ test('telegram bot accepts inline button callbacks for the dialog flow', async (
   assert.equal(sentMessages[1].reply_markup.inline_keyboard[0][0].callback_data, 'connector:dc');
 });
 
+test('telegram bot accepts textual aliases and custom vehicle input', async () => {
+  const sentMessages = [];
+  const createdRows = [];
+  const bot = createTelegramBot({
+    telegramConfig: {
+      enabled: true,
+      botToken: '123:abc',
+      allowedChatIds: ['12345'],
+    },
+    prisma: {
+      chargingSession: {
+        create: async ({ data }) => {
+          createdRows.push(data);
+          return { id: 'session-3', ...data };
+        },
+      },
+    },
+    logger: {},
+    fetchImpl: createFetchStub(sentMessages),
+    now: () => new Date('2026-03-15T10:00:00+01:00'),
+  });
+
+  const sequence = [
+    '/new',
+    'gestern',
+    'wallbox',
+    '1',
+    '1',
+    'Mein Testfahrzeug',
+    '1',
+    '20',
+    '80',
+    '25',
+    '0,30',
+    '45',
+    '12345',
+    '1',
+    'speichern',
+  ];
+
+  for (const text of sequence) {
+    await bot.handleUpdate(createMessage(text));
+  }
+
+  assert.equal(createdRows.length, 1);
+  assert.equal(createdRows[0].date.toISOString().slice(0, 10), '2026-03-14');
+  assert.equal(createdRows[0].connector, 'Wallbox AC');
+  assert.equal(createdRows[0].provider, null);
+  assert.equal(createdRows[0].location, null);
+  assert.equal(createdRows[0].vehicle, 'Mein Testfahrzeug');
+  assert.equal(createdRows[0].tags, null);
+  assert.equal(createdRows[0].duration_seconds, 45 * 60);
+  assert.equal(createdRows[0].odo_end_km, 12345);
+  assert.equal(createdRows[0].total_cost, 7.5);
+});
+
+test('telegram bot keeps the user on soc_end after an invalid lower value and then continues', async () => {
+  const sentMessages = [];
+  const bot = createTelegramBot({
+    telegramConfig: {
+      enabled: true,
+      botToken: '123:abc',
+      allowedChatIds: ['12345'],
+    },
+    prisma: {
+      chargingSession: {
+        create: async ({ data }) => ({ id: 'session-4', ...data }),
+      },
+    },
+    logger: {},
+    fetchImpl: createFetchStub(sentMessages),
+    now: () => new Date('2026-03-15T10:00:00+01:00'),
+  });
+
+  const sequence = [
+    '/new',
+    '1',
+    '1',
+    '1',
+    '1',
+    '1',
+    '1',
+    '80',
+    '20',
+    '90',
+  ];
+
+  for (const text of sequence) {
+    await bot.handleUpdate(createMessage(text));
+  }
+
+  assert.match(sentMessages.at(-2).text, /nicht kleiner sein/i);
+  assert.match(sentMessages.at(-2).reply_markup.inline_keyboard[0][0].text, /Abbrechen/i);
+  assert.match(sentMessages.at(-1).text, /9\/13 Geladene Energie/i);
+});
+
 test('telegram bot rejects unauthorized chats', async () => {
   const sentMessages = [];
   const bot = createTelegramBot({

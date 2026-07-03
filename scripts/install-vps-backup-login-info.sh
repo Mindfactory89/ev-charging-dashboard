@@ -6,7 +6,7 @@ HOST="${HOST:-${SSH_DEPLOY_HOST:-}}"
 USER_NAME="${USER_NAME:-${SSH_DEPLOY_USER:-${1:-}}}"
 REMOTE_PATH="${REMOTE_PATH:-${SSH_DEPLOY_PATH:-/srv/mobility-dashboard}}"
 BACKUP_ROOT="${BACKUP_ROOT:-/srv/mobility-dashboard-backups}"
-RETENTION="${RETENTION:-5}"
+RETENTION="${RETENTION:-4}"
 DOWNLOAD_HOST="${DOWNLOAD_HOST:-${HOST}}"
 DOWNLOAD_USER="${DOWNLOAD_USER:-${USER_NAME}}"
 REMOTE_SCRIPT_PATH="${REMOTE_PATH%/}/scripts/backup-login-info.sh"
@@ -19,7 +19,7 @@ Usage:
 Optional env vars:
   REMOTE_PATH=/srv/mobility-dashboard
   BACKUP_ROOT=/srv/mobility-dashboard-backups
-  RETENTION=5
+  RETENTION=4
   DOWNLOAD_HOST=your.server.ip
   DOWNLOAD_USER=deploy
 

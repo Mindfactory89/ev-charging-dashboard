@@ -3,11 +3,11 @@ import { monthLabel } from "./monthLabels.js";
 import { getActiveLocale, translate } from "../i18n/runtime.js";
 
 const DRIVING_EFFICIENCY_TIERS = [
-  { maxEnergyPer100Km: 15.0, key: "veryEfficient", emoji: "😄", tone: "mint" },
-  { maxEnergyPer100Km: 16.5, key: "efficient", emoji: "🙂", tone: "frost" },
-  { maxEnergyPer100Km: 18.0, key: "balanced", emoji: "😐", tone: "neutral" },
-  { maxEnergyPer100Km: 19.5, key: "optimizable", emoji: "😕", tone: "warm" },
-  { maxEnergyPer100Km: Number.POSITIVE_INFINITY, key: "highConsumption", emoji: "😬", tone: "danger" },
+  { maxEnergyPer100Km: 15.0, key: "veryEfficient", iconKey: "veryEfficient", tone: "mint" },
+  { maxEnergyPer100Km: 16.5, key: "efficient", iconKey: "efficient", tone: "frost" },
+  { maxEnergyPer100Km: 18.0, key: "balanced", iconKey: "balanced", tone: "neutral" },
+  { maxEnergyPer100Km: 19.5, key: "optimizable", iconKey: "optimizable", tone: "warm" },
+  { maxEnergyPer100Km: Number.POSITIVE_INFINITY, key: "highConsumption", iconKey: "highConsumption", tone: "danger" },
 ];
 
 function t(key, values = {}, locale = getActiveLocale()) {
@@ -426,7 +426,7 @@ export function buildDrivingEfficiencyProfile(sessions = []) {
   let coverageBadge = t("mobilityProfile.statuses.noRating", {}, locale);
 
   if (tier) {
-    const decoratedTierLabel = `${tier.emoji} ${tier.label}`;
+    const tierLabel = tier.label;
     coverageBadge =
       mobility.coveragePct < 40
         ? t("mobilityProfile.statuses.provisional", {}, locale)
@@ -437,13 +437,13 @@ export function buildDrivingEfficiencyProfile(sessions = []) {
     if (mobility.coveragePct < 40) {
       label = t("mobilityProfile.statuses.notEnoughData", {}, locale);
       tone = "neutral";
-      summaryHint = t("mobilityProfile.statuses.trend", { label: decoratedTierLabel }, locale);
+      summaryHint = t("mobilityProfile.statuses.trend", { label: tierLabel }, locale);
     } else if (mobility.coveragePct < 70) {
-      label = t("mobilityProfile.statuses.trend", { label: decoratedTierLabel }, locale);
+      label = t("mobilityProfile.statuses.trend", { label: tierLabel }, locale);
       tone = tier.tone;
       summaryHint = t("mobilityProfile.statuses.dataHint", {}, locale);
     } else {
-      label = decoratedTierLabel;
+      label = tierLabel;
       tone = tier.tone;
     }
 
@@ -457,7 +457,7 @@ export function buildDrivingEfficiencyProfile(sessions = []) {
     narrative = t(
       "mobilityProfile.narrative.base",
       {
-        label: decoratedTierLabel,
+        label: tierLabel,
         distance: round(mobility.totalDistanceKm, 0),
         energy: round(avgEnergy, 1),
         coverageNarrative,
@@ -475,28 +475,28 @@ export function buildDrivingEfficiencyProfile(sessions = []) {
   }
   if (shortTripShare >= 0.35) {
     tips.push(t("mobilityProfile.tips.shortTrips", {}, locale));
-    chips.push({ icon: "🏙️", label: t("mobilityProfile.chips.shortTrips", {}, locale), tone: "warm" });
+    chips.push({ iconKey: "shortTrips", label: t("mobilityProfile.chips.shortTrips", {}, locale), tone: "warm" });
   }
   if (winterShare >= 0.3) {
     tips.push(t("mobilityProfile.tips.winter", {}, locale));
-    chips.push({ icon: "❄️", label: t("mobilityProfile.chips.winter", {}, locale), tone: "frost" });
+    chips.push({ iconKey: "winter", label: t("mobilityProfile.chips.winter", {}, locale), tone: "frost" });
   }
   if (dcShare >= 0.35) {
     tips.push(t("mobilityProfile.tips.highDc", {}, locale));
-    chips.push({ icon: "⚡", label: t("mobilityProfile.chips.highDc", {}, locale), tone: "danger" });
+    chips.push({ iconKey: "highDc", label: t("mobilityProfile.chips.highDc", {}, locale), tone: "danger" });
   }
   if (highSocShare >= 0.4) {
     tips.push(t("mobilityProfile.tips.highSoc", {}, locale));
-    chips.push({ icon: "🔋", label: t("mobilityProfile.chips.highSoc", {}, locale), tone: "warm" });
+    chips.push({ iconKey: "highSoc", label: t("mobilityProfile.chips.highSoc", {}, locale), tone: "warm" });
   }
   if (homeShare >= 0.45) {
-    chips.push({ icon: "🏠", label: t("mobilityProfile.chips.homeCharging", {}, locale), tone: "mint" });
+    chips.push({ iconKey: "homeCharging", label: t("mobilityProfile.chips.homeCharging", {}, locale), tone: "mint" });
   }
   if (!tips.length && Number.isFinite(avgEnergy) && avgEnergy > 0) {
     tips.push(t("mobilityProfile.tips.calmProfile", {}, locale));
   }
   if (!chips.length && tier) {
-    chips.push({ icon: "🧭", label: t("mobilityProfile.chips.consistent", {}, locale), tone: tier.tone === "danger" ? "warm" : tier.tone });
+    chips.push({ iconKey: "consistent", label: t("mobilityProfile.chips.consistent", {}, locale), tone: tier.tone === "danger" ? "warm" : tier.tone });
   }
 
   return {
@@ -504,6 +504,7 @@ export function buildDrivingEfficiencyProfile(sessions = []) {
     score,
     label,
     tone,
+    profileIconKey: tier?.iconKey ?? null,
     summaryHint,
     coverageBadge,
     narrative,

@@ -9,7 +9,7 @@ HOST="${HOST:-${SSH_DEPLOY_HOST:-}}"
 USER_NAME="${USER_NAME:-${SSH_DEPLOY_USER:-${1:-}}}"
 REMOTE_PATH="${REMOTE_PATH:-${SSH_DEPLOY_PATH:-/srv/mobility-dashboard}}"
 BACKUP_ROOT="${BACKUP_ROOT:-/srv/mobility-dashboard-backups}"
-RETENTION="${RETENTION:-5}"
+RETENTION="${RETENTION:-4}"
 SKIP_DB="${SKIP_DB:-0}"
 
 if [[ -z "${USER_NAME}" || -z "${HOST}" ]]; then
@@ -20,7 +20,7 @@ Usage:
 Optional env vars:
   REMOTE_PATH=/srv/mobility-dashboard
   BACKUP_ROOT=/srv/mobility-dashboard-backups
-  RETENTION=5
+  RETENTION=4
   SKIP_DB=0
 
 Example:

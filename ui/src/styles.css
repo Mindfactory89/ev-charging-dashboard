@@ -6412,3 +6412,128 @@ body.touch-shell .tableWrap{
     font-size: 24px;
   }
 }
+
+/* ===== Global interaction states ===== */
+body :is(
+  a[href],
+  button,
+  input:not([type="hidden"]),
+  select,
+  textarea,
+  summary,
+  [role="button"],
+  [role="tab"],
+  [role="menuitem"],
+  [tabindex]:not([tabindex="-1"]),
+  .btn,
+  .btnPrimary,
+  .toggleBtn,
+  .ttTrigger,
+  .tablePricePill,
+  .rowEditBtn,
+  .rowDeleteBtn,
+  .rowDetailBtn,
+  .runtimeToastClose
+){
+  -webkit-tap-highlight-color: var(--cupraSoft);
+}
+
+body :is(
+  a[href],
+  button,
+  input:not([type="hidden"]),
+  select,
+  textarea,
+  summary,
+  [role="button"],
+  [role="tab"],
+  [role="menuitem"],
+  [tabindex]:not([tabindex="-1"]),
+  .btn,
+  .btnPrimary,
+  .toggleBtn,
+  .ttTrigger,
+  .tablePricePill,
+  .rowEditBtn,
+  .rowDeleteBtn,
+  .rowDetailBtn,
+  .runtimeToastClose
+):focus-visible{
+  outline: 2px solid var(--cupra);
+  outline-offset: 3px;
+}
+
+body :is(
+  a[href],
+  button,
+  summary,
+  [role="button"],
+  [role="tab"],
+  [role="menuitem"],
+  .btn,
+  .btnPrimary,
+  .toggleBtn,
+  .ttTrigger,
+  .tablePricePill,
+  .rowEditBtn,
+  .rowDeleteBtn,
+  .rowDetailBtn,
+  .runtimeToastClose
+):not(:disabled):not([aria-disabled="true"]){
+  touch-action: manipulation;
+}
+
+body :is(
+  a[href],
+  button,
+  summary,
+  [role="button"],
+  [role="tab"],
+  [role="menuitem"],
+  .btn,
+  .btnPrimary,
+  .toggleBtn,
+  .ttTrigger,
+  .tablePricePill,
+  .rowEditBtn,
+  .rowDeleteBtn,
+  .rowDetailBtn,
+  .runtimeToastClose
+):not(:disabled):not([aria-disabled="true"]):active{
+  transform: translateY(1px) scale(0.99);
+  filter: brightness(0.96);
+}
+
+@media (prefers-reduced-motion: reduce){
+  body :is(
+    a[href],
+    button,
+    summary,
+    [role="button"],
+    [role="tab"],
+    [role="menuitem"],
+    .btn,
+    .btnPrimary,
+    .toggleBtn,
+    .ttTrigger,
+    .tablePricePill,
+    .rowEditBtn,
+    .rowDeleteBtn,
+    .rowDetailBtn,
+    .runtimeToastClose
+  ):not(:disabled):not([aria-disabled="true"]):active{
+    transform: none;
+  }
+}
+
+.srOnly{
+  position:absolute;
+  width:1px;
+  height:1px;
+  padding:0;
+  margin:-1px;
+  overflow:hidden;
+  clip:rect(0, 0, 0, 0);
+  white-space:nowrap;
+  border:0;
+}

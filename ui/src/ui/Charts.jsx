@@ -42,6 +42,7 @@ function PremiumTooltip({ active, payload, label, t }) {
 
 export default function Charts({ sessions = [] }) {
   const { formatDate, t } = useI18n();
+  const chartSummaryId = React.useId();
   const data = React.useMemo(() => {
     const sorted = [...sessions].sort((a, b) => new Date(a.date) - new Date(b.date));
     return sorted.map((s) => ({
@@ -60,6 +61,12 @@ export default function Charts({ sessions = [] }) {
       totalCost,
     };
   }, [data]);
+
+  const chartSummary = t("charts.chartSummary", {
+    count: num(summary.count, 0),
+    energy: kwh(summary.totalEnergy),
+    cost: euro(summary.totalCost),
+  });
 
   return (
     <div className="card glassStrong">
@@ -93,8 +100,14 @@ export default function Charts({ sessions = [] }) {
       </div>
 
       <div className="chartWrap">
+        <p id={chartSummaryId} className="srOnly">{chartSummary}</p>
         <ResponsiveContainer width="100%" height={260}>
-          <ComposedChart data={data} margin={{ top: 20, right: 20, left: 12, bottom: 2 }}>
+          <ComposedChart
+            data={data}
+            accessibilityLayer
+            aria-describedby={chartSummaryId}
+            margin={{ top: 20, right: 20, left: 12, bottom: 2 }}
+          >
             <defs>
               <linearGradient id="energyFill" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="rgba(205,132,64,0.34)" />

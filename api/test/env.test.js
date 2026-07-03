@@ -47,3 +47,16 @@ test('readRuntimeConfig rejects partial telegram configuration', () => {
     /TELEGRAM_ALLOWED_CHAT_IDS/
   );
 });
+
+test('readRuntimeConfig rejects invalid telegram chat id lists', () => {
+  assert.throws(
+    () =>
+      readRuntimeConfig({
+        DATABASE_URL: 'postgresql://user:password@127.0.0.1:5432/mobility?schema=public',
+        PORT: '3000',
+        TELEGRAM_BOT_TOKEN: '123:abc',
+        TELEGRAM_ALLOWED_CHAT_IDS: '12345,abc',
+      }),
+    /komma-separierte Liste ganzer Zahlen/
+  );
+});

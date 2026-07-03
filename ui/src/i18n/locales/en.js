@@ -240,6 +240,7 @@ export default {
     yearSessions: "{{count}} sessions across the year",
     chargingEvents: "{{count}} charging events",
     cellSessions: "{{count}} sessions",
+    cellAria: "{{month}} {{day}}: {{sessions}} sessions, {{energy}} kWh",
   },
   pricePanel: {
     kicker: "Price",
@@ -513,6 +514,8 @@ export default {
       "Monthly aggregation of all sessions. Depending on the mode, it shows energy (kWh), cost (€), or number of charging sessions.",
     modeAria: "Monthly chart mode",
     modeInfo: "Info: {{label}}",
+    chartSummary: "{{title}}. {{months}} months in the chart. Highest value: {{value}} in {{month}}.",
+    chartEmptySummary: "{{title}}. No monthly values in the chart yet.",
     modes: {
       energy: "Energy",
       cost: "Cost",
@@ -539,6 +542,8 @@ export default {
     tooltipEnergy: "Energy",
     tooltipCost: "Cost",
     sessionsMeta: "{{count}} sessions",
+    chartSummary:
+      "Charging history with {{count}} sessions. Total energy {{energy}}, total cost {{cost}}.",
   },
   socWindow: {
     kicker: "SoC",

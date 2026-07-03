@@ -1,7 +1,8 @@
 import { getLocation, isNativeShell, readQueryParam } from "../platform/runtime.js";
 
+const ENV = import.meta.env || {};
 const demoByQuery = readQueryParam("demo") === "1";
-const ENV_DEMO_HOST_PREFIXES = String(import.meta.env.VITE_DEMO_HOST_PREFIX || "")
+const ENV_DEMO_HOST_PREFIXES = String(ENV.VITE_DEMO_HOST_PREFIX || "")
   .split(",")
   .map((value) => value.trim().toLowerCase())
   .filter(Boolean);
@@ -12,8 +13,8 @@ const demoByHost = (() => {
   return ENV_DEMO_HOST_PREFIXES.some((prefix) => hostname === prefix || hostname.startsWith(prefix));
 })();
 
-const ENV_API_BASE = (import.meta.env.VITE_API_BASE || "").trim();
-const ENV_MOBILE_API_BASE = (import.meta.env.VITE_MOBILE_API_BASE || "").trim();
+const ENV_API_BASE = String(ENV.VITE_API_BASE || "").trim();
+const ENV_MOBILE_API_BASE = String(ENV.VITE_MOBILE_API_BASE || "").trim();
 
 export const isDemoMode = demoByQuery || demoByHost;
 

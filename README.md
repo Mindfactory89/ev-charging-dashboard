@@ -251,13 +251,13 @@ HOST=your.server.ip USER_NAME=deploy ./scripts/backup-vps.sh
 
 `deploy-to-vps.sh` now creates that backup automatically before syncing unless you explicitly set `CREATE_REMOTE_BACKUP=0`.
 
-Install a daily VPS backup cron job:
+Install a Wednesday/Saturday VPS backup cron job:
 
 ```bash
 HOST=your.server.ip USER_NAME=deploy ./scripts/install-vps-backup-cron.sh
 ```
 
-Default schedule: every day at `03:20` server time, with `RETENTION=5`.
+Default schedule: Wednesdays and Saturdays at `03:20`, with `RETENTION=4`.
 
 Restore a selected VPS backup:
 

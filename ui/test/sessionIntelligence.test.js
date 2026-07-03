@@ -51,7 +51,7 @@ test("buildShiftScenario supports configurable source and target channels", () =
   assert.equal(scenario.ok, true);
   assert.equal(scenario.sourceKey, "public_ac");
   assert.equal(scenario.targetKey, "home");
-  assert.equal(scenario.source?.label, "Public AC");
+  assert.equal(scenario.source?.label, "Öffentliches AC");
   assert.equal(scenario.target?.label, "Wallbox Zuhause");
   assert.equal(scenario.shiftEnergyKwh, 5);
   assert.equal(scenario.deltaPricePerKwh, 0.18);

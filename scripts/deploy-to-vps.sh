@@ -10,9 +10,10 @@ SERVICES="${SERVICES:-api ui}"
 RUN_REMOTE_DEPLOY="${RUN_REMOTE_DEPLOY:-1}"
 CREATE_REMOTE_BACKUP="${CREATE_REMOTE_BACKUP:-1}"
 REMOTE_BACKUP_ROOT="${REMOTE_BACKUP_ROOT:-/srv/mobility-dashboard-backups}"
-BACKUP_RETENTION="${BACKUP_RETENTION:-5}"
+BACKUP_RETENTION="${BACKUP_RETENTION:-4}"
 DEPLOY_HEALTH_TIMEOUT="${DEPLOY_HEALTH_TIMEOUT:-120}"
 DEPLOY_HEALTH_INTERVAL="${DEPLOY_HEALTH_INTERVAL:-3}"
+DEPLOY_META_FILENAME="${DEPLOY_META_FILENAME:-.deploy-meta}"
 
 if [[ -z "${USER_NAME}" || -z "${HOST}" ]]; then
   cat >&2 <<'EOF'
@@ -27,7 +28,7 @@ Optional env vars:
   RUN_REMOTE_DEPLOY=1
   CREATE_REMOTE_BACKUP=1
   REMOTE_BACKUP_ROOT=/srv/mobility-dashboard-backups
-  BACKUP_RETENTION=5
+  BACKUP_RETENTION=4
   DEPLOY_HEALTH_TIMEOUT=120
   DEPLOY_HEALTH_INTERVAL=3
 
@@ -40,6 +41,25 @@ fi
 if ! command -v rsync >/dev/null 2>&1; then
   echo "rsync ist nicht installiert. Bitte zuerst installieren." >&2
   exit 1
+fi
+
+deploy_meta_branch=""
+deploy_meta_commit=""
+deploy_meta_dirty="0"
+deploy_meta_version=""
+deploy_meta_timestamp="$(date '+%Y-%m-%dT%H:%M:%S%z')"
+deploy_meta_epoch="$(date +%s)"
+
+if [[ -d "${LOCAL_PATH}/.git" ]]; then
+  deploy_meta_branch="$(git -C "${LOCAL_PATH}" branch --show-current 2>/dev/null || true)"
+  deploy_meta_commit="$(git -C "${LOCAL_PATH}" rev-parse --short HEAD 2>/dev/null || true)"
+  if [[ -n "$(git -C "${LOCAL_PATH}" status --porcelain --untracked-files=no 2>/dev/null || true)" ]]; then
+    deploy_meta_dirty="1"
+  fi
+fi
+
+if [[ -f "${LOCAL_PATH}/ui/package.json" ]]; then
+  deploy_meta_version="$(sed -n 's/^[[:space:]]*"version":[[:space:]]*"\([^"]*\)".*/\1/p' "${LOCAL_PATH}/ui/package.json" | head -n 1)"
 fi
 
 echo "Deploying ${LOCAL_PATH} -> ${USER_NAME}@${HOST}:${REMOTE_PATH}"
@@ -126,6 +146,20 @@ for service in ${SERVICES}; do
     esac
   done
 done
+EOF
+fi
+
+if [[ "${RUN_REMOTE_DEPLOY}" == "1" ]]; then
+  ssh "${USER_NAME}@${HOST}" \
+    "cat > '${REMOTE_PATH%/}/${DEPLOY_META_FILENAME}'" <<EOF
+project=mobility
+deployed_at=${deploy_meta_timestamp}
+deployed_at_epoch=${deploy_meta_epoch}
+branch=${deploy_meta_branch}
+commit=${deploy_meta_commit}
+dirty=${deploy_meta_dirty}
+version=${deploy_meta_version}
+source=deploy-to-vps
 EOF
 fi
 

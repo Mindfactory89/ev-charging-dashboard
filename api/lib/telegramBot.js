@@ -7,6 +7,88 @@ const TELEGRAM_API_BASE = 'https://api.telegram.org';
 const DEFAULT_CONNECTOR_OPTIONS = ['CCS - DC', 'CCS AC', 'Wallbox AC'];
 const DEFAULT_VEHICLE = 'CUPRA Born 79 kWh';
 const DRAFT_TTL_MS = 24 * 60 * 60 * 1000;
+const CONTROL_TEXT_ALIASES = {
+  cancel: new Set(['/cancel', 'abbrechen', 'cancel', '❌ abbrechen']),
+  skip: new Set(['/skip', 'überspringen', 'ueberspringen', 'skip', 'ohne angabe', '1 - ohne angabe', '⏭️ 1 - ohne angabe']),
+  newSession: new Set(['/new', 'neue session', 'neu', '✨ neue session starten']),
+  restart: new Set(['neu starten', '🔄 2 - neu starten']),
+  save: new Set(['speichern', '/save', '✅ 1 - speichern']),
+};
+const CONNECTOR_ALIASES = new Map([
+  ['ccs - dc', 'CCS - DC'],
+  ['ccs dc', 'CCS - DC'],
+  ['dc', 'CCS - DC'],
+  ['ccs ac', 'CCS AC'],
+  ['ac', 'CCS AC'],
+  ['wallbox ac', 'Wallbox AC'],
+  ['wallbox', 'Wallbox AC'],
+  ['home', 'Wallbox AC'],
+]);
+const SKIPPABLE_STEPS = new Set(['provider', 'location', 'tags', 'odometer_km', 'note']);
+const STEP_KEYBOARD_ROWS = {
+  date: [
+    [
+      { text: '📅 1 - Heute', callback_data: 'date:today' },
+      { text: '🕘 2 - Gestern', callback_data: 'date:yesterday' },
+    ],
+    [{ text: '❌ Abbrechen', callback_data: 'nav:cancel' }],
+  ],
+  connector: [
+    [
+      { text: '⚡ 1 - CCS - DC', callback_data: 'connector:dc' },
+      { text: '🔌 2 - CCS AC', callback_data: 'connector:ac' },
+    ],
+    [{ text: '🏠 3 - Wallbox AC', callback_data: 'connector:wallbox' }],
+    [{ text: '❌ Abbrechen', callback_data: 'nav:cancel' }],
+  ],
+  vehicle: [
+    [
+      { text: '🚗 1 - Standardfahrzeug', callback_data: 'vehicle:default' },
+      { text: '⏭️ 2 - Ohne Angabe', callback_data: 'vehicle:skip' },
+    ],
+    [{ text: '❌ Abbrechen', callback_data: 'nav:cancel' }],
+  ],
+  confirm: [
+    [{ text: '✅ 1 - Speichern', callback_data: 'confirm:save' }],
+    [
+      { text: '🔄 2 - Neu starten', callback_data: 'confirm:restart' },
+      { text: '❌ 3 - Abbrechen', callback_data: 'confirm:cancel' },
+    ],
+  ],
+};
+const CALLBACK_ACTIONS = new Map([
+  ['menu:new', { type: 'command', text: '/new' }],
+  ['nav:cancel', { type: 'command', text: '/cancel' }],
+  ['date:today', { type: 'step', step: 'date', text: '1' }],
+  ['date:yesterday', { type: 'step', step: 'date', text: '2' }],
+  ['connector:dc', { type: 'step', step: 'connector', text: '1' }],
+  ['connector:ac', { type: 'step', step: 'connector', text: '2' }],
+  ['connector:wallbox', { type: 'step', step: 'connector', text: '3' }],
+  ['provider:skip', { type: 'step', step: 'provider', text: '1' }],
+  ['location:skip', { type: 'step', step: 'location', text: '1' }],
+  ['vehicle:default', { type: 'step', step: 'vehicle', text: '1' }],
+  ['vehicle:skip', { type: 'step', step: 'vehicle', text: '2' }],
+  ['tags:skip', { type: 'step', step: 'tags', text: '1' }],
+  ['odometer_km:skip', { type: 'step', step: 'odometer_km', text: '1' }],
+  ['note:skip', { type: 'step', step: 'note', text: '1' }],
+  ['confirm:save', { type: 'step', step: 'confirm', text: '1' }],
+  ['confirm:restart', { type: 'step', step: 'confirm', text: '2' }],
+  ['confirm:cancel', { type: 'step', step: 'confirm', text: '3' }],
+]);
+const STEP_PROMPTS = {
+  date: 'Hallo 👋\nSchön, dass du da bist. Ich begleite dich jetzt Schritt für Schritt durch den Eintrag deines Ladevorgangs 🙂\n\nSo funktioniert es:\n• Ich frage dich nacheinander alle wichtigen Angaben.\n• Bei optionalen Feldern kannst du einfach auf den Button tippen oder nur die Zahl senden.\n• Mit „❌ Abbrechen“ kannst du jederzeit stoppen.\n\n1/13 Datum\nWann war der Ladevorgang?\nDu kannst „1 - Heute“, „2 - Gestern“ oder ein Datum wie 15.03.2026 senden.',
+  connector: '2/13 Anschluss ⚡\nWelchen Anschluss hast du genutzt?\n\n1. CCS - DC\n2. CCS AC\n3. Wallbox AC\n\nWenn dir Telegram keine Buttons zeigt, antworte einfach mit 1, 2 oder 3.',
+  provider: '3/13 Betreiber 🙂\nWer war der Betreiber?\nZum Beispiel: Ionity, EnBW oder Aral Pulse.\n\nWenn du das Feld leer lassen möchtest, tippe einfach auf „⏭️ 1 - Ohne Angabe“ oder sende nur 1.',
+  location: '4/13 Standort 📍\nWo hast du geladen?\nZum Beispiel: Raststätte Holmmoor West oder Zuhause.\n\nWenn du keinen Standort angeben möchtest, tippe einfach 1.',
+  tags: '6/13 Tags 🏷️\nMöchtest du Tags vergeben?\nDu kannst mehrere Tags mit Komma trennen, zum Beispiel: Reise, HPC, Urlaub.\n\nWenn du keine Tags setzen möchtest, tippe einfach 1.',
+  soc_start: '7/13 SoC Start 🔋\nWie hoch war der Akkustand zu Beginn?\nBitte als Prozentzahl senden, zum Beispiel 12.',
+  soc_end: '8/13 SoC Ende 🔋\nDanke dir. Wie hoch war der Akkustand am Ende?\nBitte wieder als Prozentzahl senden, zum Beispiel 80.',
+  energy_kwh: '9/13 Geladene Energie ⚡\nWie viel Energie wurde geladen?\nBitte in kWh senden, zum Beispiel 42,5.',
+  price_per_kwh: '10/13 Preis 💶\nWie hoch war der Preis pro kWh?\nBitte in Euro senden, zum Beispiel 0,59.',
+  duration_hhmm: '11/13 Dauer ⏱️\nWie lange hat der Ladevorgang gedauert?\nDu kannst HH:MM oder einfach Minuten senden, zum Beispiel 00:32 oder 32.',
+  odometer_km: '12/13 Kilometerstand 🚙\nWenn du magst, sende jetzt den Kilometerstand in km.\nWenn du ihn nicht angeben möchtest, tippe einfach 1.',
+  note: '13/13 Notiz ✍️\nFast geschafft 😊\nWenn du noch eine kurze Notiz ergänzen möchtest, schick sie mir jetzt.\nWenn nicht, tippe einfach 1.',
+};
 
 function pad2(value) {
   return String(value).padStart(2, '0');
@@ -35,48 +117,32 @@ function extractChoiceNumber(value) {
   return Number.isInteger(parsed) ? parsed : null;
 }
 
-function isCancelText(value) {
+function matchesControlAlias(value, aliasSet, expectedChoiceNumber = null) {
   const normalized = normalizeControlText(value);
-  return normalized === '/cancel'
-    || normalized === 'abbrechen'
-    || normalized === 'cancel'
-    || normalized === '❌ abbrechen';
+  if (expectedChoiceNumber != null && extractChoiceNumber(value) === expectedChoiceNumber) {
+    return true;
+  }
+  return aliasSet.has(normalized);
+}
+
+function isCancelText(value) {
+  return matchesControlAlias(value, CONTROL_TEXT_ALIASES.cancel);
 }
 
 function isSkipText(value) {
-  const normalized = normalizeControlText(value);
-  const choiceNumber = extractChoiceNumber(value);
-  return choiceNumber === 1
-    || normalized === '/skip'
-    || normalized === 'überspringen'
-    || normalized === 'ueberspringen'
-    || normalized === 'skip'
-    || normalized === 'ohne angabe'
-    || normalized === '1 - ohne angabe'
-    || normalized === '⏭️ 1 - ohne angabe';
+  return matchesControlAlias(value, CONTROL_TEXT_ALIASES.skip, 1);
 }
 
 function isNewSessionText(value) {
-  const normalized = normalizeControlText(value);
-  return normalized === '/new'
-    || normalized === 'neue session'
-    || normalized === 'neu'
-    || normalized === '✨ neue session starten';
+  return matchesControlAlias(value, CONTROL_TEXT_ALIASES.newSession);
 }
 
 function isRestartText(value) {
-  const normalized = normalizeControlText(value);
-  return extractChoiceNumber(value) === 2
-    || normalized === 'neu starten'
-    || normalized === '🔄 2 - neu starten';
+  return matchesControlAlias(value, CONTROL_TEXT_ALIASES.restart, 2);
 }
 
 function isSaveText(value) {
-  const normalized = normalizeControlText(value);
-  return extractChoiceNumber(value) === 1
-    || normalized === 'speichern'
-    || normalized === '/save'
-    || normalized === '✅ 1 - speichern';
+  return matchesControlAlias(value, CONTROL_TEXT_ALIASES.save, 1);
 }
 
 function parseDateInput(value, now) {
@@ -184,29 +250,14 @@ function parseConnectorInput(value) {
   if (!raw) return null;
 
   const choiceNumber = extractChoiceNumber(value);
-  if (choiceNumber === 1) return 'CCS - DC';
-  if (choiceNumber === 2) return 'CCS AC';
-  if (choiceNumber === 3) return 'Wallbox AC';
+  if (choiceNumber != null && DEFAULT_CONNECTOR_OPTIONS[choiceNumber - 1]) {
+    return DEFAULT_CONNECTOR_OPTIONS[choiceNumber - 1];
+  }
 
   const compact = raw.replace(/\s+/g, ' ').trim();
   const withoutPrefix = compact.replace(/^\d+\s*[-.)]?\s*/, '').trim();
   const normalized = withoutPrefix.replace(/\s*-\s*/g, ' - ');
-
-  const aliases = new Map([
-    ['1', 'CCS - DC'],
-    ['ccs - dc', 'CCS - DC'],
-    ['ccs dc', 'CCS - DC'],
-    ['dc', 'CCS - DC'],
-    ['2', 'CCS AC'],
-    ['ccs ac', 'CCS AC'],
-    ['ac', 'CCS AC'],
-    ['3', 'Wallbox AC'],
-    ['wallbox ac', 'Wallbox AC'],
-    ['wallbox', 'Wallbox AC'],
-    ['home', 'Wallbox AC'],
-  ]);
-
-  return aliases.get(compact) || aliases.get(normalized) || null;
+  return CONNECTOR_ALIASES.get(compact) || CONNECTOR_ALIASES.get(normalized) || null;
 }
 
 function parseVehicleInput(value) {
@@ -253,48 +304,11 @@ function cancelKeyboard() {
 }
 
 function stepKeyboard(step) {
-  if (step === 'date') {
-    return buildInlineKeyboard([
-      [
-        { text: '📅 1 - Heute', callback_data: 'date:today' },
-        { text: '🕘 2 - Gestern', callback_data: 'date:yesterday' },
-      ],
-      [{ text: '❌ Abbrechen', callback_data: 'nav:cancel' }],
-    ]);
+  if (STEP_KEYBOARD_ROWS[step]) {
+    return buildInlineKeyboard(STEP_KEYBOARD_ROWS[step]);
   }
 
-  if (step === 'connector') {
-    return buildInlineKeyboard([
-      [
-        { text: '⚡ 1 - CCS - DC', callback_data: 'connector:dc' },
-        { text: '🔌 2 - CCS AC', callback_data: 'connector:ac' },
-      ],
-      [{ text: '🏠 3 - Wallbox AC', callback_data: 'connector:wallbox' }],
-      [{ text: '❌ Abbrechen', callback_data: 'nav:cancel' }],
-    ]);
-  }
-
-  if (step === 'vehicle') {
-    return buildInlineKeyboard([
-      [
-        { text: '🚗 1 - Standardfahrzeug', callback_data: 'vehicle:default' },
-        { text: '⏭️ 2 - Ohne Angabe', callback_data: 'vehicle:skip' },
-      ],
-      [{ text: '❌ Abbrechen', callback_data: 'nav:cancel' }],
-    ]);
-  }
-
-  if (step === 'confirm') {
-    return buildInlineKeyboard([
-      [{ text: '✅ 1 - Speichern', callback_data: 'confirm:save' }],
-      [
-        { text: '🔄 2 - Neu starten', callback_data: 'confirm:restart' },
-        { text: '❌ 3 - Abbrechen', callback_data: 'confirm:cancel' },
-      ],
-    ]);
-  }
-
-  if (step === 'provider' || step === 'location' || step === 'tags' || step === 'odometer_km' || step === 'note') {
+  if (SKIPPABLE_STEPS.has(step)) {
     return buildInlineKeyboard([
       [{ text: '⏭️ 1 - Ohne Angabe', callback_data: `${step}:skip` }],
       [{ text: '❌ Abbrechen', callback_data: 'nav:cancel' }],
@@ -305,77 +319,16 @@ function stepKeyboard(step) {
 }
 
 function parseCallbackAction(data) {
-  switch (String(data || '')) {
-    case 'menu:new':
-      return { type: 'command', text: '/new' };
-    case 'nav:cancel':
-      return { type: 'command', text: '/cancel' };
-    case 'date:today':
-      return { type: 'step', step: 'date', text: '1' };
-    case 'date:yesterday':
-      return { type: 'step', step: 'date', text: '2' };
-    case 'connector:dc':
-      return { type: 'step', step: 'connector', text: '1' };
-    case 'connector:ac':
-      return { type: 'step', step: 'connector', text: '2' };
-    case 'connector:wallbox':
-      return { type: 'step', step: 'connector', text: '3' };
-    case 'provider:skip':
-      return { type: 'step', step: 'provider', text: '1' };
-    case 'location:skip':
-      return { type: 'step', step: 'location', text: '1' };
-    case 'vehicle:default':
-      return { type: 'step', step: 'vehicle', text: '1' };
-    case 'vehicle:skip':
-      return { type: 'step', step: 'vehicle', text: '2' };
-    case 'tags:skip':
-      return { type: 'step', step: 'tags', text: '1' };
-    case 'odometer_km:skip':
-      return { type: 'step', step: 'odometer_km', text: '1' };
-    case 'note:skip':
-      return { type: 'step', step: 'note', text: '1' };
-    case 'confirm:save':
-      return { type: 'step', step: 'confirm', text: '1' };
-    case 'confirm:restart':
-      return { type: 'step', step: 'confirm', text: '2' };
-    case 'confirm:cancel':
-      return { type: 'step', step: 'confirm', text: '3' };
-    default:
-      return null;
-  }
+  const action = CALLBACK_ACTIONS.get(String(data || ''));
+  return action ? { ...action } : null;
 }
 
 function buildPrompt(step) {
-  switch (step) {
-    case 'date':
-      return 'Hallo 👋\nSchön, dass du da bist. Ich begleite dich jetzt Schritt für Schritt durch den Eintrag deines Ladevorgangs 🙂\n\nSo funktioniert es:\n• Ich frage dich nacheinander alle wichtigen Angaben.\n• Bei optionalen Feldern kannst du einfach auf den Button tippen oder nur die Zahl senden.\n• Mit „❌ Abbrechen“ kannst du jederzeit stoppen.\n\n1/13 Datum\nWann war der Ladevorgang?\nDu kannst „1 - Heute“, „2 - Gestern“ oder ein Datum wie 15.03.2026 senden.';
-    case 'connector':
-      return '2/13 Anschluss ⚡\nWelchen Anschluss hast du genutzt?\n\n1. CCS - DC\n2. CCS AC\n3. Wallbox AC\n\nWenn dir Telegram keine Buttons zeigt, antworte einfach mit 1, 2 oder 3.';
-    case 'provider':
-      return '3/13 Betreiber 🙂\nWer war der Betreiber?\nZum Beispiel: Ionity, EnBW oder Aral Pulse.\n\nWenn du das Feld leer lassen möchtest, tippe einfach auf „⏭️ 1 - Ohne Angabe“ oder sende nur 1.';
-    case 'location':
-      return '4/13 Standort 📍\nWo hast du geladen?\nZum Beispiel: Raststätte Holmmoor West oder Zuhause.\n\nWenn du keinen Standort angeben möchtest, tippe einfach 1.';
-    case 'vehicle':
-      return `5/13 Fahrzeug 🚗\nWelches Fahrzeug war es?\n\n1. Standardfahrzeug verwenden\n2. Ohne Angabe weiter\n\nDein Standardfahrzeug ist aktuell: ${DEFAULT_VEHICLE}\nDu kannst aber auch einfach einen eigenen Fahrzeugnamen senden.`;
-    case 'tags':
-      return '6/13 Tags 🏷️\nMöchtest du Tags vergeben?\nDu kannst mehrere Tags mit Komma trennen, zum Beispiel: Reise, HPC, Urlaub.\n\nWenn du keine Tags setzen möchtest, tippe einfach 1.';
-    case 'soc_start':
-      return '7/13 SoC Start 🔋\nWie hoch war der Akkustand zu Beginn?\nBitte als Prozentzahl senden, zum Beispiel 12.';
-    case 'soc_end':
-      return '8/13 SoC Ende 🔋\nDanke dir. Wie hoch war der Akkustand am Ende?\nBitte wieder als Prozentzahl senden, zum Beispiel 80.';
-    case 'energy_kwh':
-      return '9/13 Geladene Energie ⚡\nWie viel Energie wurde geladen?\nBitte in kWh senden, zum Beispiel 42,5.';
-    case 'price_per_kwh':
-      return '10/13 Preis 💶\nWie hoch war der Preis pro kWh?\nBitte in Euro senden, zum Beispiel 0,59.';
-    case 'duration_hhmm':
-      return '11/13 Dauer ⏱️\nWie lange hat der Ladevorgang gedauert?\nDu kannst HH:MM oder einfach Minuten senden, zum Beispiel 00:32 oder 32.';
-    case 'odometer_km':
-      return '12/13 Kilometerstand 🚙\nWenn du magst, sende jetzt den Kilometerstand in km.\nWenn du ihn nicht angeben möchtest, tippe einfach 1.';
-    case 'note':
-      return '13/13 Notiz ✍️\nFast geschafft 😊\nWenn du noch eine kurze Notiz ergänzen möchtest, schick sie mir jetzt.\nWenn nicht, tippe einfach 1.';
-    default:
-      return 'Bitte antworte über die eingeblendeten Optionen 🙂';
+  if (step === 'vehicle') {
+    return `5/13 Fahrzeug 🚗\nWelches Fahrzeug war es?\n\n1. Standardfahrzeug verwenden\n2. Ohne Angabe weiter\n\nDein Standardfahrzeug ist aktuell: ${DEFAULT_VEHICLE}\nDu kannst aber auch einfach einen eigenen Fahrzeugnamen senden.`;
   }
+
+  return STEP_PROMPTS[step] || 'Bitte antworte über die eingeblendeten Optionen 🙂';
 }
 
 function buildSummary(payload) {
@@ -630,6 +583,161 @@ function createTelegramBot(options = {}) {
     await sendStep(chatId, nextStep);
   }
 
+  function cloneDraft(draft) {
+    return {
+      ...draft,
+      data: { ...draft.data },
+    };
+  }
+
+  async function sendDraftStepError(chatId, step, message) {
+    await sendMessage(chatId, message, stepKeyboard(step));
+  }
+
+  async function updateDraftAndMove(chatId, draft, field, value, nextStep) {
+    draft.data[field] = value;
+    await moveToNextStep(chatId, draft, nextStep);
+  }
+
+  async function handleDateStep(chatId, draft, text) {
+    const date = parseDateInput(text, now);
+    if (!date) {
+      await sendDraftStepError(chatId, 'date', 'Das Datum konnte ich leider nicht verstehen 😕\nBitte sende YYYY-MM-DD, DD.MM.YYYY oder nutze einfach 1 für Heute bzw. 2 für Gestern.');
+      return;
+    }
+
+    await updateDraftAndMove(chatId, draft, 'date', date, 'connector');
+  }
+
+  async function handleConnectorStep(chatId, draft, text) {
+    const connector = parseConnectorInput(text);
+    if (!connector) {
+      await sendDraftStepError(chatId, 'connector', 'Ich brauche hier einen gültigen Anschluss 🙂\nBitte wähle einen Button oder sende einfach 1, 2 oder 3.');
+      return;
+    }
+
+    await updateDraftAndMove(chatId, draft, 'connector', connector, 'provider');
+  }
+
+  async function handleOptionalTextStep(chatId, draft, text, field, nextStep) {
+    await updateDraftAndMove(
+      chatId,
+      draft,
+      field,
+      isSkipText(text) ? null : normalizeOptionalText(text),
+      nextStep
+    );
+  }
+
+  async function handleVehicleStep(chatId, draft, text) {
+    const vehicleChoice = parseVehicleInput(text);
+    if (!vehicleChoice) {
+      await sendDraftStepError(chatId, 'vehicle', 'Hier kannst du 1 für dein Standardfahrzeug, 2 für „ohne Angabe“ oder einen eigenen Fahrzeugnamen senden 🙂');
+      return;
+    }
+
+    await updateDraftAndMove(chatId, draft, 'vehicle', vehicleChoice.value, 'tags');
+  }
+
+  async function handleSocStartStep(chatId, draft, text) {
+    const value = parseIntegerInput(text, { min: 0, max: 100 });
+    if (value == null) {
+      await sendDraftStepError(chatId, 'soc_start', 'Bitte sende den SoC Start als Zahl zwischen 0 und 100 🙂');
+      return;
+    }
+
+    await updateDraftAndMove(chatId, draft, 'soc_start', value, 'soc_end');
+  }
+
+  async function handleSocEndStep(chatId, draft, text) {
+    const value = parseIntegerInput(text, { min: 0, max: 100 });
+    if (value == null) {
+      await sendDraftStepError(chatId, 'soc_end', 'Bitte sende den SoC Ende als Zahl zwischen 0 und 100 🙂');
+      return;
+    }
+    if (value < Number(draft.data.soc_start)) {
+      await sendDraftStepError(chatId, 'soc_end', 'Der SoC am Ende darf nicht kleiner sein als der SoC am Anfang 🙂');
+      return;
+    }
+
+    await updateDraftAndMove(chatId, draft, 'soc_end', value, 'energy_kwh');
+  }
+
+  async function handleEnergyStep(chatId, draft, text) {
+    const value = parseDecimalInput(text, { minExclusive: 0 });
+    if (value == null) {
+      await sendDraftStepError(chatId, 'energy_kwh', 'Bitte sende eine gültige Energiemenge größer als 0, zum Beispiel 42,5 🙂');
+      return;
+    }
+
+    await updateDraftAndMove(chatId, draft, 'energy_kwh', value, 'price_per_kwh');
+  }
+
+  async function handlePriceStep(chatId, draft, text) {
+    const value = parseDecimalInput(text, { minExclusive: 0 });
+    if (value == null) {
+      await sendDraftStepError(chatId, 'price_per_kwh', 'Bitte sende einen gültigen Preis größer als 0, zum Beispiel 0,59 🙂');
+      return;
+    }
+
+    await updateDraftAndMove(chatId, draft, 'price_per_kwh', value, 'duration_hhmm');
+  }
+
+  async function handleDurationStep(chatId, draft, text) {
+    const value = parseDurationInput(text);
+    if (!value) {
+      await sendDraftStepError(chatId, 'duration_hhmm', 'Bitte sende die Dauer als HH:MM oder in Minuten, zum Beispiel 00:32 oder 32 🙂');
+      return;
+    }
+
+    await updateDraftAndMove(chatId, draft, 'duration_hhmm', value, 'odometer_km');
+  }
+
+  async function handleOdometerStep(chatId, draft, text) {
+    if (isSkipText(text)) {
+      await updateDraftAndMove(chatId, draft, 'odometer_km', null, 'note');
+      return;
+    }
+
+    const value = parseIntegerInput(text, { min: 0, max: 2000000 });
+    if (value == null) {
+      await sendDraftStepError(chatId, 'odometer_km', 'Bitte sende den Kilometerstand als ganze Zahl oder tippe einfach 1 für „ohne Angabe“ 🙂');
+      return;
+    }
+
+    await updateDraftAndMove(chatId, draft, 'odometer_km', value, 'note');
+  }
+
+  async function handleNoteStep(chatId, draft, text) {
+    draft.data.note = isSkipText(text) ? null : normalizeOptionalText(text);
+    const summary = buildSummary(draft.data);
+
+    if (summary.error) {
+      await sendDraftStepError(chatId, 'note', `Fast geschafft, aber hier fehlt noch etwas 😕\n${summary.error}`);
+      return;
+    }
+
+    upsertDraft(chatId, { ...draft, step: 'confirm' });
+    await sendMessage(chatId, summary.text, stepKeyboard('confirm'));
+  }
+
+  const draftStepHandlers = {
+    date: handleDateStep,
+    connector: handleConnectorStep,
+    provider: (chatId, draft, text) => handleOptionalTextStep(chatId, draft, text, 'provider', 'location'),
+    location: (chatId, draft, text) => handleOptionalTextStep(chatId, draft, text, 'location', 'vehicle'),
+    vehicle: handleVehicleStep,
+    tags: (chatId, draft, text) => handleOptionalTextStep(chatId, draft, text, 'tags', 'soc_start'),
+    soc_start: handleSocStartStep,
+    soc_end: handleSocEndStep,
+    energy_kwh: handleEnergyStep,
+    price_per_kwh: handlePriceStep,
+    duration_hhmm: handleDurationStep,
+    odometer_km: handleOdometerStep,
+    note: handleNoteStep,
+    confirm: handleConfirm,
+  };
+
   async function handleDraftInput(chatId, draft, text) {
     if (isCancelText(text)) {
       await cancelDraft(chatId);
@@ -641,156 +749,15 @@ function createTelegramBot(options = {}) {
       return;
     }
 
-    const nextDraft = {
-      ...draft,
-      data: { ...draft.data },
-    };
+    const nextDraft = cloneDraft(draft);
+    const handler = draftStepHandlers[draft.step];
 
-    switch (draft.step) {
-      case 'date': {
-        const date = parseDateInput(text, now);
-        if (!date) {
-          await sendMessage(chatId, 'Das Datum konnte ich leider nicht verstehen 😕\nBitte sende YYYY-MM-DD, DD.MM.YYYY oder nutze einfach 1 für Heute bzw. 2 für Gestern.', stepKeyboard('date'));
-          return;
-        }
-        nextDraft.data.date = date;
-        await moveToNextStep(chatId, nextDraft, 'connector');
-        return;
-      }
-
-      case 'connector': {
-        const connector = parseConnectorInput(text);
-        if (!connector) {
-          await sendMessage(chatId, 'Ich brauche hier einen gültigen Anschluss 🙂\nBitte wähle einen Button oder sende einfach 1, 2 oder 3.', stepKeyboard('connector'));
-          return;
-        }
-        nextDraft.data.connector = connector;
-        await moveToNextStep(chatId, nextDraft, 'provider');
-        return;
-      }
-
-      case 'provider': {
-        nextDraft.data.provider = isSkipText(text) ? null : normalizeOptionalText(text);
-        await moveToNextStep(chatId, nextDraft, 'location');
-        return;
-      }
-
-      case 'location': {
-        nextDraft.data.location = isSkipText(text) ? null : normalizeOptionalText(text);
-        await moveToNextStep(chatId, nextDraft, 'vehicle');
-        return;
-      }
-
-      case 'vehicle': {
-        const vehicleChoice = parseVehicleInput(text);
-        if (!vehicleChoice) {
-          await sendMessage(chatId, 'Hier kannst du 1 für dein Standardfahrzeug, 2 für „ohne Angabe“ oder einen eigenen Fahrzeugnamen senden 🙂', stepKeyboard('vehicle'));
-          return;
-        }
-        nextDraft.data.vehicle = vehicleChoice.value;
-        await moveToNextStep(chatId, nextDraft, 'tags');
-        return;
-      }
-
-      case 'tags': {
-        nextDraft.data.tags = isSkipText(text) ? null : normalizeOptionalText(text);
-        await moveToNextStep(chatId, nextDraft, 'soc_start');
-        return;
-      }
-
-      case 'soc_start': {
-        const value = parseIntegerInput(text, { min: 0, max: 100 });
-        if (value == null) {
-          await sendMessage(chatId, 'Bitte sende den SoC Start als Zahl zwischen 0 und 100 🙂', stepKeyboard('soc_start'));
-          return;
-        }
-        nextDraft.data.soc_start = value;
-        await moveToNextStep(chatId, nextDraft, 'soc_end');
-        return;
-      }
-
-      case 'soc_end': {
-        const value = parseIntegerInput(text, { min: 0, max: 100 });
-        if (value == null) {
-          await sendMessage(chatId, 'Bitte sende den SoC Ende als Zahl zwischen 0 und 100 🙂', stepKeyboard('soc_end'));
-          return;
-        }
-        if (value < Number(nextDraft.data.soc_start)) {
-          await sendMessage(chatId, 'Der SoC am Ende darf nicht kleiner sein als der SoC am Anfang 🙂', stepKeyboard('soc_end'));
-          return;
-        }
-        nextDraft.data.soc_end = value;
-        await moveToNextStep(chatId, nextDraft, 'energy_kwh');
-        return;
-      }
-
-      case 'energy_kwh': {
-        const value = parseDecimalInput(text, { minExclusive: 0 });
-        if (value == null) {
-          await sendMessage(chatId, 'Bitte sende eine gültige Energiemenge größer als 0, zum Beispiel 42,5 🙂', stepKeyboard('energy_kwh'));
-          return;
-        }
-        nextDraft.data.energy_kwh = value;
-        await moveToNextStep(chatId, nextDraft, 'price_per_kwh');
-        return;
-      }
-
-      case 'price_per_kwh': {
-        const value = parseDecimalInput(text, { minExclusive: 0 });
-        if (value == null) {
-          await sendMessage(chatId, 'Bitte sende einen gültigen Preis größer als 0, zum Beispiel 0,59 🙂', stepKeyboard('price_per_kwh'));
-          return;
-        }
-        nextDraft.data.price_per_kwh = value;
-        await moveToNextStep(chatId, nextDraft, 'duration_hhmm');
-        return;
-      }
-
-      case 'duration_hhmm': {
-        const value = parseDurationInput(text);
-        if (!value) {
-          await sendMessage(chatId, 'Bitte sende die Dauer als HH:MM oder in Minuten, zum Beispiel 00:32 oder 32 🙂', stepKeyboard('duration_hhmm'));
-          return;
-        }
-        nextDraft.data.duration_hhmm = value;
-        await moveToNextStep(chatId, nextDraft, 'odometer_km');
-        return;
-      }
-
-      case 'odometer_km': {
-        if (isSkipText(text)) {
-          nextDraft.data.odometer_km = null;
-        } else {
-          const value = parseIntegerInput(text, { min: 0, max: 2000000 });
-          if (value == null) {
-            await sendMessage(chatId, 'Bitte sende den Kilometerstand als ganze Zahl oder tippe einfach 1 für „ohne Angabe“ 🙂', stepKeyboard('odometer_km'));
-            return;
-          }
-          nextDraft.data.odometer_km = value;
-        }
-        await moveToNextStep(chatId, nextDraft, 'note');
-        return;
-      }
-
-      case 'note': {
-        nextDraft.data.note = isSkipText(text) ? null : normalizeOptionalText(text);
-        const summary = buildSummary(nextDraft.data);
-        if (summary.error) {
-          await sendMessage(chatId, `Fast geschafft, aber hier fehlt noch etwas 😕\n${summary.error}`, stepKeyboard('note'));
-          return;
-        }
-        upsertDraft(chatId, { ...nextDraft, step: 'confirm' });
-        await sendMessage(chatId, summary.text, stepKeyboard('confirm'));
-        return;
-      }
-
-      case 'confirm':
-        await handleConfirm(chatId, nextDraft, text);
-        return;
-
-      default:
-        await beginDraft(chatId);
+    if (!handler) {
+      await beginDraft(chatId);
+      return;
     }
+
+    await handler(chatId, nextDraft, text);
   }
 
   async function handleCommand(chatId, text) {

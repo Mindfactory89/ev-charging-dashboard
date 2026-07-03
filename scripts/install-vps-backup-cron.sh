@@ -6,8 +6,8 @@ HOST="${HOST:-${SSH_DEPLOY_HOST:-}}"
 USER_NAME="${USER_NAME:-${SSH_DEPLOY_USER:-${1:-}}}"
 REMOTE_PATH="${REMOTE_PATH:-${SSH_DEPLOY_PATH:-/srv/mobility-dashboard}}"
 BACKUP_ROOT="${BACKUP_ROOT:-/srv/mobility-dashboard-backups}"
-RETENTION="${RETENTION:-5}"
-CRON_SCHEDULE="${CRON_SCHEDULE:-20 3 * * *}"
+RETENTION="${RETENTION:-4}"
+CRON_SCHEDULE="${CRON_SCHEDULE:-20 3 * * 3,6}"
 LOG_PATH="${LOG_PATH:-${BACKUP_ROOT%/}/cron.log}"
 CRON_MATCH="${CRON_MATCH:-scripts/backup-local.sh}"
 
@@ -19,8 +19,8 @@ Usage:
 Optional env vars:
   REMOTE_PATH=/srv/mobility-dashboard
   BACKUP_ROOT=/srv/mobility-dashboard-backups
-  RETENTION=5
-  CRON_SCHEDULE="20 3 * * *"
+  RETENTION=4
+  CRON_SCHEDULE="20 3 * * 3,6"
   LOG_PATH=/srv/mobility-dashboard-backups/cron.log
 
 Example:

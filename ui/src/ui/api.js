@@ -84,6 +84,16 @@ function safeUUID() {
     return `${Date.now()}-${Math.random()}`;
   }
 }
+function firstDefined(...values) {
+  for (const value of values) {
+    if (value !== undefined && value !== null) return value;
+  }
+  return undefined;
+}
+function hasFiniteNumber(value) {
+  if (value == null || value === "") return false;
+  return Number.isFinite(Number(value));
+}
 function round(n, d = 2) {
   const v = Number(n);
   if (!Number.isFinite(v)) return 0;
@@ -745,7 +755,7 @@ function applySequentialOdometer(rows, year) {
 }
 
 function ensureDemoOdometer(row, year, existingRows = []) {
-  if (Number.isFinite(Number(row?.odo_start_km)) && Number.isFinite(Number(row?.odo_end_km))) return row;
+  if (hasFiniteNumber(row?.odo_start_km) && hasFiniteNumber(row?.odo_end_km)) return row;
 
   const latestCursor = existingRows.reduce((maxValue, existing) => {
     const candidate = Math.max(Number(existing?.odo_end_km || 0), Number(existing?.odo_start_km || 0));
@@ -893,6 +903,49 @@ function getDemoYearRows(year) {
   return DEMO_BY_YEAR[y];
 }
 
+function getAllDemoRows() {
+  ensureDemoSeeded();
+  return Object.values(DEMO_BY_YEAR).flatMap((rows) => rows || []);
+}
+
+function compareSessionDateAsc(left, right) {
+  return new Date(left?.date || 0).getTime() - new Date(right?.date || 0).getTime();
+}
+
+function sortSessionsAsc(rows) {
+  return [...(rows || [])].sort(compareSessionDateAsc);
+}
+
+function setDemoYearRows(year, rows) {
+  const y = Number(year) || DEMO_DEFAULT_YEAR;
+  DEMO_BY_YEAR[y] = sortSessionsAsc(rows);
+  return DEMO_BY_YEAR[y];
+}
+
+function isSameSessionId(session, id) {
+  return String(session?.id) === String(id);
+}
+
+function withoutSessionId(rows, id) {
+  return (rows || []).filter((session) => !isSameSessionId(session, id));
+}
+
+function findDemoSessionRecord(id) {
+  ensureDemoSeeded();
+  for (const yearKey of Object.keys(DEMO_BY_YEAR)) {
+    const rows = DEMO_BY_YEAR[yearKey] || [];
+    const session = rows.find((entry) => isSameSessionId(entry, id));
+    if (session) {
+      return {
+        year: Number(yearKey),
+        rows,
+        session,
+      };
+    }
+  }
+  return null;
+}
+
 function filterByYear(rows, year) {
   const y = Number(year) || 2026;
   return (rows || []).filter((s) => {
@@ -902,7 +955,7 @@ function filterByYear(rows, year) {
 }
 
 function sortSessionsDesc(rows) {
-  return [...(rows || [])].sort((left, right) => new Date(right?.date || 0).getTime() - new Date(left?.date || 0).getTime());
+  return sortSessionsAsc(rows).reverse();
 }
 
 function buildAvailableYears(rows, fallbackYear = null) {
@@ -944,51 +997,175 @@ function buildDerived(row) {
   };
 }
 
-function computeStatsFromSessions(rows, year) {
-  const r = filterByYear(rows, year);
-  const total_energy_kwh = r.reduce((sum, s) => sum + (Number(s.energy_kwh) || 0), 0);
-  const total_cost = r.reduce((sum, s) => sum + (Number(s.total_cost) || 0), 0);
-  const timedSessions = r.filter((session) => Number(session?.duration_seconds) > 0);
-  const total_dur = timedSessions.reduce((sum, session) => sum + (Number(session.duration_seconds) || 0), 0);
-  const total_timed_energy_kwh = timedSessions.reduce((sum, session) => sum + (Number(session.energy_kwh) || 0), 0);
-  const n = r.length || 0;
-  const avg_kwh_per_session = n ? total_energy_kwh / n : 0;
-  const avg_duration_seconds = timedSessions.length ? total_dur / timedSessions.length : 0;
-  const avg_price_per_charge = n ? total_cost / n : 0;
-  const avg_power_kw = total_dur > 0 ? total_timed_energy_kwh / (total_dur / 3600) : 0;
-  const avg_price_per_kwh = total_energy_kwh > 0 ? total_cost / total_energy_kwh : 0;
-  const prices = r
-    .map((session) => buildDerived(session).price_per_kwh)
-    .filter((value) => Number.isFinite(value) && value > 0);
-  const powers = r
-    .map((session) => buildDerived(session).avg_power_kw)
-    .filter((value) => Number.isFinite(value) && value > 0);
-  const energies = r.map((session) => Number(session.energy_kwh)).filter((value) => Number.isFinite(value) && value > 0);
-  const costs = r.map((session) => Number(session.total_cost)).filter((value) => Number.isFinite(value) && value >= 0);
-  const durations = r
-    .map((session) => Number(session.duration_seconds))
-    .filter((value) => Number.isFinite(value) && value > 0);
+function normalizeAnalyticsYear(year) {
+  return Number(year) || DEMO_DEFAULT_YEAR;
+}
 
-  const most_expensive = r.reduce(
-    (best, s) => ((Number(s.total_cost) || 0) > (Number(best?.total_cost) || -1) ? s : best),
-    null
-  );
-  const longest = r.reduce(
-    (best, s) => ((Number(s.duration_seconds) || 0) > (Number(best?.duration_seconds) || -1) ? s : best),
-    null
-  );
+function sumMetric(rows, reader) {
+  return (rows || []).reduce((sum, row) => sum + (Number(reader(row)) || 0), 0);
+}
+
+function collectMetricValues(rows, reader, predicate = (value) => Number.isFinite(value)) {
+  return (rows || [])
+    .map((row) => Number(reader(row)))
+    .filter((value) => Number.isFinite(value) && predicate(value));
+}
+
+function getTimedRows(rows) {
+  return (rows || []).filter((row) => Number(row?.duration_seconds) > 0);
+}
+
+function buildSessionAggregate(rows) {
+  const list = rows || [];
+  const timedRows = getTimedRows(list);
+  const totalEnergy = sumMetric(list, (row) => row?.energy_kwh);
+  const totalCost = sumMetric(list, (row) => row?.total_cost);
+  const totalDuration = sumMetric(timedRows, (row) => row?.duration_seconds);
+  const totalTimedEnergy = sumMetric(timedRows, (row) => row?.energy_kwh);
+
+  return {
+    rows: list,
+    count: list.length,
+    timedRows,
+    totalEnergy,
+    totalCost,
+    totalDuration,
+    totalTimedEnergy,
+  };
+}
+
+function averageRounded(total, count, digits = 2, options = {}) {
+  const { emptyValue = 0 } = options;
+  if (!(count > 0)) return emptyValue;
+  return round(total / count, digits);
+}
+
+function averageDurationSeconds(totalDuration, count) {
+  return count > 0 ? Math.round(totalDuration / count) : 0;
+}
+
+function deriveAveragePricePerKwh(totalCost, totalEnergy, options = {}) {
+  const { emptyValue = null } = options;
+  if (!(totalEnergy > 0)) return emptyValue;
+  return round(totalCost / totalEnergy, 3);
+}
+
+function deriveAveragePowerKw(totalTimedEnergy, totalDuration, options = {}) {
+  const { emptyValue = null } = options;
+  if (!(totalDuration > 0)) return emptyValue;
+  return round(totalTimedEnergy / (totalDuration / 3600), 1);
+}
+
+function pickMetric(rows, reader, options = {}) {
+  const { direction = "desc" } = options;
+  const fallback = direction === "asc" ? Infinity : -Infinity;
+
+  return (rows || []).reduce((best, row) => {
+    const currentValue = Number(reader(row));
+    const bestValue = best ? Number(reader(best)) : fallback;
+    const currentScore = Number.isFinite(currentValue) ? currentValue : fallback;
+    const bestScore = Number.isFinite(bestValue) ? bestValue : fallback;
+
+    if (direction === "asc") {
+      return currentScore < bestScore ? row : best;
+    }
+
+    return currentScore > bestScore ? row : best;
+  }, null);
+}
+
+function pickHighestBy(rows, reader) {
+  return pickMetric(rows, reader, { direction: "desc" });
+}
+
+function pickLowestBy(rows, reader) {
+  return pickMetric(rows, reader, { direction: "asc" });
+}
+
+function buildStaticSessionMeta(total) {
+  return {
+    total,
+    offset: 0,
+    limit: null,
+    has_more: false,
+    truncated: false,
+  };
+}
+
+function buildTrend(current, previous, digits = 3) {
+  const currentValue = Number(current);
+  const previousValue = Number(previous);
+  if (!Number.isFinite(currentValue) || !Number.isFinite(previousValue) || previousValue === 0) return null;
+
+  return {
+    delta: round(currentValue - previousValue, digits),
+    pct: round((currentValue - previousValue) / previousValue, 4),
+  };
+}
+
+function createMonthlyBuckets() {
+  return Array.from({ length: 12 }, (_, index) => ({ month: index + 1, count: 0, energy_kwh: 0, cost: 0 }));
+}
+
+function buildMonthlySummary(bucket) {
+  const energy = round(bucket.energy_kwh, 3);
+  const cost = round(bucket.cost, 2);
+
+  return {
+    month: bucket.month,
+    count: bucket.count,
+    energy_kwh: energy,
+    cost,
+    avg_price_per_charge: bucket.count ? round(cost / bucket.count, 2) : 0,
+    price_per_kwh: energy > 0 ? round(cost / energy, 3) : 0,
+  };
+}
+
+function buildSeasonSummary(meta, rows, scoreRow) {
+  const aggregate = buildSessionAggregate(rows);
+  const scored = rows.map((row) => scoreRow(row));
+
+  return {
+    key: meta.key,
+    label: meta.label,
+    months: meta.months,
+    count: aggregate.count,
+    energy_kwh: round(aggregate.totalEnergy, 3),
+    cost: round(aggregate.totalCost, 2),
+    avg_duration_seconds: averageDurationSeconds(aggregate.totalDuration, aggregate.timedRows.length),
+    avg_kwh_per_session: averageRounded(aggregate.totalEnergy, aggregate.count, 2),
+    avg_cost_per_session: averageRounded(aggregate.totalCost, aggregate.count, 2),
+    avg_price_per_kwh: deriveAveragePricePerKwh(aggregate.totalCost, aggregate.totalEnergy, { emptyValue: null }),
+    avg_power_kw: deriveAveragePowerKw(aggregate.totalTimedEnergy, aggregate.totalDuration, { emptyValue: null }),
+    efficiency_score: averageRounded(sumMetric(scored, (session) => session?.score), scored.length, 1, { emptyValue: null }),
+    best_session: pickHighestBy(scored, (session) => session?.score),
+    worst_session: pickLowestBy(scored, (session) => session?.score),
+  };
+}
+
+function computeStatsFromSessions(rows, year) {
+  const yearRows = filterByYear(rows, year);
+  const aggregate = buildSessionAggregate(yearRows);
+  const derivedRows = yearRows.map((session) => ({ session, derived: buildDerived(session) }));
+  const prices = collectMetricValues(derivedRows, ({ derived }) => derived.price_per_kwh, (value) => value > 0);
+  const powers = collectMetricValues(derivedRows, ({ derived }) => derived.avg_power_kw, (value) => value > 0);
+  const energies = collectMetricValues(yearRows, (session) => session?.energy_kwh, (value) => value > 0);
+  const costs = collectMetricValues(yearRows, (session) => session?.total_cost, (value) => value >= 0);
+  const durations = collectMetricValues(yearRows, (session) => session?.duration_seconds, (value) => value > 0);
+  const mostExpensive = pickHighestBy(yearRows, (session) => session?.total_cost);
+  const longest = pickHighestBy(yearRows, (session) => session?.duration_seconds);
 
   return {
     ok: true,
-    year: Number(year) || 2026,
-    count: n,
-    total_cost: round(total_cost, 2),
-    total_energy_kwh: round(total_energy_kwh, 3),
-    avg_kwh_per_session: round(avg_kwh_per_session, 2),
-    avg_duration_seconds: Math.round(avg_duration_seconds),
-    avg_price_per_charge: round(avg_price_per_charge, 2),
-    avg_price_per_kwh: round(avg_price_per_kwh, 3),
-    avg_power_kw: round(avg_power_kw, 1),
+    year: normalizeAnalyticsYear(year),
+    count: aggregate.count,
+    total_cost: round(aggregate.totalCost, 2),
+    total_energy_kwh: round(aggregate.totalEnergy, 3),
+    avg_kwh_per_session: averageRounded(aggregate.totalEnergy, aggregate.count, 2),
+    avg_duration_seconds: averageDurationSeconds(aggregate.totalDuration, aggregate.timedRows.length),
+    avg_price_per_charge: averageRounded(aggregate.totalCost, aggregate.count, 2),
+    avg_price_per_kwh: deriveAveragePricePerKwh(aggregate.totalCost, aggregate.totalEnergy, { emptyValue: 0 }),
+    avg_power_kw: deriveAveragePowerKw(aggregate.totalTimedEnergy, aggregate.totalDuration, { emptyValue: 0 }),
     medians: {
       energy_kwh: median(energies) != null ? round(median(energies), 1) : null,
       cost_per_session: median(costs) != null ? round(median(costs), 2) : null,
@@ -996,32 +1173,28 @@ function computeStatsFromSessions(rows, year) {
       price_per_kwh: median(prices) != null ? round(median(prices), 3) : null,
       power_kw: median(powers) != null ? round(median(powers), 1) : null,
     },
-    most_expensive: most_expensive ? { date: most_expensive.date, total_cost: most_expensive.total_cost } : null,
+    most_expensive: mostExpensive ? { date: mostExpensive.date, total_cost: mostExpensive.total_cost } : null,
     longest: longest ? { date: longest.date, duration_seconds: longest.duration_seconds } : null,
   };
 }
 
 function summarizeRows(rows, label) {
-  const totalEnergy = rows.reduce((sum, row) => sum + (Number(row.energy_kwh) || 0), 0);
-  const totalCost = rows.reduce((sum, row) => sum + (Number(row.total_cost) || 0), 0);
-  const timedRows = rows.filter((row) => Number(row?.duration_seconds) > 0);
-  const totalDuration = timedRows.reduce((sum, row) => sum + (Number(row.duration_seconds) || 0), 0);
-  const totalTimedEnergy = timedRows.reduce((sum, row) => sum + (Number(row.energy_kwh) || 0), 0);
+  const aggregate = buildSessionAggregate(rows);
   const tags = Array.from(new Set(rows.flatMap((row) => parseTags(row.tags)))).sort((left, right) => left.localeCompare(right, "de"));
 
   return {
     key: label.toLowerCase(),
     label,
-    count: rows.length,
-    energy_kwh: round(totalEnergy, 3),
-    cost: round(totalCost, 2),
-    avg_duration_seconds: timedRows.length ? Math.round(totalDuration / timedRows.length) : 0,
-    avg_kwh_per_session: rows.length ? round(totalEnergy / rows.length, 2) : 0,
-    avg_cost_per_session: rows.length ? round(totalCost / rows.length, 2) : 0,
-    avg_price_per_kwh: totalEnergy > 0 ? round(totalCost / totalEnergy, 3) : null,
-    avg_power_kw: totalDuration > 0 ? round(totalTimedEnergy / (totalDuration / 3600), 1) : null,
-    first_session_date: rows.length ? rows[0].date : null,
-    last_session_date: rows.length ? rows[rows.length - 1].date : null,
+    count: aggregate.count,
+    energy_kwh: round(aggregate.totalEnergy, 3),
+    cost: round(aggregate.totalCost, 2),
+    avg_duration_seconds: averageDurationSeconds(aggregate.totalDuration, aggregate.timedRows.length),
+    avg_kwh_per_session: averageRounded(aggregate.totalEnergy, aggregate.count, 2),
+    avg_cost_per_session: averageRounded(aggregate.totalCost, aggregate.count, 2),
+    avg_price_per_kwh: deriveAveragePricePerKwh(aggregate.totalCost, aggregate.totalEnergy, { emptyValue: null }),
+    avg_power_kw: deriveAveragePowerKw(aggregate.totalTimedEnergy, aggregate.totalDuration, { emptyValue: null }),
+    first_session_date: aggregate.count ? rows[0].date : null,
+    last_session_date: aggregate.count ? rows[rows.length - 1].date : null,
     tags,
   };
 }
@@ -1085,36 +1258,31 @@ function computeIntelligenceFromSessions(rows, year) {
 }
 
 function buildDashboardBundleFromSessions(rows, year) {
-  const yearRows = filterByYear(rows, year);
+  const normalizedYear = normalizeAnalyticsYear(year);
+  const yearRows = filterByYear(rows, normalizedYear);
   return {
     ok: true,
-    year: Number(year) || 2026,
-    available_years: buildAvailableYears(rows, year),
-    stats: computeStatsFromSessions(yearRows, year),
-    monthly: computeMonthlyFromSessions(yearRows, year),
-    seasons: computeSeasonAnalytics(yearRows, year),
-    efficiency: computeEfficiencyFromSessions(yearRows, year),
-    outliers: computeOutlierAnalytics(yearRows, year),
-    soc_window_analysis: computeSocWindowAnalysis(yearRows, year),
-    intelligence: computeIntelligenceFromSessions(yearRows, year),
+    year: normalizedYear,
+    available_years: buildAvailableYears(rows, normalizedYear),
+    stats: computeStatsFromSessions(yearRows, normalizedYear),
+    monthly: computeMonthlyFromSessions(yearRows, normalizedYear),
+    seasons: computeSeasonAnalytics(yearRows, normalizedYear),
+    efficiency: computeEfficiencyFromSessions(yearRows, normalizedYear),
+    outliers: computeOutlierAnalytics(yearRows, normalizedYear),
+    soc_window_analysis: computeSocWindowAnalysis(yearRows, normalizedYear),
+    intelligence: computeIntelligenceFromSessions(yearRows, normalizedYear),
     sessions: {
       rows: sortSessionsDesc(yearRows),
-      meta: {
-        total: yearRows.length,
-        offset: 0,
-        limit: null,
-        has_more: false,
-        truncated: false,
-      },
+      meta: buildStaticSessionMeta(yearRows.length),
     },
   };
 }
 
 function computeMonthlyFromSessions(rows, year) {
-  const r = filterByYear(rows, year);
-  const months = Array.from({ length: 12 }, (_, i) => ({ month: i + 1, count: 0, energy_kwh: 0, cost: 0 }));
+  const yearRows = filterByYear(rows, year);
+  const months = createMonthlyBuckets();
 
-  for (const s of r) {
+  for (const s of yearRows) {
     const parts = parseDateParts(s.date);
     if (!parts?.valid) continue;
     const idx = parts.month - 1;
@@ -1125,115 +1293,240 @@ function computeMonthlyFromSessions(rows, year) {
     months[idx].cost += c;
   }
 
-  const base = months.map((m) => {
-    const energy = round(m.energy_kwh, 3);
-    const cost = round(m.cost, 2);
-    return {
-      month: m.month,
-      count: m.count,
-      energy_kwh: energy,
-      cost,
-      avg_price_per_charge: m.count ? round(cost / m.count, 2) : 0,
-      price_per_kwh: energy > 0 ? round(cost / energy, 3) : 0,
-    };
-  });
-
-  function mkTrend(cur, prev) {
-    const c = Number(cur);
-    const p = Number(prev);
-    if (!Number.isFinite(c) || !Number.isFinite(p) || p === 0) return null;
-    return { delta: round(c - p, 3), pct: round((c - p) / p, 4) };
-  }
+  const base = months.map(buildMonthlySummary);
 
   const monthsWithTrend = base.map((m, idx) => {
     const prev = idx > 0 ? base[idx - 1] : null;
     return {
       ...m,
       trend: {
-        energy: prev ? mkTrend(m.energy_kwh, prev.energy_kwh) : null,
-        cost: prev ? mkTrend(m.cost, prev.cost) : null,
-        price_per_kwh: prev ? mkTrend(m.price_per_kwh, prev.price_per_kwh) : null,
+        energy: prev ? buildTrend(m.energy_kwh, prev.energy_kwh) : null,
+        cost: prev ? buildTrend(m.cost, prev.cost) : null,
+        price_per_kwh: prev ? buildTrend(m.price_per_kwh, prev.price_per_kwh) : null,
       },
     };
   });
 
-  const top_energy_month = monthsWithTrend.reduce(
-    (best, m) => (m.energy_kwh > (best?.energy_kwh ?? -1) ? m : best),
-    null
-  );
-  const top_cost_month = monthsWithTrend.reduce((best, m) => (m.cost > (best?.cost ?? -1) ? m : best), null);
+  const topEnergyMonth = pickHighestBy(monthsWithTrend, (month) => month?.energy_kwh);
+  const topCostMonth = pickHighestBy(monthsWithTrend, (month) => month?.cost);
 
   return {
     ok: true,
-    year: Number(year) || 2026,
+    year: normalizeAnalyticsYear(year),
     months: monthsWithTrend,
-    top_energy_month: top_energy_month ? { month: top_energy_month.month, energy_kwh: top_energy_month.energy_kwh } : null,
-    top_cost_month: top_cost_month ? { month: top_cost_month.month, cost: top_cost_month.cost } : null,
+    top_energy_month: topEnergyMonth ? { month: topEnergyMonth.month, energy_kwh: topEnergyMonth.energy_kwh } : null,
+    top_cost_month: topCostMonth ? { month: topCostMonth.month, cost: topCostMonth.cost } : null,
   };
 }
 
-function buildEfficiencyFramework(rows, year) {
-  const r = filterByYear(rows, year);
-  const enriched = r.map((row) => ({ ...row, _derived: buildDerived(row) }));
+const EFFICIENCY_WEIGHTS = {
+  price_score: 0.55,
+  power_score: 0.25,
+  speed_score: 0.2,
+};
+const EFFICIENCY_NEUTRAL_SCORE = 50;
+const EFFICIENCY_MISSING_COMPONENT_SCORE = 35;
+const OUTLIER_RULES = [
+  {
+    key: "price_per_kwh",
+    label: "Hoher Preis",
+    direction: "high",
+    digits: 3,
+    fallbackMultiplier: 1.18,
+    weight: 1.8,
+    read: (session) => session.price_per_kwh,
+  },
+  {
+    key: "avg_power_kw",
+    label: "Schwache Ladeleistung",
+    direction: "low",
+    digits: 1,
+    fallbackMultiplier: 0.78,
+    weight: 1.4,
+    read: (session) => session.avg_power_kw,
+  },
+  {
+    key: "duration_seconds",
+    label: "Lange Dauer",
+    direction: "high",
+    digits: 0,
+    fallbackMultiplier: 1.3,
+    weight: 1.1,
+    read: (session) => session.duration_seconds,
+  },
+  {
+    key: "score",
+    label: "Schwacher Score",
+    direction: "low",
+    digits: 1,
+    fallbackMultiplier: 0.82,
+    weight: 1.9,
+    read: (session) => session.score,
+  },
+];
 
-  const priceValues = enriched.map((s) => s._derived.price_per_kwh).filter((n) => Number.isFinite(n) && n > 0);
-  const powerValues = enriched.map((s) => s._derived.avg_power_kw).filter((n) => Number.isFinite(n) && n > 0);
-  const mpkValues = enriched.map((s) => s._derived.minutes_per_kwh).filter((n) => Number.isFinite(n) && n > 0);
+function normalizeDirectionalScore(value, min, max, direction = "high", fallback = EFFICIENCY_NEUTRAL_SCORE) {
+  if (!Number.isFinite(value) || max <= min) return fallback;
 
-  const priceMin = priceValues.length ? Math.min(...priceValues) : 0;
-  const priceMax = priceValues.length ? Math.max(...priceValues) : 0;
-  const powerMin = powerValues.length ? Math.min(...powerValues) : 0;
-  const powerMax = powerValues.length ? Math.max(...powerValues) : 0;
-  const mpkMin = mpkValues.length ? Math.min(...mpkValues) : 0;
-  const mpkMax = mpkValues.length ? Math.max(...mpkValues) : 0;
-
-  function normLowGood(value, min, max) {
-    if (!Number.isFinite(value)) return 50;
-    if (max <= min) return 50;
+  if (direction === "low") {
     return clamp(((max - value) / (max - min)) * 100, 0, 100);
   }
-  function normHighGood(value, min, max) {
-    if (!Number.isFinite(value)) return 50;
-    if (max <= min) return 50;
-    return clamp(((value - min) / (max - min)) * 100, 0, 100);
-  }
 
-  function scoreRow(row) {
-    const d = row._derived;
-    const priceScore = normLowGood(d.price_per_kwh, priceMin, priceMax);
-    const powerScore = d.avg_power_kw > 0 ? normHighGood(d.avg_power_kw, powerMin, powerMax) : 35;
-    const speedScore = d.minutes_per_kwh > 0 ? normLowGood(d.minutes_per_kwh, mpkMin, mpkMax) : 35;
-    const score = priceScore * 0.55 + powerScore * 0.25 + speedScore * 0.2;
+  return clamp(((value - min) / (max - min)) * 100, 0, 100);
+}
 
+function buildEfficiencyBaseline(enrichedRows) {
+  const priceValues = collectMetricValues(enrichedRows, (row) => row?._derived?.price_per_kwh, (value) => value > 0);
+  const powerValues = collectMetricValues(enrichedRows, (row) => row?._derived?.avg_power_kw, (value) => value > 0);
+  const mpkValues = collectMetricValues(enrichedRows, (row) => row?._derived?.minutes_per_kwh, (value) => value > 0);
+
+  const priceRange = {
+    min: priceValues.length ? Math.min(...priceValues) : 0,
+    max: priceValues.length ? Math.max(...priceValues) : 0,
+  };
+  const powerRange = {
+    min: powerValues.length ? Math.min(...powerValues) : 0,
+    max: powerValues.length ? Math.max(...powerValues) : 0,
+  };
+  const minutesRange = {
+    min: mpkValues.length ? Math.min(...mpkValues) : 0,
+    max: mpkValues.length ? Math.max(...mpkValues) : 0,
+  };
+
+  return {
+    priceRange,
+    powerRange,
+    minutesRange,
+    baseline: {
+      price_min: round(priceRange.min, 3),
+      price_max: round(priceRange.max, 3),
+      power_min_kw: round(powerRange.min, 1),
+      power_max_kw: round(powerRange.max, 1),
+      minutes_per_kwh_min: round(minutesRange.min, 2),
+      minutes_per_kwh_max: round(minutesRange.max, 2),
+    },
+  };
+}
+
+function scoreEfficiencyRow(row, ranges) {
+  const derived = row._derived;
+  const priceScore = normalizeDirectionalScore(
+    derived.price_per_kwh,
+    ranges.priceRange.min,
+    ranges.priceRange.max,
+    "low"
+  );
+  const powerScore =
+    derived.avg_power_kw > 0
+      ? normalizeDirectionalScore(derived.avg_power_kw, ranges.powerRange.min, ranges.powerRange.max, "high")
+      : EFFICIENCY_MISSING_COMPONENT_SCORE;
+  const speedScore =
+    derived.minutes_per_kwh > 0
+      ? normalizeDirectionalScore(derived.minutes_per_kwh, ranges.minutesRange.min, ranges.minutesRange.max, "low")
+      : EFFICIENCY_MISSING_COMPONENT_SCORE;
+  const score =
+    priceScore * EFFICIENCY_WEIGHTS.price_score +
+    powerScore * EFFICIENCY_WEIGHTS.power_score +
+    speedScore * EFFICIENCY_WEIGHTS.speed_score;
+
+  return {
+    session_id: row.id,
+    date: row.date,
+    connector: row.connector,
+    energy_kwh: round(derived.energy_kwh, 1),
+    total_cost: round(derived.total_cost, 2),
+    duration_seconds: derived.duration_seconds || null,
+    avg_power_kw: derived.avg_power_kw > 0 ? round(derived.avg_power_kw, 1) : null,
+    price_per_kwh: derived.price_per_kwh > 0 ? round(derived.price_per_kwh, 3) : null,
+    score: round(score, 1),
+    breakdown: {
+      price_score: round(priceScore, 1),
+      power_score: round(powerScore, 1),
+      speed_score: round(speedScore, 1),
+    },
+  };
+}
+
+function getPositiveSocDelta(row) {
+  const start = Number(row?.soc_start);
+  const end = Number(row?.soc_end);
+  return Number.isFinite(start) && Number.isFinite(end) && end > start ? round(end - start, 1) : null;
+}
+
+function buildScoredSessionDetails(row, scored) {
+  const socStart = Number(row?.soc_start);
+  const socEnd = Number(row?.soc_end);
+
+  return {
+    ...scored,
+    minutes_per_kwh: row._derived.minutes_per_kwh > 0 ? round(row._derived.minutes_per_kwh, 2) : null,
+    soc_delta: getPositiveSocDelta(row),
+    soc_start: Number.isFinite(socStart) ? socStart : null,
+    soc_end: Number.isFinite(socEnd) ? socEnd : null,
+  };
+}
+
+function buildEfficiencyAnalysisContext(rows, year) {
+  const framework = buildEfficiencyFramework(rows, year);
+  const entries = framework.rows.map((row) => {
+    const scored = framework.scoreRow(row);
     return {
-      session_id: row.id,
-      date: row.date,
-      connector: row.connector,
-      energy_kwh: round(d.energy_kwh, 1),
-      total_cost: round(d.total_cost, 2),
-      duration_seconds: d.duration_seconds || null,
-      avg_power_kw: d.avg_power_kw > 0 ? round(d.avg_power_kw, 1) : null,
-      price_per_kwh: d.price_per_kwh > 0 ? round(d.price_per_kwh, 3) : null,
-      score: round(score, 1),
-      breakdown: {
-        price_score: round(priceScore, 1),
-        power_score: round(powerScore, 1),
-        speed_score: round(speedScore, 1),
-      },
+      row,
+      scored,
+      details: buildScoredSessionDetails(row, scored),
     };
-  }
+  });
+
+  return {
+    ...framework,
+    entries,
+    scoredRows: entries.map((entry) => entry.scored),
+    detailedRows: entries.map((entry) => entry.details),
+  };
+}
+
+function getEfficiencyScoreLabel(score) {
+  if (score == null) return "Keine Daten";
+  if (score >= 80) return "Sehr effizient";
+  if (score >= 65) return "Effizient";
+  if (score >= 50) return "Solide";
+  return "Optimierungspotenzial";
+}
+
+function averageMetric(rows, reader, digits = 2, options = {}) {
+  const { emptyValue = null, predicate = () => true } = options;
+  const values = collectMetricValues(rows, reader, predicate);
+  if (!values.length) return emptyValue;
+  return round(values.reduce((sum, value) => sum + value, 0) / values.length, digits);
+}
+
+function selectDirectionalHighlight(rows, reader, direction = "desc") {
+  return direction === "asc" ? pickLowestBy(rows, reader) : pickHighestBy(rows, reader);
+}
+
+function filterSessionsByReason(flaggedSessions, reasonKey) {
+  return (flaggedSessions || []).filter((session) =>
+    (session.reasons || []).some((reason) => reason.key === reasonKey)
+  );
+}
+
+function buildDirectionalHighlights(rows, definitions) {
+  return Object.fromEntries(
+    definitions.map(({ key, source, reader, direction = "desc" }) => [
+      key,
+      selectDirectionalHighlight(source ? source(rows) : rows, reader, direction),
+    ])
+  );
+}
+
+function buildEfficiencyFramework(rows, year) {
+  const enriched = filterByYear(rows, year).map((row) => ({ ...row, _derived: buildDerived(row) }));
+  const ranges = buildEfficiencyBaseline(enriched);
 
   return {
     rows: enriched,
-    scoreRow,
-    baseline: {
-      price_min: round(priceMin, 3),
-      price_max: round(priceMax, 3),
-      power_min_kw: round(powerMin, 1),
-      power_max_kw: round(powerMax, 1),
-      minutes_per_kwh_min: round(mpkMin, 2),
-      minutes_per_kwh_max: round(mpkMax, 2),
-    },
+    scoreRow: (row) => scoreEfficiencyRow(row, ranges),
+    baseline: ranges.baseline,
   };
 }
 
@@ -1247,45 +1540,15 @@ function computeSeasonAnalytics(rows, year) {
     buckets[monthToSeason(parts.month)].push(row);
   }
 
-  const seasons = Object.values(SEASON_META).map((meta) => {
-    const list = buckets[meta.key] || [];
-    const totalEnergy = list.reduce((a, s) => a + Number(s.energy_kwh || 0), 0);
-    const totalCost = list.reduce((a, s) => a + Number(s.total_cost || 0), 0);
-    const timedSessions = list.filter((session) => Number(session?.duration_seconds) > 0);
-    const durations = timedSessions.map((s) => Number(s.duration_seconds || 0)).filter((n) => Number.isFinite(n) && n > 0);
-    const scored = list.map((s) => fw.scoreRow(s));
-    const totalDuration = durations.reduce((a, n) => a + n, 0);
-    const totalTimedEnergy = timedSessions.reduce((sum, session) => sum + Number(session.energy_kwh || 0), 0);
-
-    return {
-      key: meta.key,
-      label: meta.label,
-      months: meta.months,
-      count: list.length,
-      energy_kwh: round(totalEnergy, 3),
-      cost: round(totalCost, 2),
-      avg_duration_seconds: durations.length ? Math.round(totalDuration / durations.length) : 0,
-      avg_kwh_per_session: list.length ? round(totalEnergy / list.length, 2) : 0,
-      avg_cost_per_session: list.length ? round(totalCost / list.length, 2) : 0,
-      avg_price_per_kwh: totalEnergy > 0 ? round(totalCost / totalEnergy, 3) : null,
-      avg_power_kw: totalDuration > 0 ? round(totalTimedEnergy / (totalDuration / 3600), 1) : null,
-      efficiency_score: scored.length ? round(scored.reduce((a, s) => a + Number(s.score || 0), 0) / scored.length, 1) : null,
-      best_session: scored.reduce((best, s) => (!best || s.score > best.score ? s : best), null),
-      worst_session: scored.reduce((best, s) => (!best || s.score < best.score ? s : best), null),
-    };
-  });
+  const seasons = Object.values(SEASON_META).map((meta) => buildSeasonSummary(meta, buckets[meta.key] || [], fw.scoreRow));
 
   const active = seasons.filter((s) => s.count > 0);
-  const best_efficiency_season = active.reduce((best, s) => (!best || (s.efficiency_score || -1) > (best.efficiency_score || -1) ? s : best), null);
-  const cheapest_season = active.reduce((best, s) => {
-    const cur = Number(s.avg_price_per_kwh ?? Infinity);
-    const old = Number(best?.avg_price_per_kwh ?? Infinity);
-    return cur < old ? s : best;
-  }, null);
+  const best_efficiency_season = pickHighestBy(active, (season) => season?.efficiency_score);
+  const cheapest_season = pickLowestBy(active, (season) => season?.avg_price_per_kwh);
 
   return {
     ok: true,
-    year: Number(year) || 2026,
+    year: normalizeAnalyticsYear(year),
     seasons,
     highlights: { best_efficiency_season, cheapest_season },
     baseline: fw.baseline,
@@ -1293,40 +1556,32 @@ function computeSeasonAnalytics(rows, year) {
 }
 
 function computeEfficiencyFromSessions(rows, year) {
-  const fw = buildEfficiencyFramework(rows, year);
-  const scored = fw.rows.map((r) => fw.scoreRow(r));
-  const validPrice = scored.filter((s) => s.price_per_kwh != null);
-  const validPower = scored.filter((s) => s.avg_power_kw != null);
-  const overall = scored.length ? round(scored.reduce((a, s) => a + Number(s.score || 0), 0) / scored.length, 1) : null;
+  const context = buildEfficiencyAnalysisContext(rows, year);
+  const scored = context.scoredRows;
+  const overall = averageMetric(scored, (session) => session?.score, 1, { emptyValue: null });
 
   return {
     ok: true,
-    year: Number(year) || 2026,
+    year: normalizeAnalyticsYear(year),
     overall_score: overall,
-    score_label: overall == null ? "Keine Daten" : overall >= 80 ? "Sehr effizient" : overall >= 65 ? "Effizient" : overall >= 50 ? "Solide" : "Optimierungspotenzial",
+    score_label: getEfficiencyScoreLabel(overall),
     session_count: scored.length,
     averages: {
-      price_per_kwh: validPrice.length ? round(validPrice.reduce((a, s) => a + Number(s.price_per_kwh || 0), 0) / validPrice.length, 3) : null,
-      power_kw: validPower.length ? round(validPower.reduce((a, s) => a + Number(s.avg_power_kw || 0), 0) / validPower.length, 1) : null,
+      price_per_kwh: averageMetric(scored, (session) => session?.price_per_kwh, 3, {
+        emptyValue: null,
+        predicate: (value) => value > 0,
+      }),
+      power_kw: averageMetric(scored, (session) => session?.avg_power_kw, 1, {
+        emptyValue: null,
+        predicate: (value) => value > 0,
+      }),
     },
-    best_session: scored.reduce((best, s) => (!best || s.score > best.score ? s : best), null),
-    worst_session: scored.reduce((best, s) => (!best || s.score < best.score ? s : best), null),
-    cheapest_session: scored.reduce((best, s) => {
-      const cur = Number(s.price_per_kwh ?? Infinity);
-      const old = Number(best?.price_per_kwh ?? Infinity);
-      return cur < old ? s : best;
-    }, null),
-    fastest_session: scored.reduce((best, s) => {
-      const cur = Number(s.avg_power_kw ?? -1);
-      const old = Number(best?.avg_power_kw ?? -1);
-      return cur > old ? s : best;
-    }, null),
-    baseline: fw.baseline,
-    weights: {
-      price_score: 0.55,
-      power_score: 0.25,
-      speed_score: 0.2,
-    },
+    best_session: pickHighestBy(scored, (session) => session?.score),
+    worst_session: pickLowestBy(scored, (session) => session?.score),
+    cheapest_session: pickLowestBy(scored, (session) => session?.price_per_kwh),
+    fastest_session: pickHighestBy(scored, (session) => session?.avg_power_kw),
+    baseline: context.baseline,
+    weights: EFFICIENCY_WEIGHTS,
     sessions: scored,
   };
 }
@@ -1421,7 +1676,7 @@ function createSocAggregate(meta) {
 
 function accumulateSocAggregate(target, scored, row, options = {}) {
   const { weight = 1, countWeight = 1 } = options;
-  const socDelta = Math.max(0, Number(row?.soc_end || 0) - Number(row?.soc_start || 0));
+  const socDelta = getPositiveSocDelta(row);
   const scoreValue = Number(scored.score);
   const priceValue = Number(scored.price_per_kwh);
   const powerValue = Number(scored.avg_power_kw);
@@ -1451,16 +1706,15 @@ function accumulateSocAggregate(target, scored, row, options = {}) {
     target.total_energy_kwh += energyValue * weight;
     target.energy_weight += weight;
   }
-  if (Number.isFinite(socDelta) && socDelta > 0) {
+  if (socDelta != null && socDelta > 0) {
     target.total_soc_delta += socDelta * countWeight;
     target.soc_delta_weight += countWeight;
   }
 
-  const sessionSnapshot = { ...scored, soc_start: Number(row.soc_start), soc_end: Number(row.soc_end) };
   target.best_session =
-    !target.best_session || Number(scored.score || 0) > Number(target.best_session.score || -1) ? sessionSnapshot : target.best_session;
+    !target.best_session || Number(scored.score || 0) > Number(target.best_session.score || -1) ? scored : target.best_session;
   target.worst_session =
-    !target.worst_session || Number(scored.score || 0) < Number(target.worst_session.score || Infinity) ? sessionSnapshot : target.worst_session;
+    !target.worst_session || Number(scored.score || 0) < Number(target.worst_session.score || Infinity) ? scored : target.worst_session;
 }
 
 function finalizeSocAggregates(collection, analyzedSessionCount) {
@@ -1491,25 +1745,25 @@ function finalizeSocAggregates(collection, analyzedSessionCount) {
 }
 
 export function computeSocWindowAnalysis(rows, year = 2026) {
-  const fw = buildEfficiencyFramework(rows, year);
+  const context = buildEfficiencyAnalysisContext(rows, year);
   const byWindow = new Map();
   const byBand = new Map();
   let analyzedSessionCount = 0;
 
-  for (const row of fw.rows) {
+  for (const entry of context.entries) {
+    const { row, details } = entry;
     const windowMeta = getSocWindowMeta(row?.soc_start, row?.soc_end);
     if (!windowMeta) continue;
     analyzedSessionCount += 1;
 
-    const scored = fw.scoreRow(row);
     const windowBucket = byWindow.get(windowMeta.key) || createSocAggregate(windowMeta);
-    accumulateSocAggregate(windowBucket, scored, row, { weight: 1, countWeight: 1 });
+    accumulateSocAggregate(windowBucket, details, row, { weight: 1, countWeight: 1 });
     byWindow.set(windowMeta.key, windowBucket);
 
     const bandSlices = getSocBandSlices(row?.soc_start, row?.soc_end);
     for (const bandMeta of bandSlices) {
       const bandBucket = byBand.get(bandMeta.key) || createSocAggregate(bandMeta);
-      accumulateSocAggregate(bandBucket, scored, row, { weight: bandMeta.weight, countWeight: 1 });
+      accumulateSocAggregate(bandBucket, details, row, { weight: bandMeta.weight, countWeight: 1 });
       byBand.set(bandMeta.key, bandBucket);
     }
   }
@@ -1519,32 +1773,18 @@ export function computeSocWindowAnalysis(rows, year = 2026) {
   const bands = finalizeSocAggregates(byBand, analyzed_session_count);
   const highlightPool = bands.length ? bands : windows;
 
-  const highlights = {
-    best_efficiency_window: highlightPool.reduce((best, window) => {
-      if (!best) return window;
-      return Number(window.avg_score || -1) > Number(best.avg_score || -1) ? window : best;
-    }, null),
-    cheapest_window: highlightPool.reduce((best, window) => {
-      if (!best) return window;
-      return Number(window.avg_price_per_kwh ?? Infinity) < Number(best.avg_price_per_kwh ?? Infinity) ? window : best;
-    }, null),
-    fastest_window: highlightPool.reduce((best, window) => {
-      if (!best) return window;
-      return Number(window.avg_power_kw || -1) > Number(best.avg_power_kw || -1) ? window : best;
-    }, null),
-    widest_window: highlightPool.reduce((best, window) => {
-      if (!best) return window;
-      return Number(window.avg_soc_delta || -1) > Number(best.avg_soc_delta || -1) ? window : best;
-    }, null),
-  };
-
   return {
     ok: true,
-    year: Number(year) || 2026,
+    year: normalizeAnalyticsYear(year),
     analyzed_session_count,
     windows,
     bands,
-    highlights,
+    highlights: buildDirectionalHighlights(highlightPool, [
+      { key: "best_efficiency_window", reader: (window) => window?.avg_score, direction: "desc" },
+      { key: "cheapest_window", reader: (window) => window?.avg_price_per_kwh, direction: "asc" },
+      { key: "fastest_window", reader: (window) => window?.avg_power_kw, direction: "desc" },
+      { key: "widest_window", reader: (window) => window?.avg_soc_delta, direction: "desc" },
+    ]),
   };
 }
 
@@ -1607,63 +1847,74 @@ function buildOutlierBaseline(values, direction, fallbackMultiplier, digits = 2)
   };
 }
 
-export function computeOutlierAnalytics(rows, year = 2026) {
-  const fw = buildEfficiencyFramework(rows, year);
-  const scored = fw.rows.map((row) => {
-    const scoredRow = fw.scoreRow(row);
-    return {
-      ...scoredRow,
-      minutes_per_kwh: row._derived.minutes_per_kwh > 0 ? round(row._derived.minutes_per_kwh, 2) : null,
-      soc_delta:
-        Number.isFinite(row?.soc_start) && Number.isFinite(row?.soc_end) && Number(row.soc_end) > Number(row.soc_start)
-          ? round(Number(row.soc_end) - Number(row.soc_start), 1)
-          : null,
-    };
-  });
+function isDirectionalOutlier(value, threshold, direction) {
+  return direction === "high" ? value > Number(threshold) : value < Number(threshold);
+}
 
-  const rules = [
-    {
-      key: "price_per_kwh",
-      label: "Hoher Preis",
-      direction: "high",
-      digits: 3,
-      fallbackMultiplier: 1.18,
-      weight: 1.8,
-      read: (session) => session.price_per_kwh,
-    },
-    {
-      key: "avg_power_kw",
-      label: "Schwache Ladeleistung",
-      direction: "low",
-      digits: 1,
-      fallbackMultiplier: 0.78,
-      weight: 1.4,
-      read: (session) => session.avg_power_kw,
-    },
-    {
-      key: "duration_seconds",
-      label: "Lange Dauer",
-      direction: "high",
-      digits: 0,
-      fallbackMultiplier: 1.3,
-      weight: 1.1,
-      read: (session) => session.duration_seconds,
-    },
-    {
-      key: "score",
-      label: "Schwacher Score",
-      direction: "low",
-      digits: 1,
-      fallbackMultiplier: 0.82,
-      weight: 1.9,
-      read: (session) => session.score,
-    },
-  ];
+function buildOutlierReason(rule, value, baseline) {
+  const median = Number(baseline.median);
+  const deviationPct =
+    Number.isFinite(median) && median !== 0
+      ? round((Math.abs(value - median) / Math.abs(median)) * 100, 1)
+      : null;
+
+  return {
+    key: rule.key,
+    label: rule.label,
+    direction: rule.direction,
+    value: round(value, rule.digits),
+    threshold: baseline.threshold,
+    median: baseline.median,
+    deviation_pct: deviationPct,
+    severity:
+      deviationPct != null && deviationPct >= 35
+        ? "high"
+        : deviationPct != null && deviationPct >= 18
+          ? "medium"
+          : "low",
+  };
+}
+
+function buildOutlierHighlights(flaggedSessions) {
+  return {
+    worst_session: flaggedSessions[0] || null,
+    ...buildDirectionalHighlights(flaggedSessions, [
+      {
+        key: "priciest_outlier",
+        source: (sessions) => filterSessionsByReason(sessions, "price_per_kwh"),
+        reader: (session) => session?.price_per_kwh,
+        direction: "desc",
+      },
+      {
+        key: "lowest_power_outlier",
+        source: (sessions) => filterSessionsByReason(sessions, "avg_power_kw"),
+        reader: (session) => session?.avg_power_kw,
+        direction: "asc",
+      },
+      {
+        key: "longest_outlier",
+        source: (sessions) => filterSessionsByReason(sessions, "duration_seconds"),
+        reader: (session) => session?.duration_seconds,
+        direction: "desc",
+      },
+      {
+        key: "weakest_score_outlier",
+        source: (sessions) => filterSessionsByReason(sessions, "score"),
+        reader: (session) => session?.score,
+        direction: "asc",
+      },
+    ]),
+  };
+}
+
+export function computeOutlierAnalytics(rows, year = 2026) {
+  const context = buildEfficiencyAnalysisContext(rows, year);
+  const scored = context.detailedRows;
 
   const baselines = {};
   const bySession = new Map();
 
-  for (const rule of rules) {
+  for (const rule of OUTLIER_RULES) {
     const baseline = buildOutlierBaseline(
       scored.map((session) => rule.read(session)),
       rule.direction,
@@ -1679,35 +1930,9 @@ export function computeOutlierAnalytics(rows, year = 2026) {
       if (rawValue == null || rawValue === "") continue;
       const value = Number(rawValue);
       if (!Number.isFinite(value)) continue;
+      if (!isDirectionalOutlier(value, baseline.threshold, rule.direction)) continue;
 
-      const isOutlier =
-        rule.direction === "high"
-          ? value > Number(baseline.threshold)
-          : value < Number(baseline.threshold);
-
-      if (!isOutlier) continue;
-
-      const median = Number(baseline.median);
-      const deviationPct =
-        Number.isFinite(median) && median !== 0
-          ? round((Math.abs(value - median) / Math.abs(median)) * 100, 1)
-          : null;
-
-      const reason = {
-        key: rule.key,
-        label: rule.label,
-        direction: rule.direction,
-        value: round(value, rule.digits),
-        threshold: baseline.threshold,
-        median: baseline.median,
-        deviation_pct: deviationPct,
-        severity:
-          deviationPct != null && deviationPct >= 35
-            ? "high"
-            : deviationPct != null && deviationPct >= 18
-              ? "medium"
-              : "low",
-      };
+      const reason = buildOutlierReason(rule, value, baseline);
 
       const current =
         bySession.get(session.session_id) ||
@@ -1721,7 +1946,7 @@ export function computeOutlierAnalytics(rows, year = 2026) {
       current.reasons.push(reason);
       current.flag_count += 1;
       current.severity_score +=
-        rule.weight + (deviationPct != null ? Math.min(4, deviationPct / 20) : 0);
+        rule.weight + (reason.deviation_pct != null ? Math.min(4, reason.deviation_pct / 20) : 0);
 
       bySession.set(session.session_id, current);
     }
@@ -1743,57 +1968,14 @@ export function computeOutlierAnalytics(rows, year = 2026) {
       return String(b.date).localeCompare(String(a.date), "de");
     });
 
-  const priceOutliers = flagged_sessions.filter((session) =>
-    session.reasons.some((reason) => reason.key === "price_per_kwh")
-  );
-  const powerOutliers = flagged_sessions.filter((session) =>
-    session.reasons.some((reason) => reason.key === "avg_power_kw")
-  );
-  const durationOutliers = flagged_sessions.filter((session) =>
-    session.reasons.some((reason) => reason.key === "duration_seconds")
-  );
-  const scoreOutliers = flagged_sessions.filter((session) =>
-    session.reasons.some((reason) => reason.key === "score")
-  );
-
-  const priciest_outlier = priceOutliers.reduce((best, session) => {
-    const cur = Number(session.price_per_kwh ?? -1);
-    const old = Number(best?.price_per_kwh ?? -1);
-    return cur > old ? session : best;
-  }, null);
-
-  const lowest_power_outlier = powerOutliers.reduce((best, session) => {
-    const cur = Number(session.avg_power_kw ?? Infinity);
-    const old = Number(best?.avg_power_kw ?? Infinity);
-    return cur < old ? session : best;
-  }, null);
-
-  const longest_outlier = durationOutliers.reduce((best, session) => {
-    const cur = Number(session.duration_seconds ?? -1);
-    const old = Number(best?.duration_seconds ?? -1);
-    return cur > old ? session : best;
-  }, null);
-
-  const weakest_score_outlier = scoreOutliers.reduce((best, session) => {
-    const cur = Number(session.score ?? Infinity);
-    const old = Number(best?.score ?? Infinity);
-    return cur < old ? session : best;
-  }, null);
-
   return {
     ok: true,
-    year: Number(year) || 2026,
+    year: normalizeAnalyticsYear(year),
     session_count: scored.length,
     outlier_count: flagged_sessions.length,
     flagged_sessions,
     baselines,
-    highlights: {
-      worst_session: flagged_sessions[0] || null,
-      priciest_outlier,
-      lowest_power_outlier,
-      longest_outlier,
-      weakest_score_outlier,
-    },
+    highlights: buildOutlierHighlights(flagged_sessions),
   };
 }
 
@@ -1832,8 +2014,8 @@ function normalizePayloadToSession(payload) {
 
   const odoStartRaw = payload?.odo_start_km ?? payload?.odoStartKm ?? payload?.km_start;
   const odoEndRaw = payload?.odo_end_km ?? payload?.odoEndKm ?? payload?.km_end ?? payload?.odometer_km ?? payload?.odometerKm;
-  const odoStart = Number.isFinite(Number(odoStartRaw)) ? Math.max(0, Math.round(Number(odoStartRaw))) : null;
-  const odoEnd = Number.isFinite(Number(odoEndRaw)) ? Math.max(0, Math.round(Number(odoEndRaw))) : null;
+  const odoStart = hasFiniteNumber(odoStartRaw) ? Math.max(0, Math.round(Number(odoStartRaw))) : null;
+  const odoEnd = hasFiniteNumber(odoEndRaw) ? Math.max(0, Math.round(Number(odoEndRaw))) : null;
   const vehicle = normalizeSessionText(payload?.vehicle ?? payload?.fahrzeug) || DEFAULT_VEHICLE;
   const tags = normalizeTagsInput(payload?.tags ?? payload?.schlagworte);
 
@@ -1857,9 +2039,137 @@ function normalizePayloadToSession(payload) {
   };
 }
 
+function buildSessionNormalizationInput(existing, payload) {
+  const current = existing || {};
+  const next = payload || {};
+
+  return {
+    ...current,
+    ...next,
+    id: current.id ?? next.id,
+    date: firstDefined(next?.date, next?.datum, next?.session_date, current?.date, current?.datum, current?.session_date),
+    energy_kwh: firstDefined(
+      next?.energy_kwh,
+      next?.energyKWh,
+      next?.kwh,
+      next?.energy,
+      current?.energy_kwh,
+      current?.energyKWh,
+      current?.kwh,
+      current?.energy
+    ),
+    price_per_kwh: firstDefined(next?.price_per_kwh, next?.pricePerKwh, current?.price_per_kwh, current?.pricePerKwh),
+    total_cost: firstDefined(
+      next?.total_cost,
+      next?.costEur,
+      next?.cost,
+      next?.eur,
+      current?.total_cost,
+      current?.costEur,
+      current?.cost,
+      current?.eur
+    ),
+    duration_seconds: firstDefined(
+      next?.duration_seconds,
+      next?.durationSeconds,
+      next?.duration,
+      current?.duration_seconds,
+      current?.durationSeconds,
+      current?.duration
+    ),
+    duration_minutes: firstDefined(next?.duration_minutes, next?.durationMinutes, current?.duration_minutes, current?.durationMinutes),
+    provider: firstDefined(next?.provider, next?.anbieter, current?.provider, current?.anbieter),
+    location: firstDefined(next?.location, next?.ort, current?.location, current?.ort),
+    vehicle: firstDefined(next?.vehicle, next?.fahrzeug, current?.vehicle, current?.fahrzeug),
+    tags: firstDefined(next?.tags, next?.schlagworte, current?.tags, current?.schlagworte),
+    connector: firstDefined(next?.connector, next?.anschluss, current?.connector, current?.anschluss),
+    soc_start: firstDefined(next?.soc_start, next?.socStart, current?.soc_start, current?.socStart),
+    soc_end: firstDefined(next?.soc_end, next?.socEnd, current?.soc_end, current?.socEnd),
+    odo_start_km: firstDefined(next?.odo_start_km, next?.odoStartKm, next?.km_start, current?.odo_start_km, current?.odoStartKm, current?.km_start),
+    odo_end_km: firstDefined(
+      next?.odo_end_km,
+      next?.odoEndKm,
+      next?.km_end,
+      next?.odometer_km,
+      next?.odometerKm,
+      current?.odo_end_km,
+      current?.odoEndKm,
+      current?.km_end,
+      current?.odometer_km,
+      current?.odometerKm
+    ),
+    note: next?.note ?? current?.note,
+  };
+}
+
+function getDemoSessionsResult(year) {
+  return {
+    ok: true,
+    rows: sortSessionsDesc(filterByYear(getDemoYearRows(year), year)),
+  };
+}
+
+function getDemoDashboardBundleValue(cacheKey, year) {
+  return setDashboardCacheValue(cacheKey, buildDashboardBundleFromSessions(getAllDemoRows(), year));
+}
+
+function resolveDemoOrRemote(year, demoResolver, remoteResolver) {
+  if (isDemoMode) return demoResolver(year);
+  return remoteResolver(year);
+}
+
+async function runSessionMutation(executor) {
+  const result = await executor();
+  invalidateDashboardBundleCache();
+  return result;
+}
+
+function createDemoSession(payload) {
+  const candidate = normalizePayloadToSession(payload || {});
+  const year = parseDateParts(candidate.date)?.year ?? DEMO_DEFAULT_YEAR;
+  if (getDemoTotalRowCount() >= DEMO_MAX_ROWS) {
+    throw new Error(`Demo-Limit erreicht (${DEMO_MAX_ROWS} Einträge insgesamt). Reload = neue Demo-Daten.`);
+  }
+
+  const rows = getDemoYearRows(year);
+  const row = ensureDemoOdometer(candidate, year, rows);
+  setDemoYearRows(year, [...rows, row]);
+  return { ok: true, demo: true, row };
+}
+
+function updateDemoSession(id, payload) {
+  const existing = findDemoSessionRecord(id);
+  if (!existing) {
+    throw new Error("Session not found");
+  }
+
+  const candidate = normalizePayloadToSession(buildSessionNormalizationInput(existing.session, payload));
+  const targetYear = parseDateParts(candidate.date)?.year ?? existing.year;
+  const targetRows = withoutSessionId(getDemoYearRows(targetYear), id);
+  const updated = ensureDemoOdometer(candidate, targetYear, targetRows);
+
+  setDemoYearRows(existing.year, withoutSessionId(existing.rows, id));
+  setDemoYearRows(targetYear, [...withoutSessionId(getDemoYearRows(targetYear), id), updated]);
+  return { ok: true, demo: true, updated };
+}
+
+function deleteDemoSession(id) {
+  const existing = findDemoSessionRecord(id);
+  if (!existing) {
+    throw new Error("Session not found");
+  }
+
+  setDemoYearRows(existing.year, withoutSessionId(existing.rows, id));
+  return { ok: true, demo: true, deleted: existing.session };
+}
+
+function getCsvUrl(year, remoteResolver) {
+  if (isDemoMode) return null;
+  return remoteResolver(year);
+}
+
 export async function getStats(year = 2026) {
-  if (isDemoMode) return computeStatsFromSessions(getDemoYearRows(year), year);
-  return getStatsRemote(year);
+  return resolveDemoOrRemote(year, (selectedYear) => computeStatsFromSessions(getDemoYearRows(selectedYear), selectedYear), getStatsRemote);
 }
 
 export async function getDashboardBundle(year = 2026) {
@@ -1870,9 +2180,7 @@ export async function getDashboardBundle(year = 2026) {
   if (cachedEntry?.promise) return cachedEntry.promise;
 
   if (isDemoMode) {
-    ensureDemoSeeded();
-    const allRows = Object.values(DEMO_BY_YEAR).flatMap((rows) => rows || []);
-    return setDashboardCacheValue(cacheKey, buildDashboardBundleFromSessions(allRows, year));
+    return getDemoDashboardBundleValue(cacheKey, year);
   }
 
   const request = getDashboardBundleRemote(year)
@@ -1887,89 +2195,37 @@ export async function getDashboardBundle(year = 2026) {
 }
 
 export async function getSessions(year = 2026) {
-  if (isDemoMode) return { ok: true, rows: sortSessionsDesc(filterByYear(getDemoYearRows(year), year)) };
-  return getSessionsRemote(year);
+  return resolveDemoOrRemote(year, getDemoSessionsResult, getSessionsRemote);
 }
 
 export async function getMonthly(year = 2026) {
-  if (isDemoMode) return computeMonthlyFromSessions(getDemoYearRows(year), year);
-  return getMonthlyRemote(year);
+  return resolveDemoOrRemote(year, (selectedYear) => computeMonthlyFromSessions(getDemoYearRows(selectedYear), selectedYear), getMonthlyRemote);
 }
 
 export async function getSeasons(year = 2026) {
-  if (isDemoMode) return computeSeasonAnalytics(getDemoYearRows(year), year);
-  return getSeasonsRemote(year);
+  return resolveDemoOrRemote(year, (selectedYear) => computeSeasonAnalytics(getDemoYearRows(selectedYear), selectedYear), getSeasonsRemote);
 }
 
 export async function getEfficiency(year = 2026) {
-  if (isDemoMode) return computeEfficiencyFromSessions(getDemoYearRows(year), year);
-  return getEfficiencyRemote(year);
+  return resolveDemoOrRemote(
+    year,
+    (selectedYear) => computeEfficiencyFromSessions(getDemoYearRows(selectedYear), selectedYear),
+    getEfficiencyRemote
+  );
 }
 
 export async function getOutliers(year = 2026) {
-  if (isDemoMode) return computeOutlierAnalytics(getDemoYearRows(year), year);
-  return getOutliersRemote(year);
+  return resolveDemoOrRemote(year, (selectedYear) => computeOutlierAnalytics(getDemoYearRows(selectedYear), selectedYear), getOutliersRemote);
 }
 
 export async function createSession(payload) {
-  if (isDemoMode) {
-    const year = parseDateParts(payload?.date)?.year ?? 2026;
-    const totalRows = getDemoTotalRowCount();
-    const rows = getDemoYearRows(year);
-    if (totalRows >= DEMO_MAX_ROWS) {
-      throw new Error(`Demo-Limit erreicht (${DEMO_MAX_ROWS} Einträge insgesamt). Reload = neue Demo-Daten.`);
-    }
-
-    const row = ensureDemoOdometer(normalizePayloadToSession(payload || {}), year, rows);
-    DEMO_BY_YEAR[year] = [...rows, row].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    invalidateDashboardBundleCache();
-    return { ok: true, demo: true, row };
-  }
-
-  const result = await createSessionRemote(payload);
-  invalidateDashboardBundleCache();
-  return result;
+  return runSessionMutation(() => (isDemoMode ? createDemoSession(payload) : createSessionRemote(payload)));
 }
 
 export async function updateSession(id, payload) {
   if (!id) throw new Error("Missing id");
 
-  if (isDemoMode) {
-    let existing = null;
-    let currentYear = null;
-
-    for (const y of Object.keys(DEMO_BY_YEAR)) {
-      const row = (DEMO_BY_YEAR[y] || []).find((session) => String(session.id) === String(id));
-      if (row) {
-        existing = row;
-        currentYear = Number(y);
-        break;
-      }
-    }
-
-    if (!existing || currentYear == null) {
-      throw new Error("Session not found");
-    }
-
-    const candidate = normalizePayloadToSession({ ...existing, ...(payload || {}), id: existing.id });
-    const targetYear = parseDateParts(candidate.date)?.year ?? currentYear;
-    const updated = ensureDemoOdometer(
-      candidate,
-      targetYear,
-      (DEMO_BY_YEAR[targetYear] || []).filter((session) => String(session.id) !== String(id))
-    );
-
-    DEMO_BY_YEAR[currentYear] = (DEMO_BY_YEAR[currentYear] || []).filter((session) => String(session.id) !== String(id));
-    DEMO_BY_YEAR[targetYear] = [...getDemoYearRows(targetYear).filter((session) => String(session.id) !== String(id)), updated]
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-    invalidateDashboardBundleCache();
-    return { ok: true, demo: true, updated };
-  }
-
-  const result = await updateSessionRemote(id, payload);
-  invalidateDashboardBundleCache();
-  return result;
+  return runSessionMutation(() => (isDemoMode ? updateDemoSession(id, payload) : updateSessionRemote(id, payload)));
 }
 
 export async function restoreSession(payload) {
@@ -1977,18 +2233,15 @@ export async function restoreSession(payload) {
 }
 
 export function getMonthlyCsvUrl(year = 2026) {
-  if (isDemoMode) return null;
-  return getMonthlyCsvUrlRemote(year);
+  return getCsvUrl(year, getMonthlyCsvUrlRemote);
 }
 
 export function getSessionsCsvUrl(year = 2026) {
-  if (isDemoMode) return null;
-  return getSessionsCsvUrlRemote(year);
+  return getCsvUrl(year, getSessionsCsvUrlRemote);
 }
 
 export function getSeasonsCsvUrl(year = 2026) {
-  if (isDemoMode) return null;
-  return getSeasonsCsvUrlRemote(year);
+  return getCsvUrl(year, getSeasonsCsvUrlRemote);
 }
 
 export const ladeAuswertung = (year) => getStats(year);
@@ -2007,21 +2260,7 @@ export const erstelleLadevorgang = (payload) => createSession(payload);
 export async function deleteSession(id) {
   if (!id) throw new Error("Missing id");
 
-  if (isDemoMode) {
-    for (const y of Object.keys(DEMO_BY_YEAR)) {
-      const rows = DEMO_BY_YEAR[y] || [];
-      const deleted = rows.find((session) => String(session.id) === String(id));
-      if (!deleted) continue;
-      DEMO_BY_YEAR[y] = rows.filter((session) => String(session.id) !== String(id));
-      invalidateDashboardBundleCache();
-      return { ok: true, demo: true, deleted };
-    }
-    throw new Error("Session not found");
-  }
-
-  const result = await deleteSessionRemote(id);
-  invalidateDashboardBundleCache();
-  return result;
+  return runSessionMutation(() => (isDemoMode ? deleteDemoSession(id) : deleteSessionRemote(id)));
 }
 
 export function invalidateDashboardBundleCache(year = null) {

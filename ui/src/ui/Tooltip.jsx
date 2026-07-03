@@ -136,6 +136,18 @@ export default function Tooltip({
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
+  // Close when tapping/clicking outside the trigger and tooltip.
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (e) => {
+      const target = e.target;
+      if (triggerRef.current?.contains(target) || tipRef.current?.contains(target)) return;
+      hardClose();
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [open]);
+
   // Clone child and attach handlers
   const child = React.Children.only(children);
   const childProps = child.props || {};
@@ -156,6 +168,11 @@ export default function Tooltip({
     childProps.onBlur?.(e);
     scheduleClose();
   };
+  const onClick = (e) => {
+    childProps.onClick?.(e);
+    clearTimers();
+    setOpen((value) => !value);
+  };
 
   const trigger = React.cloneElement(child, {
     ref: triggerRef,
@@ -163,7 +180,9 @@ export default function Tooltip({
     onMouseLeave,
     onFocus,
     onBlur,
+    onClick,
     "aria-describedby": open ? tooltipId : undefined,
+    "aria-expanded": open ? true : undefined,
   });
 
   const tip = open && mounted ? (
