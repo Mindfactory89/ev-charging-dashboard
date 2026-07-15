@@ -1,0 +1,441 @@
+/* Package 5: focused analysis and history workspaces. */
+
+.analysisWorkspace,
+.historyWorkspaceHero,
+.historyComposerSection,
+.historyImportDisclosure {
+  border-color: var(--color-border);
+  border-radius: var(--ds-radius-xl);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-surface);
+}
+
+.analysisWorkspace {
+  display: grid;
+  gap: var(--ds-space-5);
+  padding: var(--ds-space-6);
+  overflow: visible;
+  background:
+    radial-gradient(640px 240px at 0% 0%, var(--color-accent-soft), transparent 66%),
+    var(--color-surface);
+}
+
+.analysisWorkspaceHeader,
+.historyWorkspaceHeader,
+.historyComposerHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ds-space-5);
+}
+
+.analysisWorkspaceTitle,
+.historyWorkspaceTitle,
+.historyComposerTitle {
+  margin: var(--ds-space-2) 0 0;
+  color: var(--color-text-primary);
+  font-size: var(--font-heading-2);
+  line-height: var(--ds-leading-tight);
+  letter-spacing: var(--ds-tracking-tight);
+}
+
+.analysisWorkspaceScope {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding-inline: var(--ds-space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--ds-radius-full);
+  color: var(--color-text-secondary);
+  background: var(--color-surface-raised);
+  font-size: var(--ds-font-size-xs);
+  font-weight: var(--ds-font-semibold);
+  white-space: nowrap;
+}
+
+.analysisModeGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--ds-space-3);
+}
+
+.analysisModeCard {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-3);
+  min-width: 0;
+  min-height: 68px;
+  padding: var(--ds-space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--ds-radius-md);
+  color: var(--color-text-secondary);
+  background: var(--color-surface-raised);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--font-body-sm);
+  font-weight: var(--ds-font-semibold);
+  text-align: left;
+  transition: var(--transition-interactive);
+}
+
+.analysisModeCard:hover {
+  border-color: var(--color-border-strong);
+  color: var(--color-text-primary);
+  transform: translateY(-1px);
+}
+
+.analysisModeCard.active {
+  border-color: var(--color-primary-border);
+  color: var(--color-text-primary);
+  background: var(--color-primary-soft);
+  box-shadow: inset 0 -2px 0 var(--color-primary);
+}
+
+.analysisModeIcon,
+.analysisActiveSummaryIcon,
+.historyImportIcon {
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--ds-radius-md);
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+}
+
+.analysisModeCard.active .analysisModeIcon,
+.analysisActiveSummaryIcon {
+  color: var(--color-primary);
+  border-color: var(--color-primary-border);
+  background: var(--color-primary-soft);
+}
+
+.analysisModeIcon svg,
+.analysisActiveSummaryIcon svg,
+.historyWorkspaceAction svg,
+.historyImportIcon svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.analysisActiveSummary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: var(--ds-space-4);
+  padding: var(--ds-space-4);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--ds-radius-lg);
+  background: var(--color-surface-raised);
+}
+
+.analysisActiveLabel {
+  margin-bottom: var(--ds-space-1);
+  color: var(--color-text-tertiary);
+  font-size: var(--ds-font-size-xs);
+  font-weight: var(--ds-font-semibold);
+  letter-spacing: var(--ds-tracking-wide);
+  text-transform: uppercase;
+}
+
+.analysisActiveSummary strong {
+  color: var(--color-text-primary);
+  font-size: var(--ds-font-size-lg);
+}
+
+.analysisActiveSummary p {
+  max-width: 62ch;
+  margin: var(--ds-space-1) 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-body-sm);
+  line-height: var(--ds-leading-normal);
+}
+
+.historyWorkspaceHero {
+  display: grid;
+  gap: var(--ds-space-6);
+  padding: var(--ds-space-6);
+  overflow: hidden;
+  background:
+    radial-gradient(680px 280px at 100% 0%, var(--color-primary-soft), transparent 68%),
+    var(--color-surface);
+}
+
+.historyWorkspaceCopy {
+  max-width: 62ch;
+}
+
+.historyWorkspaceCopy p {
+  margin: var(--ds-space-3) 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-body-sm);
+  line-height: var(--ds-leading-relaxed);
+}
+
+.historyActionRow {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--ds-space-2);
+}
+
+.historyWorkspaceAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ds-space-2);
+  min-height: var(--touch-target-min);
+  padding: var(--ds-space-2) var(--ds-space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--ds-radius-full);
+  color: var(--color-text-primary);
+  background: var(--color-surface-raised);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--font-body-sm);
+  font-weight: var(--ds-font-semibold);
+  transition: var(--transition-interactive);
+}
+
+.historyWorkspaceAction:hover {
+  border-color: var(--color-border-strong);
+  transform: translateY(-1px);
+}
+
+.historyWorkspaceAction.primary {
+  border-color: var(--color-primary-border);
+  color: var(--color-primary-foreground);
+  background: var(--color-primary);
+}
+
+.historyWorkspaceAction.primary:hover {
+  border-color: var(--color-primary-hover);
+  background: var(--color-primary-hover);
+}
+
+.historyWorkspaceAction svg {
+  flex: 0 0 auto;
+}
+
+.historyQuickStats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--ds-radius-lg);
+  background: var(--color-surface-raised);
+}
+
+.historyQuickStats > div {
+  min-width: 0;
+  padding: var(--ds-space-4);
+}
+
+.historyQuickStats > div + div {
+  border-left: 1px solid var(--color-border-subtle);
+}
+
+.historyQuickStats dt {
+  color: var(--color-text-tertiary);
+  font-size: var(--ds-font-size-xs);
+  font-weight: var(--ds-font-semibold);
+  letter-spacing: var(--ds-tracking-wide);
+  text-transform: uppercase;
+}
+
+.historyQuickStats dd {
+  margin: var(--ds-space-2) 0 0;
+  overflow: hidden;
+  color: var(--color-text-primary);
+  font-size: var(--ds-font-size-xl);
+  font-weight: var(--ds-font-bold);
+  line-height: var(--ds-leading-tight);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.historyComposerSection {
+  display: grid;
+  gap: var(--ds-space-4);
+  padding: var(--ds-space-5);
+  border: 1px solid var(--color-primary-border);
+  background:
+    linear-gradient(135deg, var(--color-primary-soft), transparent 42%),
+    var(--color-surface);
+  scroll-margin-top: var(--ds-space-6);
+}
+
+.historyComposerSection[hidden] {
+  display: none;
+}
+
+.historyComposerTitle {
+  font-size: var(--font-heading-3);
+}
+
+.historyComposerTitle:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
+  border-radius: var(--ds-radius-sm);
+}
+
+.historyComposerSection > .formCard {
+  box-shadow: none;
+}
+
+.historyImportDisclosure {
+  border: 1px solid var(--color-border);
+  scroll-margin-top: var(--ds-space-6);
+}
+
+.historyImportDisclosure > summary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--ds-space-4);
+  min-height: 76px;
+  padding: var(--ds-space-4) var(--ds-space-5);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  list-style: none;
+}
+
+.historyImportDisclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+.historyImportDisclosure > summary:hover .historyImportIcon {
+  color: var(--color-primary);
+  border-color: var(--color-primary-border);
+}
+
+.historyImportDisclosure > summary strong,
+.historyImportDisclosure > summary small {
+  display: block;
+}
+
+.historyImportDisclosure > summary strong {
+  font-size: var(--font-body);
+}
+
+.historyImportDisclosure > summary small {
+  margin-top: var(--ds-space-1);
+  color: var(--color-text-secondary);
+  font-size: var(--ds-font-size-sm);
+  line-height: var(--ds-leading-normal);
+}
+
+.historyImportState {
+  display: grid;
+  place-items: center;
+  width: var(--touch-target-min);
+  height: var(--touch-target-min);
+  border-radius: var(--ds-radius-full);
+  color: var(--color-text-secondary);
+  background: var(--color-surface-raised);
+  font-size: var(--ds-font-size-xl);
+  transition: transform var(--ds-duration-normal) var(--ds-ease-standard);
+}
+
+.historyImportDisclosure[open] .historyImportState {
+  transform: rotate(45deg);
+}
+
+.historyImportContent {
+  padding: 0 var(--ds-space-5) var(--ds-space-5);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.historyImportContent > .formCard {
+  margin-top: var(--ds-space-5);
+  box-shadow: none;
+}
+
+@media (max-width: 980px) {
+  .analysisModeGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .historyWorkspaceHeader {
+    display: grid;
+  }
+
+  .historyActionRow {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .analysisWorkspace,
+  .historyWorkspaceHero,
+  .historyComposerSection {
+    padding: var(--ds-space-4);
+  }
+
+  .analysisWorkspaceHeader,
+  .historyComposerHeader {
+    display: grid;
+  }
+
+  .analysisWorkspaceScope {
+    justify-self: start;
+  }
+
+  .analysisModeGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--ds-space-2);
+  }
+
+  .analysisModeCard {
+    min-height: 60px;
+    padding: var(--ds-space-2);
+  }
+
+  .analysisModeGrid .analysisModeCard:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+
+  .analysisModeIcon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .historyActionRow,
+  .historyWorkspaceAction {
+    width: 100%;
+  }
+
+  .historyQuickStats {
+    grid-template-columns: 1fr;
+  }
+
+  .historyQuickStats > div + div {
+    border-top: 1px solid var(--color-border-subtle);
+    border-left: 0;
+  }
+
+  .historyImportDisclosure > summary {
+    gap: var(--ds-space-3);
+    padding: var(--ds-space-3) var(--ds-space-4);
+  }
+
+  .historyImportContent {
+    padding: 0 var(--ds-space-3) var(--ds-space-3);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .analysisModeCard,
+  .historyWorkspaceAction,
+  .historyImportState {
+    transition: none;
+  }
+}

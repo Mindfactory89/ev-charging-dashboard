@@ -24,13 +24,13 @@ class ErrorBoundaryContainer extends React.Component {
 
       return (
         <div className="app">
-          <div className="card glassStrong" style={{ padding: 16, border: "1px solid rgba(255,120,120,0.45)" }}>
+          <div className="card glassStrong" style={{ padding: 16, border: "1px solid var(--color-danger)" }}>
             <div className="sectionKicker">{this.props.t("errorBoundary.kicker")}</div>
             <div className="sectionTitle" style={{ marginTop: 6 }}>
               {this.props.t("errorBoundary.title")}
             </div>
 
-            <div style={{ marginTop: 10, fontSize: 13, color: "rgba(255,255,255,0.9)", lineHeight: 1.5 }}>
+            <div style={{ marginTop: 10, fontSize: 13, color: "var(--color-text-primary)", lineHeight: 1.5 }}>
               <b>{this.props.t("errorBoundary.messageLabel")}</b> {msg}
               <div style={{ marginTop: 8, opacity: 0.8 }}>
                 {this.props.t("errorBoundary.help")}
@@ -43,10 +43,10 @@ class ErrorBoundaryContainer extends React.Component {
                 padding: 12,
                 borderRadius: 14,
                 overflow: "auto",
-                background: "rgba(0,0,0,0.35)",
-                border: "1px solid rgba(255,255,255,0.10)",
+                background: "var(--color-surface-sunken)",
+                border: "1px solid var(--color-border)",
                 fontSize: 12,
-                color: "rgba(255,255,255,0.86)",
+                color: "var(--color-text-secondary)",
                 whiteSpace: "pre-wrap",
               }}
             >

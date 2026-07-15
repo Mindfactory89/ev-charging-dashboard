@@ -1,0 +1,652 @@
+/* Package 3: first-run guidance and actionable empty states. */
+
+.onboardingOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--ds-z-modal);
+  display: grid;
+  place-items: center;
+  padding: var(--ds-space-4);
+  background: var(--dialog-overlay);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.onboardingDialog {
+  display: flex;
+  flex-direction: column;
+  width: min(980px, 100%);
+  max-height: min(760px, calc(100dvh - var(--ds-space-8)));
+  overflow: hidden;
+  border: 1px solid var(--dialog-border);
+  border-radius: var(--ds-radius-xl);
+  color: var(--dialog-fg);
+  background: var(--dialog-bg);
+  box-shadow: var(--dialog-shadow);
+}
+
+.onboardingHeader,
+.onboardingFooter {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space-4);
+  padding: var(--ds-space-4) var(--ds-space-5);
+}
+
+.onboardingHeader {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.onboardingEyebrow {
+  color: var(--color-primary);
+  font-size: var(--font-label);
+  font-weight: var(--ds-font-semibold);
+  letter-spacing: var(--ds-tracking-label);
+  text-transform: uppercase;
+}
+
+.onboardingStepCount {
+  margin-top: var(--ds-space-1);
+  color: var(--color-text-secondary);
+  font-size: var(--font-body-sm);
+}
+
+.onboardingClose {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--ds-radius-md);
+  color: var(--color-text-secondary);
+  background: var(--color-surface-raised);
+  cursor: pointer;
+  transition: var(--transition-interactive);
+}
+
+.onboardingClose:hover {
+  color: var(--color-text-primary);
+  border-color: var(--color-border-strong);
+}
+
+.onboardingClose svg,
+.onboardingIcon svg,
+.guidedEmptyVisual svg {
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.onboardingClose svg {
+  width: 20px;
+  height: 20px;
+}
+
+.onboardingProgress {
+  display: grid;
+  flex: 0 0 auto;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--ds-space-2);
+  margin: 0;
+  padding: var(--ds-space-3) var(--ds-space-5);
+  border-bottom: 1px solid var(--color-border);
+  list-style: none;
+}
+
+.onboardingProgress li {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  min-width: 0;
+  color: var(--color-text-tertiary);
+}
+
+.onboardingProgress li::after {
+  position: absolute;
+  right: 0;
+  bottom: calc(var(--ds-space-3) * -1 - 1px);
+  left: 0;
+  height: 2px;
+  border-radius: var(--ds-radius-full);
+  background: transparent;
+  content: "";
+}
+
+.onboardingProgress li.active {
+  color: var(--color-text-primary);
+}
+
+.onboardingProgress li.active::after {
+  background: var(--color-primary);
+}
+
+.onboardingProgress li > span {
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--ds-radius-full);
+  background: var(--color-surface-raised);
+  font-size: var(--ds-font-size-xs);
+  font-weight: var(--ds-font-semibold);
+}
+
+.onboardingProgress li.active > span {
+  color: var(--color-primary);
+  border-color: var(--color-primary-border);
+  background: var(--color-primary-soft);
+}
+
+.onboardingProgress small {
+  overflow: hidden;
+  font-size: var(--ds-font-size-xs);
+  font-weight: var(--ds-font-medium);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.onboardingBody {
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: var(--ds-space-6);
+}
+
+.onboardingStep {
+  min-height: 390px;
+}
+
+.onboardingWelcomeStep {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.9fr) minmax(320px, 1.1fr);
+  align-items: center;
+  gap: clamp(var(--ds-space-6), 5vw, var(--ds-space-12));
+}
+
+.onboardingVisual {
+  position: relative;
+  min-height: 340px;
+  overflow: hidden;
+  border: 1px solid var(--color-primary-border);
+  border-radius: var(--ds-radius-xl);
+  background:
+    radial-gradient(320px 220px at 18% 10%, var(--color-primary-soft), transparent 66%),
+    linear-gradient(145deg, var(--color-surface-raised), var(--color-surface));
+  box-shadow: var(--shadow-raised);
+}
+
+.onboardingVisual::after {
+  position: absolute;
+  right: -52px;
+  bottom: -78px;
+  width: 230px;
+  height: 230px;
+  border: 1px solid var(--color-primary-border);
+  border-radius: var(--ds-radius-full);
+  content: "";
+}
+
+.onboardingVisualBrand {
+  position: absolute;
+  top: var(--ds-space-5);
+  left: var(--ds-space-5);
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--color-primary-border);
+  border-radius: var(--ds-radius-md);
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+  font-size: 28px;
+  font-weight: var(--ds-font-bold);
+}
+
+.onboardingVisualChart {
+  position: absolute;
+  right: var(--ds-space-5);
+  bottom: var(--ds-space-5);
+  left: var(--ds-space-5);
+  display: flex;
+  align-items: flex-end;
+  gap: var(--ds-space-3);
+  height: 150px;
+  padding: var(--ds-space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--ds-radius-lg);
+  background: var(--color-surface);
+}
+
+.onboardingVisualChart span {
+  flex: 1;
+  min-height: 24px;
+  border-radius: var(--ds-radius-sm) var(--ds-radius-sm) 3px 3px;
+  background: var(--chart-series-copper);
+}
+
+.onboardingVisualChart span:nth-child(2n) {
+  background: var(--chart-series-blue);
+}
+
+.onboardingVisualMetric {
+  position: absolute;
+  top: var(--ds-space-5);
+  right: var(--ds-space-5);
+  display: grid;
+  gap: 2px;
+  text-align: right;
+}
+
+.onboardingVisualMetric small,
+.onboardingVisualMetric span {
+  color: var(--color-text-secondary);
+  font-size: var(--ds-font-size-xs);
+}
+
+.onboardingVisualMetric strong {
+  color: var(--color-text-primary);
+  font-size: var(--ds-font-size-xl);
+}
+
+.onboardingCopy h2 {
+  max-width: 18ch;
+  margin: var(--ds-space-2) 0 0;
+  color: var(--color-text-primary);
+  font-size: clamp(2rem, 4vw, 3rem);
+  letter-spacing: var(--ds-tracking-tight);
+  line-height: var(--ds-leading-tight);
+}
+
+.onboardingCopy h2:focus {
+  outline: none;
+}
+
+.onboardingCopy > p {
+  max-width: 64ch;
+  margin: var(--ds-space-3) 0 0;
+  color: var(--color-text-secondary);
+  line-height: var(--ds-leading-relaxed);
+}
+
+.onboardingFeatureList {
+  display: grid;
+  gap: var(--ds-space-3);
+  margin-top: var(--ds-space-5);
+}
+
+.onboardingFeature {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-3);
+}
+
+.onboardingIcon {
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--ds-radius-md);
+  color: var(--color-primary);
+  background: var(--color-surface-raised);
+}
+
+.onboardingIcon svg {
+  width: 21px;
+  height: 21px;
+}
+
+.onboardingFeature > span:last-child,
+.onboardingStartCard > span:nth-child(2),
+.onboardingScreenChoices button > span:last-child {
+  display: grid;
+  gap: 2px;
+}
+
+.onboardingFeature strong,
+.onboardingStartCard strong,
+.onboardingScreenChoices strong {
+  color: var(--color-text-primary);
+  font-size: var(--font-body-sm);
+}
+
+.onboardingFeature small,
+.onboardingStartCard small,
+.onboardingScreenChoices small {
+  color: var(--color-text-secondary);
+  font-size: var(--ds-font-size-xs);
+  line-height: var(--ds-leading-snug);
+}
+
+.onboardingPreferenceStep,
+.onboardingStartStep {
+  display: grid;
+  align-content: start;
+  gap: var(--ds-space-6);
+}
+
+.onboardingPreferenceGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(320px, 1.2fr);
+  gap: var(--ds-space-4);
+}
+
+.onboardingPreferenceCard,
+.onboardingStartCard {
+  min-width: 0;
+  padding: var(--ds-space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--ds-radius-lg);
+  background: var(--color-surface-raised);
+}
+
+.onboardingPreferenceCard {
+  display: grid;
+  align-content: start;
+  gap: var(--ds-space-4);
+}
+
+.onboardingPreferenceCard h3,
+.onboardingStartCard h3,
+.guidedEmptyCopy h3 {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: var(--ds-font-size-lg);
+}
+
+.onboardingPreferenceCard p,
+.onboardingStartCard p,
+.guidedEmptyCopy p {
+  margin: var(--ds-space-1) 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-body-sm);
+  line-height: var(--ds-leading-normal);
+}
+
+.onboardingPreferenceCard .themeControl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.onboardingPreferenceCard .themeControl .chip {
+  min-width: 0;
+}
+
+.onboardingScreenChoices {
+  display: grid;
+  gap: var(--ds-space-2);
+}
+
+.onboardingScreenChoices button {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-3);
+  min-height: 62px;
+  padding: var(--ds-space-2) var(--ds-space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--ds-radius-md);
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  cursor: pointer;
+  text-align: left;
+  transition: var(--transition-interactive);
+}
+
+.onboardingScreenChoices button:hover,
+.onboardingScreenChoices button.active {
+  border-color: var(--color-primary-border);
+  background: var(--color-primary-soft);
+}
+
+.onboardingScreenChoices button.active .onboardingIcon {
+  border-color: var(--color-primary-border);
+  background: var(--color-surface);
+}
+
+.onboardingStartGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ds-space-4);
+}
+
+.onboardingStartCard {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-3);
+  min-height: 112px;
+  text-align: left;
+}
+
+.onboardingStartCard.actionable {
+  position: relative;
+  color: var(--color-text-primary);
+  border-color: var(--color-primary-border);
+  background: var(--color-primary-soft);
+  cursor: pointer;
+  transition: var(--transition-interactive);
+}
+
+.onboardingStartCard.actionable:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-raised);
+}
+
+.onboardingArrow {
+  margin-left: auto;
+  color: var(--color-primary);
+  font-size: var(--ds-font-size-xl);
+}
+
+.onboardingFooter {
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.onboardingFooterActions {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+}
+
+.onboardingSkip,
+.onboardingSecondary,
+.onboardingPrimary {
+  min-height: 44px;
+  padding-inline: var(--ds-space-4);
+  border-radius: var(--ds-radius-md);
+  cursor: pointer;
+  font-weight: var(--ds-font-semibold);
+  transition: var(--transition-interactive);
+}
+
+.onboardingSkip {
+  border: 0;
+  color: var(--color-text-secondary);
+  background: transparent;
+}
+
+.onboardingSkip:hover {
+  color: var(--color-text-primary);
+  background: var(--color-surface-raised);
+}
+
+.onboardingSecondary {
+  color: var(--button-secondary-fg);
+  border: 1px solid var(--button-secondary-border);
+  background: var(--button-secondary-bg);
+}
+
+.onboardingPrimary {
+  color: var(--button-fg);
+  border: 1px solid var(--button-border);
+  background: var(--button-bg);
+  box-shadow: var(--shadow-surface);
+}
+
+.onboardingPrimary:hover {
+  background: var(--button-bg-hover);
+  box-shadow: var(--shadow-raised);
+}
+
+.shellSettingsHint {
+  max-width: 25ch;
+  margin-top: 3px;
+  color: var(--color-text-secondary);
+  font-size: var(--ds-font-size-xs);
+  line-height: var(--ds-leading-snug);
+}
+
+.guidedEmptyState {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--ds-space-6);
+  padding: var(--ds-space-6);
+}
+
+.guidedEmptyVisual {
+  display: grid;
+  place-items: center;
+  min-height: 150px;
+  border: 1px solid var(--color-primary-border);
+  border-radius: var(--ds-radius-lg);
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+
+.guidedEmptyVisual svg {
+  width: 120px;
+  height: 92px;
+}
+
+.guidedEmptyCopy h3 {
+  margin-top: var(--ds-space-2);
+  font-size: var(--ds-font-size-xl);
+}
+
+.guidedEmptyActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-2);
+  margin-top: var(--ds-space-4);
+}
+
+.guidedEmptyActions .btnPrimary,
+.guidedEmptyActions .chip {
+  min-height: 44px;
+}
+
+@media (max-width: 760px) {
+  .onboardingOverlay {
+    align-items: end;
+    padding: 0;
+  }
+
+  .onboardingDialog {
+    width: 100%;
+    max-height: calc(100dvh - var(--ds-space-3));
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-radius: var(--ds-radius-xl) var(--ds-radius-xl) 0 0;
+  }
+
+  .onboardingHeader,
+  .onboardingFooter {
+    padding: var(--ds-space-3) var(--ds-space-4);
+  }
+
+  .onboardingProgress {
+    padding-inline: var(--ds-space-4);
+  }
+
+  .onboardingBody {
+    padding: var(--ds-space-4);
+  }
+
+  .onboardingStep {
+    min-height: 0;
+  }
+
+  .onboardingWelcomeStep,
+  .onboardingPreferenceGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .onboardingVisual {
+    min-height: 220px;
+  }
+
+  .onboardingVisualChart {
+    height: 104px;
+  }
+
+  .onboardingCopy h2 {
+    font-size: clamp(1.75rem, 8vw, 2.4rem);
+  }
+
+  .onboardingStartGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .guidedEmptyState {
+    grid-template-columns: 1fr;
+    gap: var(--ds-space-4);
+    padding: var(--ds-space-4);
+  }
+
+  .guidedEmptyVisual {
+    min-height: 120px;
+  }
+}
+
+@media (max-width: 420px) {
+  .onboardingProgress small {
+    display: none;
+  }
+
+  .onboardingProgress li {
+    justify-content: center;
+  }
+
+  .onboardingFeatureList {
+    gap: var(--ds-space-2);
+  }
+
+  .onboardingFeature {
+    align-items: flex-start;
+  }
+
+  .onboardingFooter {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .onboardingFooterActions,
+  .onboardingPrimary,
+  .onboardingSecondary,
+  .onboardingSkip {
+    width: 100%;
+  }
+
+  .onboardingPrimary,
+  .onboardingSecondary,
+  .onboardingSkip {
+    justify-content: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .onboardingOverlay {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}

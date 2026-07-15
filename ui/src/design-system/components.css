@@ -1,0 +1,64 @@
+/* Design System · Layer 3: Component contracts */
+:root {
+  --button-bg: var(--color-primary);
+  --button-fg: var(--color-primary-foreground);
+  --button-bg-hover: var(--color-primary-hover);
+  --button-bg-active: var(--color-primary-active);
+  --button-border: var(--color-primary-border);
+  --button-height: var(--control-min-height);
+  --button-padding-x: var(--ds-space-4);
+  --button-radius: var(--ds-radius-md);
+
+  --button-secondary-bg: var(--color-surface-raised);
+  --button-secondary-fg: var(--color-text-primary);
+  --button-secondary-bg-hover: var(--color-surface-sunken);
+  --button-secondary-border: var(--color-border);
+
+  --input-bg: var(--color-surface-sunken);
+  --input-fg: var(--color-text-primary);
+  --input-placeholder: var(--color-text-tertiary);
+  --input-border: var(--color-border);
+  --input-border-hover: var(--color-border-strong);
+  --input-border-focus: var(--color-focus);
+  --input-radius: var(--ds-radius-md);
+  --input-height: var(--control-min-height);
+
+  --card-bg: var(--color-surface);
+  --card-bg-raised: var(--color-surface-raised);
+  --card-fg: var(--color-text-primary);
+  --card-border: var(--color-border-subtle);
+  --card-radius: var(--ds-radius-lg);
+  --card-radius-compact: var(--ds-radius-md);
+  --card-shadow: var(--shadow-surface);
+  --card-shadow-raised: var(--shadow-raised);
+
+  --pill-bg: var(--color-surface-raised);
+  --pill-fg: var(--color-text-secondary);
+  --pill-border: var(--color-border);
+  --pill-radius: var(--ds-radius-full);
+
+  --toggle-bg: var(--color-surface-sunken);
+  --toggle-fg: var(--color-text-secondary);
+  --toggle-active-bg: var(--color-surface-raised);
+  --toggle-active-fg: var(--color-text-primary);
+  --toggle-border: var(--color-border-subtle);
+
+  --table-header-bg: var(--color-surface-sunken);
+  --table-header-fg: var(--color-text-tertiary);
+  --table-row-bg: var(--color-surface);
+  --table-row-hover-bg: var(--color-primary-soft);
+  --table-row-fg: var(--color-text-primary);
+  --table-border: var(--color-border-subtle);
+
+  --dialog-bg: var(--color-surface-raised);
+  --dialog-fg: var(--color-text-primary);
+  --dialog-border: var(--color-border);
+  --dialog-overlay: var(--color-overlay);
+  --dialog-radius: var(--ds-radius-xl);
+  --dialog-shadow: var(--shadow-overlay);
+
+  --tooltip-bg: var(--color-surface-raised);
+  --tooltip-fg: var(--color-text-primary);
+  --tooltip-border: var(--color-border-strong);
+  --tooltip-shadow: var(--shadow-overlay);
+}

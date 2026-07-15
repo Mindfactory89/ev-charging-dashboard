@@ -1,0 +1,130 @@
+/*
+ * Design System · Layer 1: Primitives
+ * Raw values only. Components must consume semantic or component tokens.
+ */
+:root {
+  /* Neutral scale */
+  --ds-neutral-0: #ffffff;
+  --ds-neutral-25: #fafbfc;
+  --ds-neutral-50: #f4f6f8;
+  --ds-neutral-100: #e9edf2;
+  --ds-neutral-200: #d7dde5;
+  --ds-neutral-300: #bdc6d2;
+  --ds-neutral-400: #8e9aa9;
+  --ds-neutral-500: #657386;
+  --ds-neutral-600: #445064;
+  --ds-neutral-700: #2a3443;
+  --ds-neutral-800: #1a222e;
+  --ds-neutral-850: #151c26;
+  --ds-neutral-900: #10161f;
+  --ds-neutral-925: #0c1017;
+  --ds-neutral-950: #080a0f;
+  --ds-neutral-1000: #05070a;
+
+  /* CUPRA-inspired copper */
+  --ds-copper-100: #f8e8d8;
+  --ds-copper-200: #f0cfad;
+  --ds-copper-300: #e8b684;
+  --ds-copper-400: #d99a5a;
+  --ds-copper-500: #c9874b;
+  --ds-copper-600: #a65f2b;
+  --ds-copper-700: #7e4522;
+  --ds-copper-800: #583018;
+
+  /* Data and status scales */
+  --ds-blue-300: #9fc2ff;
+  --ds-blue-400: #78aaff;
+  --ds-blue-500: #4f8df7;
+  --ds-blue-600: #2563d9;
+  --ds-blue-700: #194ba9;
+  --ds-mint-300: #8be4c3;
+  --ds-mint-400: #5ed6aa;
+  --ds-mint-500: #32b987;
+  --ds-mint-600: #16865e;
+  --ds-amber-300: #f5cf89;
+  --ds-amber-400: #f0b85d;
+  --ds-amber-600: #a86611;
+  --ds-red-300: #ffafb3;
+  --ds-red-400: #ff8187;
+  --ds-red-500: #e85e66;
+  --ds-red-600: #b9303a;
+  --ds-violet-400: #b7a1ff;
+  --ds-violet-600: #7657c8;
+
+  /* Spacing · 4px base rhythm */
+  --ds-space-0: 0;
+  --ds-space-0-5: 0.125rem;
+  --ds-space-1: 0.25rem;
+  --ds-space-1-5: 0.375rem;
+  --ds-space-2: 0.5rem;
+  --ds-space-2-5: 0.625rem;
+  --ds-space-3: 0.75rem;
+  --ds-space-3-5: 0.875rem;
+  --ds-space-4: 1rem;
+  --ds-space-5: 1.25rem;
+  --ds-space-6: 1.5rem;
+  --ds-space-8: 2rem;
+  --ds-space-10: 2.5rem;
+  --ds-space-12: 3rem;
+  --ds-space-16: 4rem;
+  --ds-space-20: 5rem;
+
+  /* Typography */
+  --ds-font-sans: Inter, "SF Pro Text", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --ds-font-mono: "SFMono-Regular", "Cascadia Code", "Roboto Mono", ui-monospace, monospace;
+  --ds-font-size-xs: 0.75rem;
+  --ds-font-size-sm: 0.875rem;
+  --ds-font-size-base: 1rem;
+  --ds-font-size-lg: 1.125rem;
+  --ds-font-size-xl: 1.25rem;
+  --ds-font-size-2xl: 1.5rem;
+  --ds-font-size-3xl: 1.875rem;
+  --ds-font-size-4xl: 2.25rem;
+  --ds-font-size-5xl: 3rem;
+  --ds-leading-none: 1;
+  --ds-leading-tight: 1.15;
+  --ds-leading-snug: 1.35;
+  --ds-leading-normal: 1.5;
+  --ds-leading-relaxed: 1.65;
+  --ds-font-normal: 400;
+  --ds-font-medium: 500;
+  --ds-font-semibold: 600;
+  --ds-font-bold: 700;
+  --ds-tracking-tight: -0.025em;
+  --ds-tracking-wide: 0.04em;
+  --ds-tracking-label: 0.12em;
+
+  /* Shape */
+  --ds-radius-sm: 0.5rem;
+  --ds-radius-md: 0.75rem;
+  --ds-radius-lg: 1rem;
+  --ds-radius-xl: 1.25rem;
+  --ds-radius-full: 9999px;
+
+  /* Elevation */
+  --ds-shadow-none: none;
+  --ds-shadow-sm-dark: 0 1px 2px rgb(0 0 0 / 0.22);
+  --ds-shadow-md-dark: 0 12px 28px rgb(0 0 0 / 0.24);
+  --ds-shadow-lg-dark: 0 24px 64px rgb(0 0 0 / 0.36);
+  --ds-shadow-sm-light: 0 1px 2px rgb(25 35 50 / 0.07);
+  --ds-shadow-md-light: 0 10px 26px rgb(25 35 50 / 0.09);
+  --ds-shadow-lg-light: 0 24px 58px rgb(25 35 50 / 0.15);
+
+  /* Motion */
+  --ds-duration-fast: 150ms;
+  --ds-duration-normal: 220ms;
+  --ds-duration-slow: 300ms;
+  --ds-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ds-ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+  --ds-ease-exit: cubic-bezier(0.4, 0, 1, 1);
+
+  /* Layering */
+  --ds-z-base: 0;
+  --ds-z-raised: 10;
+  --ds-z-sticky: 40;
+  --ds-z-floating: 60;
+  --ds-z-popover: 100;
+  --ds-z-modal: 120;
+  --ds-z-toast: 140;
+  --ds-z-tooltip: 160;
+}

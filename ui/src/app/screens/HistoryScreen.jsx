@@ -1,8 +1,29 @@
+import { useRef } from "react";
 import AddSessionCard from "../../ui/AddSessionCard.jsx";
 import ImportSessionsCard from "../../ui/ImportSessionsCard.jsx";
 import SessionsCard from "../../ui/SessionsCard.jsx";
 import { useI18n } from "../../i18n/I18nProvider.jsx";
+import { datumDE, num } from "../formatters.js";
 import { monthLabel } from "../../ui/monthLabels.js";
+
+function HistoryActionIcon({ type }) {
+  if (type === "import") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 4v10" />
+        <path d="m8 10 4 4 4-4" />
+        <path d="M5 19h14" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 5v14" />
+      <path d="M5 12h14" />
+    </svg>
+  );
+}
 
 export default function HistoryScreen({
   addOpen,
@@ -24,11 +45,21 @@ export default function HistoryScreen({
   year,
 }) {
   const { t } = useI18n();
+  const importDetailsRef = useRef(null);
 
   function sourceLabel(source) {
     if (source === "analysis") return t("history.source.analysis");
     if (source === "overview") return t("history.source.overview");
     return t("history.source.history");
+  }
+
+  function openImport() {
+    if (!importDetailsRef.current) return;
+    importDetailsRef.current.open = true;
+    requestAnimationFrame(() => {
+      const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+      importDetailsRef.current?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+    });
   }
 
   const filterLabels = [
@@ -39,15 +70,55 @@ export default function HistoryScreen({
     historyFilters?.tag ? t("history.filters.tag", { value: historyFilters.tag }) : null,
   ].filter(Boolean);
   const hasHistoryContext = Boolean(drilldownSource) || filterLabels.length > 0;
+  const totalEnergy = sessions.reduce((sum, session) => sum + (Number(session.energy_kwh) || 0), 0);
+  const latestSession = [...sessions]
+    .filter((session) => session?.date)
+    .sort((a, b) => String(b.date).localeCompare(String(a.date)))[0];
 
   return (
     <>
-      <section className="row">
-        <div className="card glassStrong premiumDataIntro">
-          <div className="premiumDataIntroEyebrow">{t("history.intro.eyebrow")}</div>
-          <div className="premiumDataIntroTitle">{t("history.intro.title")}</div>
-          <div className="premiumDataIntroText">{t("history.intro.text")}</div>
+      <section className="historyWorkspaceHero card glassStrong" aria-labelledby="history-workspace-title">
+        <div className="historyWorkspaceHeader">
+          <div className="historyWorkspaceCopy">
+            <div className="sectionKicker">{t("history.intro.eyebrow")}</div>
+            <h3 id="history-workspace-title" className="historyWorkspaceTitle">
+              {t("history.intro.title")}
+            </h3>
+            <p>{t("history.intro.text")}</p>
+          </div>
+
+          <div className="historyActionRow">
+            <button
+              type="button"
+              className="historyWorkspaceAction primary"
+              onClick={openAdd}
+              aria-expanded={addOpen}
+              aria-controls="add-session-composer"
+            >
+              <HistoryActionIcon type="add" />
+              <span>{t("history.actions.add")}</span>
+            </button>
+            <button type="button" className="historyWorkspaceAction" onClick={openImport}>
+              <HistoryActionIcon type="import" />
+              <span>{t("history.actions.import")}</span>
+            </button>
+          </div>
         </div>
+
+        <dl className="historyQuickStats">
+          <div>
+            <dt>{t("history.stats.sessions")}</dt>
+            <dd>{num(sessions.length, 0)}</dd>
+          </div>
+          <div>
+            <dt>{t("history.stats.energy")}</dt>
+            <dd>{num(totalEnergy, 1)} kWh</dd>
+          </div>
+          <div>
+            <dt>{filterLabels.length ? t("history.stats.filters") : t("history.stats.latest")}</dt>
+            <dd>{filterLabels.length ? num(filterLabels.length, 0) : latestSession ? datumDE(latestSession.date) : "–"}</dd>
+          </div>
+        </dl>
       </section>
 
       {hasHistoryContext ? (
@@ -73,7 +144,7 @@ export default function HistoryScreen({
               </div>
             </div>
 
-            <div className="historyBreadcrumbTrail">
+            <div className="historyBreadcrumbTrail" aria-label={t("history.drilldown.activeContext")}>
               {drilldownSource ? (
                 <span className="historyBreadcrumbPill">
                   {t("history.drilldown.breadcrumb", { source: sourceLabel(drilldownSource) })}
@@ -89,6 +160,33 @@ export default function HistoryScreen({
         </section>
       ) : null}
 
+      <section
+        id="add-session-composer"
+        className="historyComposerSection"
+        ref={addSectionRef}
+        hidden={!addOpen}
+        aria-labelledby="add-session-composer-title"
+      >
+        <div className="historyComposerHeader">
+          <div>
+            <div className="sectionKicker">{t("history.composer.kicker")}</div>
+            <h3 id="add-session-composer-title" ref={addPanelRef} tabIndex={-1} className="historyComposerTitle">
+              {t("history.composer.title")}
+            </h3>
+          </div>
+          <button
+            type="button"
+            className="pill ghostPill"
+            onClick={closeAdd}
+            aria-expanded={addOpen}
+            aria-controls="add-session-composer"
+          >
+            {t("common.collapse")}
+          </button>
+        </div>
+        <AddSessionCard onCreated={onCreated} demo={demo} intelligence={intelligence} sessions={sessions} />
+      </section>
+
       <section className="row">
         <SessionsCard
           filters={historyFilters}
@@ -102,84 +200,21 @@ export default function HistoryScreen({
         />
       </section>
 
-      <section className="row" style={{ marginTop: 18 }}>
-        <ImportSessionsCard onImported={onCreated} sessions={sessions} />
-      </section>
-
-      <section id="add-session-composer" className="row" ref={addSectionRef} style={{ marginTop: 18 }}>
-        <div className={`card glassStrong addComposer ${addOpen ? "open" : "closed"}`}>
-          <div className="addComposerGlow" aria-hidden="true" />
-
-          <div className="addComposerInner">
-            <div className="panelHeader">
-              <div>
-                <div className="sectionKicker">{t("history.composer.kicker")}</div>
-                <div ref={addPanelRef} tabIndex={-1} className="sectionTitle sectionTitleSpaced">
-                  {t("history.composer.title")}
-                </div>
-              </div>
-
-              <div className="panelActions">
-                {(historyFilters?.month || historyFilters?.provider || historyFilters?.location || historyFilters?.vehicle || historyFilters?.tag) ? (
-                  <button
-                    type="button"
-                    className="pill ghostPill"
-                    onClick={onClearHistoryFilters}
-                    style={{ cursor: "pointer" }}
-                  >
-                    {t("common.clearFilters")}
-                  </button>
-                ) : null}
-                {!addOpen ? (
-                  <button
-                    type="button"
-                    className="pill pillWarm"
-                    onClick={openAdd}
-                    aria-expanded={addOpen}
-                    aria-controls="add-session-composer"
-                    style={{ cursor: "pointer" }}
-                  >
-                    {t("common.open")} ↓
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    className="pill ghostPill"
-                    onClick={closeAdd}
-                    aria-expanded={addOpen}
-                    aria-controls="add-session-composer"
-                    style={{ cursor: "pointer" }}
-                  >
-                    {t("common.collapse")}
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {!addOpen ? (
-              <div className="addComposerClosed">
-                <div className="addComposerLead">{t("history.composer.lead")}</div>
-                <div className="addComposerMiniGrid">
-                  <div className="summaryCard warm addComposerStatCard">
-                    <div className="summaryLabel">{t("history.composer.liveSyncLabel")}</div>
-                    <div className="summaryValue">{t("history.composer.liveSyncValue")}</div>
-                    <div className="summarySub">{t("history.composer.liveSyncSub")}</div>
-                  </div>
-                  <div className="summaryCard addComposerStatCard">
-                    <div className="summaryLabel">{t("history.composer.maintenanceLabel")}</div>
-                    <div className="summaryValue">{t("history.composer.maintenanceValue")}</div>
-                    <div className="summarySub">{t("history.composer.maintenanceSub")}</div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="addComposerFrame">
-                <AddSessionCard onCreated={onCreated} demo={demo} intelligence={intelligence} sessions={sessions} />
-              </div>
-            )}
-          </div>
+      <details id="history-import" className="historyImportDisclosure" ref={importDetailsRef}>
+        <summary>
+          <span className="historyImportIcon">
+            <HistoryActionIcon type="import" />
+          </span>
+          <span>
+            <strong>{t("history.import.title")}</strong>
+            <small>{t("history.import.text")}</small>
+          </span>
+          <span className="historyImportState" aria-hidden="true">+</span>
+        </summary>
+        <div className="historyImportContent">
+          <ImportSessionsCard onImported={onCreated} sessions={sessions} />
         </div>
-      </section>
+      </details>
     </>
   );
 }

@@ -1,10 +1,13 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
+import "./design-system/index.css";
 import App from "./App.jsx";
 import { I18nProvider } from "./i18n/I18nProvider.jsx";
 import { bootstrapRuntimeShell } from "./platform/runtime.js";
+import { bootstrapTheme } from "./design-system/theme.js";
 
+bootstrapTheme();
 bootstrapRuntimeShell();
 createRoot(document.getElementById("root")).render(
   <I18nProvider>

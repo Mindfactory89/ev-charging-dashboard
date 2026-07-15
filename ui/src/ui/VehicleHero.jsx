@@ -84,7 +84,7 @@ export default function VehicleHero({ profile, latestDateLabel, year }) {
       <div className="heroHeader heroHeaderHybrid">
         <div className="heroLeft">
           <div className="sectionKicker">{profile?.sectionKicker || "Fahrzeugprofil"}</div>
-          <div className="heroTitle">{profile?.name || "Fahrzeug"}</div>
+          <h3 className="heroTitle">{profile?.name || "Fahrzeug"}</h3>
 
           {Array.isArray(profile?.specs) && profile.specs.length ? (
             <div className="heroChips" aria-label="Fahrzeug-Spezifikationen">

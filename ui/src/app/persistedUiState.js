@@ -1,4 +1,5 @@
 const STORAGE_KEY = "mobility-dashboard-ui-state-v2";
+const SCREEN_IDS = new Set(["overview", "analysis", "verlauf"]);
 
 function parseSearch() {
   try {
@@ -27,6 +28,11 @@ function readYear(value, fallback = 2026) {
   return Number.isInteger(numeric) ? numeric : fallback;
 }
 
+function readScreen(value, fallback = "overview") {
+  const screen = readString(value, fallback);
+  return SCREEN_IDS.has(screen) ? screen : fallback;
+}
+
 function normalizeHistoryFilters(value = {}) {
   return {
     month: value?.month != null && value.month !== "" ? Number(value.month) : null,
@@ -53,7 +59,7 @@ export function readPersistedUiState() {
 
   return {
     year: readYear(search.get("year") ?? stored.year, 2026),
-    activeScreen: readString(search.get("screen") ?? stored.activeScreen, "overview"),
+    activeScreen: readScreen(search.get("screen") ?? stored.activeScreen),
     overviewMode: readString(search.get("overview") ?? stored.overviewMode, "cost"),
     analysisMode: readString(search.get("analysis") ?? stored.analysisMode, "compare"),
     historyFilters: normalizeHistoryFilters({
@@ -71,7 +77,7 @@ export function writePersistedUiState(state) {
 
   const payload = {
     year: readYear(state?.year, 2026),
-    activeScreen: readString(state?.activeScreen, "overview"),
+    activeScreen: readScreen(state?.activeScreen),
     overviewMode: readString(state?.overviewMode, "cost"),
     analysisMode: readString(state?.analysisMode, "compare"),
     historyFilters: normalizeHistoryFilters(state?.historyFilters),

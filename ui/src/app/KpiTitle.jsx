@@ -1,12 +1,12 @@
 import Tooltip from "../ui/Tooltip.jsx";
 
 export default function KpiTitle({ label, tip }) {
-  if (!tip) return <div className="kpiTitle">{label}</div>;
+  if (!tip) return <h3 className="kpiTitle">{label}</h3>;
   return (
     <Tooltip content={tip} placement="top" openDelayMs={120} closeDelayMs={220}>
-      <span className="kpiTitle kpiTitleTip" tabIndex={0}>
+      <h3 className="kpiTitle kpiTitleTip" tabIndex={0}>
         {label}
-      </span>
+      </h3>
     </Tooltip>
   );
 }

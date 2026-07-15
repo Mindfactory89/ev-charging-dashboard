@@ -81,8 +81,17 @@ export default function MonthlyChart({ months, onMonthSelect }) {
     price: "preis",
   };
   const activeDataKey = dataKeyByMode[mode];
-  const maxRow = activeDataKey
-    ? data.reduce((best, row) => (Number(row[activeDataKey] || 0) > Number(best?.[activeDataKey] || 0) ? row : best), null)
+  const activeRows = activeDataKey ? data.filter((row) => Number(row[activeDataKey]) > 0) : [];
+  const maxRow = activeRows.reduce(
+    (best, row) => (Number(row[activeDataKey]) > Number(best?.[activeDataKey] || 0) ? row : best),
+    null
+  );
+  const minRow = activeRows.reduce(
+    (best, row) => (!best || Number(row[activeDataKey]) < Number(best[activeDataKey]) ? row : best),
+    null
+  );
+  const averageValue = activeRows.length
+    ? activeRows.reduce((sum, row) => sum + Number(row[activeDataKey] || 0), 0) / activeRows.length
     : null;
   const chartSummary = data.length && maxRow
     ? t("monthlyChart.chartSummary", {
@@ -94,10 +103,10 @@ export default function MonthlyChart({ months, onMonthSelect }) {
     : t("monthlyChart.chartEmptySummary", { title });
 
   const strokeByMode = {
-    energy: "rgba(205,132,64,0.95)",
-    cost: "rgba(196,212,255,0.86)",
-    sessions: "rgba(120,210,160,0.92)",
-    price: "rgba(120,190,255,0.95)",
+    energy: "var(--chart-series-copper)",
+    cost: "var(--chart-series-blue)",
+    sessions: "var(--chart-series-mint)",
+    price: "var(--chart-series-price)",
   };
 
   const fillByMode = {
@@ -108,28 +117,15 @@ export default function MonthlyChart({ months, onMonthSelect }) {
   };
 
   const ToggleItem = ({ id, label, tip }) => (
-    <div className="toggleItem">
-      <button
-        type="button"
-        className={mode === id ? "toggleBtn active" : "toggleBtn"}
-        aria-pressed={mode === id}
-        onClick={() => setMode(id)}
-      >
-        {label}
-      </button>
-
-      <Tooltip content={tip} placement="top">
-        <button
-          type="button"
-          className="ttTrigger"
-          aria-label={t("monthlyChart.modeInfo", { label })}
-          onClick={(e) => e.stopPropagation()}
-          onMouseDown={(e) => e.stopPropagation()}
-        >
-          i
-        </button>
-      </Tooltip>
-    </div>
+    <button
+      type="button"
+      className={mode === id ? "toggleBtn active" : "toggleBtn"}
+      aria-pressed={mode === id}
+      onClick={() => setMode(id)}
+      title={tip}
+    >
+      {label}
+    </button>
   );
 
   return (
@@ -152,7 +148,7 @@ export default function MonthlyChart({ months, onMonthSelect }) {
           </div>
         </div>
 
-        <div className="toggle monthlyChartToggle" aria-label={t("monthlyChart.modeAria")}>
+        <div className="toggle monthlyChartToggle" role="group" aria-label={t("monthlyChart.modeAria")}>
           <ToggleItem id="energy" label={t("monthlyChart.modes.energy")} tip={tips.energy} />
           <ToggleItem id="cost" label={t("monthlyChart.modes.cost")} tip={tips.cost} />
           <ToggleItem id="price" label={t("monthlyChart.modes.price")} tip={tips.price} />
@@ -160,9 +156,27 @@ export default function MonthlyChart({ months, onMonthSelect }) {
         </div>
       </div>
 
+      <div className="monthlyChartInsightRail" role="list" aria-label={t("monthlyChart.quickFacts")}>
+        <div className="monthlyChartInsight" role="listitem">
+          <span>{t("monthlyChart.peak")}</span>
+          <strong>{maxRow ? valueLabel(mode, maxRow[activeDataKey]) : "–"}</strong>
+          <small>{maxRow?.name || t("common.noData")}</small>
+        </div>
+        <div className="monthlyChartInsight" role="listitem">
+          <span>{t("monthlyChart.average")}</span>
+          <strong>{averageValue != null ? valueLabel(mode, averageValue) : "–"}</strong>
+          <small>{t("monthlyChart.activeMonths", { count: activeRows.length })}</small>
+        </div>
+        <div className="monthlyChartInsight" role="listitem">
+          <span>{t("monthlyChart.low")}</span>
+          <strong>{minRow ? valueLabel(mode, minRow[activeDataKey]) : "–"}</strong>
+          <small>{minRow?.name || t("common.noData")}</small>
+        </div>
+      </div>
+
       <div className="chartWrap compact monthlyChartShell">
         <p id={chartSummaryId} className="srOnly">{chartSummary}</p>
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height={300} initialDimension={{ width: 800, height: 300 }}>
           <AreaChart
             data={data}
             accessibilityLayer
@@ -172,34 +186,34 @@ export default function MonthlyChart({ months, onMonthSelect }) {
           >
             <defs>
               <linearGradient id="monthlyEnergyFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="rgba(205,132,64,0.30)" />
-                <stop offset="100%" stopColor="rgba(205,132,64,0.00)" />
+                <stop offset="0%" stopColor="var(--chart-series-copper-fill-strong)" />
+                <stop offset="100%" stopColor="transparent" />
               </linearGradient>
               <linearGradient id="monthlyCostFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="rgba(196,212,255,0.26)" />
-                <stop offset="100%" stopColor="rgba(196,212,255,0.00)" />
+                <stop offset="0%" stopColor="var(--chart-series-blue-fill)" />
+                <stop offset="100%" stopColor="transparent" />
               </linearGradient>
               <linearGradient id="monthlyCountFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="rgba(120,210,160,0.28)" />
-                <stop offset="100%" stopColor="rgba(120,210,160,0.00)" />
+                <stop offset="0%" stopColor="var(--chart-series-mint-fill)" />
+                <stop offset="100%" stopColor="transparent" />
               </linearGradient>
               <linearGradient id="monthlyPriceFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="rgba(120,190,255,0.28)" />
-                <stop offset="100%" stopColor="rgba(120,190,255,0.00)" />
+                <stop offset="0%" stopColor="var(--chart-series-price-fill)" />
+                <stop offset="100%" stopColor="transparent" />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="2 10" stroke="rgba(255,255,255,0.045)" vertical={false} />
+            <CartesianGrid strokeDasharray="2 10" stroke="var(--chart-grid)" vertical={false} />
             <XAxis
               dataKey="name"
               height={40}
-              tick={{ fill: "rgba(255,255,255,0.42)", fontSize: 10 }}
+              tick={{ fill: "var(--chart-axis)", fontSize: 10 }}
               axisLine={false}
               tickLine={false}
               tickMargin={16}
             />
             <YAxis
               width={60}
-              tick={{ fill: "rgba(255,255,255,0.40)", fontSize: 10.5 }}
+              tick={{ fill: "var(--chart-axis)", fontSize: 10.5 }}
               axisLine={false}
               tickLine={false}
               tickMargin={10}
@@ -209,7 +223,7 @@ export default function MonthlyChart({ months, onMonthSelect }) {
             />
 
             <RTooltip
-              cursor={{ stroke: "rgba(255,255,255,0.10)", strokeWidth: 1, strokeDasharray: "4 6" }}
+              cursor={{ stroke: "var(--chart-cursor)", strokeWidth: 1, strokeDasharray: "4 6" }}
               content={<PremiumTooltip mode={mode} t={t} />}
             />
 
@@ -222,7 +236,7 @@ export default function MonthlyChart({ months, onMonthSelect }) {
                   stroke={strokeByMode.energy}
                   strokeWidth={2.25}
                   dot={false}
-                  activeDot={{ r: 4.4, fill: strokeByMode.energy, stroke: "rgba(255,255,255,0.78)", strokeWidth: 1.2 }}
+                  activeDot={{ r: 4.4, fill: strokeByMode.energy, stroke: "var(--chart-dot-stroke)", strokeWidth: 1.2 }}
                 />
               </>
             ) : null}
@@ -235,7 +249,7 @@ export default function MonthlyChart({ months, onMonthSelect }) {
                   stroke={strokeByMode.cost}
                   strokeWidth={2.25}
                   dot={false}
-                  activeDot={{ r: 4.4, fill: strokeByMode.cost, stroke: "rgba(20,20,28,0.9)", strokeWidth: 1.2 }}
+                  activeDot={{ r: 4.4, fill: strokeByMode.cost, stroke: "var(--chart-dot-stroke-inverse)", strokeWidth: 1.2 }}
                 />
               </>
             ) : null}
@@ -248,7 +262,7 @@ export default function MonthlyChart({ months, onMonthSelect }) {
                   stroke={strokeByMode.price}
                   strokeWidth={2.25}
                   dot={false}
-                  activeDot={{ r: 4.4, fill: strokeByMode.price, stroke: "rgba(20,20,28,0.9)", strokeWidth: 1.2 }}
+                  activeDot={{ r: 4.4, fill: strokeByMode.price, stroke: "var(--chart-dot-stroke-inverse)", strokeWidth: 1.2 }}
                 />
               </>
             ) : null}
@@ -261,13 +275,36 @@ export default function MonthlyChart({ months, onMonthSelect }) {
                   stroke={strokeByMode.sessions}
                   strokeWidth={2.25}
                   dot={false}
-                  activeDot={{ r: 4.4, fill: strokeByMode.sessions, stroke: "rgba(20,20,28,0.9)", strokeWidth: 1.2 }}
+                  activeDot={{ r: 4.4, fill: strokeByMode.sessions, stroke: "var(--chart-dot-stroke-inverse)", strokeWidth: 1.2 }}
                 />
               </>
             ) : null}
           </AreaChart>
         </ResponsiveContainer>
       </div>
+
+      <details className="monthlyDataDisclosure">
+        <summary>{t("monthlyChart.showTable")}</summary>
+        <div className="monthlyDataTableWrap">
+          <table className="monthlyDataTable">
+            <caption className="srOnly">{title}</caption>
+            <thead>
+              <tr>
+                <th scope="col">{t("monthlyChart.table.month")}</th>
+                <th scope="col">{t("monthlyChart.table.value")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {activeRows.map((row) => (
+                <tr key={`${mode}-${row.month}`}>
+                  <th scope="row">{row.name}</th>
+                  <td>{valueLabel(mode, row[activeDataKey])}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </details>
     </div>
   );
 }

@@ -116,3 +116,27 @@ test("writePersistedUiState replaces synchronization state by default", async ()
     globalThis.window = previousWindow;
   }
 });
+
+test("unknown screen routes fall back to the overview shell", async () => {
+  const previousWindow = globalThis.window;
+  const browser = createBrowserWindow("?demo=1&screen=unknown");
+  globalThis.window = browser.window;
+
+  try {
+    const { readPersistedUiState, writePersistedUiState } = await loadPersistedUiState();
+
+    assert.equal(readPersistedUiState().activeScreen, "overview");
+
+    writePersistedUiState({
+      year: 2026,
+      activeScreen: "not-a-screen",
+      overviewMode: "cost",
+      analysisMode: "compare",
+      historyFilters: {},
+    });
+
+    assert.match(browser.calls[0].url, /screen=overview/);
+  } finally {
+    globalThis.window = previousWindow;
+  }
+});

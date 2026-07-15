@@ -1,0 +1,626 @@
+/* Package 2: adaptive app shell and primary navigation. */
+
+.app {
+  max-width: none;
+  min-height: 100dvh;
+  margin: 0;
+  padding: 0;
+}
+
+.appShell {
+  display: grid;
+  grid-template-columns: 272px minmax(0, 1fr);
+  width: min(100%, 1680px);
+  min-height: 100dvh;
+  margin-inline: auto;
+}
+
+.appSidebar {
+  position: sticky;
+  top: 0;
+  z-index: var(--ds-z-sticky);
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  padding: var(--ds-space-5) var(--ds-space-4);
+  border-right: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-surface) 94%, transparent);
+}
+
+.appSidebarBrand,
+.shellBrandLockup {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-3);
+}
+
+.appSidebarBrand {
+  min-height: 56px;
+  padding-inline: var(--ds-space-3);
+  color: var(--color-text-primary);
+}
+
+.appSidebarBrandMark,
+.shellBrandMark {
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--color-primary-border);
+  border-radius: var(--ds-radius-md);
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+  font-size: 24px;
+  font-weight: var(--ds-font-bold);
+  line-height: 1;
+}
+
+.appSidebarBrand > span:last-child {
+  display: grid;
+  line-height: 1.1;
+}
+
+.appSidebarBrand strong {
+  font-size: var(--font-body);
+  letter-spacing: var(--ds-tracking-tight);
+}
+
+.appSidebarBrand small {
+  margin-top: var(--ds-space-1);
+  color: var(--color-text-tertiary);
+  font-size: var(--ds-font-size-xs);
+  letter-spacing: var(--ds-tracking-label);
+  text-transform: uppercase;
+}
+
+.appSidebarNav {
+  display: grid;
+  gap: var(--ds-space-2);
+  margin-top: var(--ds-space-8);
+}
+
+.appNavItem,
+.appSidebarAction {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-3);
+  min-height: 58px;
+  width: 100%;
+  padding: var(--ds-space-2) var(--ds-space-3);
+  border: 1px solid transparent;
+  border-radius: var(--ds-radius-lg);
+  color: var(--color-text-secondary);
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  touch-action: manipulation;
+  transition: var(--transition-interactive);
+}
+
+.appNavItem:hover {
+  color: var(--color-text-primary);
+  border-color: var(--color-border);
+  background: var(--color-surface-raised);
+}
+
+.appNavItem:active,
+.appSidebarAction:active {
+  transform: scale(0.98);
+}
+
+.appNavItem.active {
+  color: var(--color-text-primary);
+  border-color: var(--color-primary-border);
+  background: var(--color-primary-soft);
+  box-shadow: var(--shadow-surface);
+}
+
+.appNavItem.active::before {
+  position: absolute;
+  top: 14px;
+  bottom: 14px;
+  left: -1px;
+  width: 3px;
+  border-radius: var(--ds-radius-full);
+  background: var(--color-primary);
+  content: "";
+}
+
+.appNavIcon {
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+}
+
+.appNavIcon svg,
+.shellSettings summary svg {
+  width: 21px;
+  height: 21px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.appNavItemCopy {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.appNavLabel {
+  color: inherit;
+  font-size: var(--font-body-sm);
+  font-weight: var(--ds-font-semibold);
+}
+
+.appNavDescription {
+  overflow: hidden;
+  color: var(--color-text-tertiary);
+  font-size: var(--ds-font-size-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.appSidebarAction {
+  justify-content: center;
+  min-height: 52px;
+  margin-top: auto;
+  color: var(--button-fg);
+  border-color: var(--button-border);
+  background: var(--button-bg);
+  box-shadow: var(--shadow-surface);
+  font-weight: var(--ds-font-semibold);
+}
+
+.appSidebarAction:hover {
+  background: var(--button-bg-hover);
+  box-shadow: var(--shadow-raised);
+}
+
+.appBottomNav {
+  display: none;
+}
+
+.appWorkspace {
+  min-width: 0;
+  padding: var(--ds-space-5) clamp(var(--ds-space-4), 2.5vw, var(--ds-space-8)) var(--ds-space-8);
+}
+
+.shellHeader,
+.premiumLayout,
+.footer {
+  width: min(100%, 1320px);
+  margin-inline: auto;
+}
+
+.shellHeader {
+  position: relative;
+  z-index: var(--ds-z-popover);
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) auto;
+  align-items: center;
+  gap: var(--ds-space-6);
+  margin-bottom: var(--ds-space-6);
+  padding: var(--ds-space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--ds-radius-xl);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-surface);
+}
+
+.shellHeaderCopy {
+  min-width: 0;
+}
+
+.shellHeader .title {
+  max-width: none;
+  margin: 2px 0 0;
+  font-size: clamp(24px, 2.3vw, 32px);
+}
+
+.shellHeader .sub {
+  max-width: 62ch;
+  margin-top: var(--ds-space-2);
+  font-size: var(--font-body-sm);
+}
+
+.shellHeader .demoBanner {
+  width: fit-content;
+  max-width: 100%;
+  margin-top: var(--ds-space-3);
+  padding: 7px 10px;
+  border-radius: var(--ds-radius-md);
+  box-shadow: none;
+}
+
+.shellHeaderControls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--ds-space-3);
+}
+
+.shellYearControl {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-3);
+  min-height: 52px;
+  padding: var(--ds-space-1) var(--ds-space-1-5) var(--ds-space-1) var(--ds-space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--ds-radius-lg);
+  background: var(--color-surface-raised);
+}
+
+.shellYearControl .chipRow {
+  gap: 4px;
+}
+
+.shellYearControl .chip {
+  min-width: 58px;
+}
+
+.shellSettings {
+  position: relative;
+}
+
+.shellSettings summary {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  min-height: 52px;
+  padding: 0 var(--ds-space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--ds-radius-lg);
+  color: var(--color-text-primary);
+  background: var(--color-surface-raised);
+  cursor: pointer;
+  font-size: var(--font-body-sm);
+  font-weight: var(--ds-font-semibold);
+  list-style: none;
+  transition: var(--transition-interactive);
+}
+
+.shellSettings summary::-webkit-details-marker {
+  display: none;
+}
+
+.shellSettings summary:hover,
+.shellSettings[open] summary {
+  border-color: var(--color-primary-border);
+  background: var(--color-primary-soft);
+}
+
+.shellSettingsStatus {
+  display: inline-grid;
+  place-items: center;
+  min-width: 30px;
+  height: 26px;
+  margin-left: var(--ds-space-1);
+  border-radius: var(--ds-radius-sm);
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  font-size: var(--ds-font-size-xs);
+}
+
+.shellSettingsPanel {
+  position: absolute;
+  top: calc(100% + var(--ds-space-2));
+  right: 0;
+  display: grid;
+  width: min(420px, calc(100vw - 32px));
+  padding: var(--ds-space-4);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--ds-radius-xl);
+  color: var(--color-text-primary);
+  background: var(--color-surface-raised);
+  box-shadow: var(--shadow-overlay);
+}
+
+.shellSettingsSection {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space-3);
+  min-width: 0;
+  padding-block: var(--ds-space-3);
+}
+
+.shellSettingsSection + .shellSettingsSection {
+  border-top: 1px solid var(--color-border);
+}
+
+.shellSettingsSection .chipRow {
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.shellSettingsSection .releaseUpdateControl {
+  justify-content: flex-end;
+}
+
+.shellHeaderMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-2);
+  padding-top: var(--ds-space-3);
+  border-top: 1px solid var(--color-border);
+}
+
+.premiumLayout {
+  gap: var(--ds-space-6);
+}
+
+#main-content:focus {
+  outline: none;
+}
+
+.appScreenIntro {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--ds-space-5);
+  padding: var(--ds-space-2) var(--ds-space-1) var(--ds-space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.appScreenIntro h2 {
+  margin: var(--ds-space-1) 0 0;
+  color: var(--color-text-primary);
+  font-size: clamp(28px, 3vw, 42px);
+  letter-spacing: var(--ds-tracking-tight);
+  line-height: var(--ds-leading-tight);
+}
+
+.appScreenIntro p {
+  max-width: 62ch;
+  margin: var(--ds-space-2) 0 0;
+  color: var(--color-text-secondary);
+}
+
+.appScreenContext {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--ds-space-2);
+}
+
+.appScreenContext span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding-inline: var(--ds-space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--ds-radius-full);
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  font-size: var(--ds-font-size-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.footer {
+  padding-top: var(--ds-space-8);
+}
+
+@media (min-width: 1024px) {
+  .floatingAddButton {
+    display: none;
+  }
+}
+
+@media (max-width: 1023px) {
+  .appShell {
+    display: block;
+  }
+
+  .appSidebar {
+    display: none;
+  }
+
+  .appWorkspace {
+    padding-bottom: calc(104px + var(--safe-bottom));
+  }
+
+  .appBottomNav {
+    position: fixed;
+    right: var(--ds-space-3);
+    bottom: calc(var(--ds-space-3) + var(--safe-bottom));
+    left: var(--ds-space-3);
+    z-index: var(--ds-z-floating);
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    min-height: 68px;
+    padding: 5px;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--ds-radius-xl);
+    background: color-mix(in srgb, var(--color-surface-raised) 92%, transparent);
+    box-shadow: var(--shadow-overlay);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+  }
+
+  .appBottomNav .appNavItem {
+    flex-direction: column;
+    justify-content: center;
+    gap: 1px;
+    min-height: 56px;
+    padding: 4px;
+    text-align: center;
+  }
+
+  .appBottomNav .appNavItem.active::before {
+    top: -1px;
+    right: 28%;
+    bottom: auto;
+    left: 28%;
+    width: auto;
+    height: 3px;
+  }
+
+  .appBottomNav .appNavIcon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .appBottomNav .appNavIcon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .appBottomNav .appNavDescription {
+    display: none;
+  }
+
+  .appBottomNav .appNavLabel {
+    font-size: 11px;
+  }
+
+  .floatingAddButton {
+    display: grid;
+    place-items: center;
+    right: calc(var(--ds-space-4) + env(safe-area-inset-right, 0px));
+    bottom: calc(92px + var(--safe-bottom));
+    width: 52px;
+    min-width: 52px;
+    height: 52px;
+    padding: 0;
+    overflow: hidden;
+    font-size: 0;
+  }
+
+  .floatingAddButton::before {
+    color: currentColor;
+    content: "+";
+    font-size: 26px;
+    font-weight: var(--ds-font-normal);
+    line-height: 1;
+  }
+}
+
+@media (max-width: 760px) {
+  .appWorkspace {
+    padding: var(--ds-space-3) var(--ds-space-3) calc(104px + var(--safe-bottom));
+  }
+
+  .shellHeader {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+    gap: var(--ds-space-4);
+    padding: var(--ds-space-4);
+    border-radius: var(--ds-radius-xl);
+  }
+
+  .shellHeaderControls {
+    justify-content: flex-start;
+  }
+
+  .shellYearControl {
+    flex: 1 1 auto;
+    justify-content: space-between;
+  }
+
+  .appScreenIntro {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--ds-space-3);
+  }
+
+  .appScreenContext {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 520px) {
+  .shellBrandMark {
+    width: 36px;
+    height: 36px;
+    font-size: 21px;
+  }
+
+  .shellHeader .title {
+    font-size: 25px;
+  }
+
+  .shellHeader .sub {
+    font-size: var(--font-body-sm);
+  }
+
+  .shellHeaderControls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .shellYearControl {
+    width: 100%;
+  }
+
+  .shellYearControl .chipRow {
+    flex: 1;
+  }
+
+  .shellYearControl .chip {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .shellSettings summary {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .shellSettingsStatus {
+    margin-left: auto;
+  }
+
+  .shellSettingsPanel {
+    position: static;
+    width: 100%;
+    margin-top: var(--ds-space-2);
+    padding: var(--ds-space-3);
+    border-radius: var(--ds-radius-lg);
+    box-shadow: var(--shadow-raised);
+  }
+
+  .shellSettingsSection {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .shellSettingsSection .chipRow,
+  .shellSettingsSection .releaseUpdateControl {
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  .shellSettingsSection .chip {
+    flex: 1;
+  }
+
+  .themeControl .chip {
+    min-width: 0;
+  }
+
+  .appScreenIntro {
+    padding-inline: var(--ds-space-1);
+  }
+
+  .appScreenIntro h2 {
+    font-size: 30px;
+  }
+
+  .demoText {
+    max-width: 220px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .appBottomNav {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}

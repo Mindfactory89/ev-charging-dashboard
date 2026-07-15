@@ -12,6 +12,9 @@ import { downloadFileFromUrl } from "./platform/download.js";
 import { showAlert } from "./platform/runtime.js";
 import DashboardHeader from "./app/DashboardHeader.jsx";
 import DashboardHeroStage from "./app/DashboardHeroStage.jsx";
+import AppNavigation from "./app/AppNavigation.jsx";
+import GuidedEmptyState from "./app/GuidedEmptyState.jsx";
+import OnboardingFlow from "./app/OnboardingFlow.jsx";
 import ErrorBoundary from "./app/ErrorBoundary.jsx";
 import LazySectionFallback from "./app/LazySectionFallback.jsx";
 import RuntimeFeedbackHost from "./app/RuntimeFeedbackHost.jsx";
@@ -33,6 +36,7 @@ import {
   writePersistedUiState,
 } from "./app/persistedUiState.js";
 import { useDashboardData } from "./app/useDashboardData.js";
+import { completeOnboarding, shouldShowOnboarding } from "./app/onboardingState.js";
 
 const AnalysisScreen = lazy(() => import("./app/screens/AnalysisScreen.jsx"));
 const HistoryScreen = lazy(() => import("./app/screens/HistoryScreen.jsx"));
@@ -52,9 +56,11 @@ export default function App() {
   const [historyFilters, setHistoryFilters] = useState(initialUiState.historyFilters);
   const [historyDrilldownSource, setHistoryDrilldownSource] = useState(null);
   const [addOpen, setAddOpen] = useState(false);
+  const [onboardingOpen, setOnboardingOpen] = useState(() => shouldShowOnboarding());
 
   const addSectionRef = useRef(null);
   const addPanelRef = useRef(null);
+  const mainContentRef = useRef(null);
   const nextHistoryModeRef = useRef("replace");
   const applyingPopStateRef = useRef(false);
 
@@ -131,9 +137,18 @@ export default function App() {
   }, [markHistoryPush]);
 
   const selectScreen = useCallback((nextScreen) => {
-    markHistoryPush();
-    setActiveScreen(nextScreen);
-  }, [markHistoryPush]);
+    if (nextScreen !== activeScreen) {
+      markHistoryPush();
+      setActiveScreen(nextScreen);
+      setAddOpen(false);
+    }
+
+    requestAnimationFrame(() => {
+      const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+      window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
+      requestAnimationFrame(() => mainContentRef.current?.focus({ preventScroll: true }));
+    });
+  }, [activeScreen, markHistoryPush]);
 
   const selectOverviewMode = useCallback((nextMode) => {
     markHistoryPush();
@@ -163,6 +178,23 @@ export default function App() {
   }, [markHistoryPush]);
 
   const closeAdd = useCallback(() => setAddOpen(false), []);
+
+  const dismissOnboarding = useCallback(() => {
+    completeOnboarding();
+    setOnboardingOpen(false);
+  }, []);
+
+  const completeOnboardingAtScreen = useCallback((nextScreen) => {
+    completeOnboarding();
+    setOnboardingOpen(false);
+    selectScreen(nextScreen || "overview");
+  }, [selectScreen]);
+
+  const completeOnboardingWithAdd = useCallback(() => {
+    completeOnboarding();
+    setOnboardingOpen(false);
+    openAdd();
+  }, [openAdd]);
 
   const openHistoryDrilldown = useCallback((filters = {}) => {
     markHistoryPush();
@@ -276,6 +308,10 @@ export default function App() {
     const merged = new Set([...(YEARS || []), year, ...values]);
     return Array.from(merged).sort((left, right) => left - right);
   }, [availableYears, year]);
+  const recoveryYear = useMemo(
+    () => (Array.isArray(availableYears) ? availableYears : []).map(Number).find((itemYear) => itemYear !== year) ?? null,
+    [availableYears, year]
+  );
 
   const insights = useMemo(() => {
     const items = [];
@@ -413,6 +449,13 @@ export default function App() {
     [currentPrev.current, sessions, year]
   );
 
+  const latestCostTrend = currentPrev.current && currentPrev.prev
+    ? currentPrev.current?.trend?.cost?.pct ?? calcTrend(currentPrev.current?.cost, currentPrev.prev?.cost)?.pct ?? null
+    : null;
+  const latestEnergyTrend = currentPrev.current && currentPrev.prev
+    ? currentPrev.current?.trend?.energy?.pct ?? calcTrend(currentPrev.current?.energy_kwh, currentPrev.prev?.energy_kwh)?.pct ?? null
+    : null;
+
   const heroMetrics = useMemo(
     () => [
       {
@@ -426,6 +469,10 @@ export default function App() {
             : noYearData
               ? t("common.noValues")
               : `${num(displayStats?.count, 0)} ${t("common.sessions")}`,
+        context: latestCostTrend != null
+          ? t("app.heroMetrics.vsPrevious", { value: trendPctLabel(latestCostTrend) })
+          : t("app.heroMetrics.yearScope", { year }),
+        contextTone: latestCostTrend == null ? "neutral" : latestCostTrend > 0 ? "negative" : "positive",
       },
       {
         key: "energy",
@@ -438,6 +485,10 @@ export default function App() {
             : noYearData
               ? t("common.noValues")
               : t("app.heroMetrics.yearTotal"),
+        context: latestEnergyTrend != null
+          ? t("app.heroMetrics.vsPrevious", { value: trendPctLabel(latestEnergyTrend) })
+          : t("app.heroMetrics.yearScope", { year }),
+        contextTone: "neutral",
       },
       {
         key: "efficiency",
@@ -449,9 +500,13 @@ export default function App() {
             ? t("common.noValues")
             : scoreLabel(displayEfficiency?.overall_score),
         tone: scoreTone(displayEfficiency?.overall_score),
+        context: noYearData
+          ? t("common.noValues")
+          : t("app.heroMetrics.yearScope", { year }),
+        contextTone: "neutral",
       },
     ],
-    [currentPrev.current, displayEfficiency, displayStats, kpiTips, noYearData, t]
+    [currentPrev.current, displayEfficiency, displayStats, kpiTips, latestCostTrend, latestEnergyTrend, noYearData, t, year]
   );
 
   const spotlightCard = useMemo(() => {
@@ -504,9 +559,24 @@ export default function App() {
         ? trendPctLabel(calcTrend(currentPrev.current?.cost, currentPrev.prev?.cost)?.pct) ?? "–"
         : "–";
   const screenOptions = [
-    { id: "overview", label: t("app.screens.overview"), meta: t("app.screenMeta.overview") },
-    { id: "analysis", label: t("app.screens.analysis"), meta: t("app.screenMeta.analysis") },
-    { id: "verlauf", label: t("app.screens.history"), meta: t("app.screenMeta.history") },
+    {
+      id: "overview",
+      label: t("app.screens.overview"),
+      meta: t("app.screenMeta.overview"),
+      shortMeta: t("app.shell.shortMeta.overview"),
+    },
+    {
+      id: "analysis",
+      label: t("app.screens.analysis"),
+      meta: t("app.screenMeta.analysis"),
+      shortMeta: t("app.shell.shortMeta.analysis"),
+    },
+    {
+      id: "verlauf",
+      label: t("app.screens.history"),
+      meta: t("app.screenMeta.history"),
+      shortMeta: t("app.shell.shortMeta.history"),
+    },
   ];
   const activeScreenOption = screenOptions.find((option) => option.id === activeScreen) ?? screenOptions[0];
 
@@ -517,77 +587,94 @@ export default function App() {
           {t("app.skipMain")}
         </a>
 
-        <DashboardHeader
-          availableYears={effectiveAvailableYears}
-          dashboardTitle={dashboardTitle}
-          demo={demo}
-          latestSession={latestSession}
-          loading={loading}
-          refreshing={refreshing}
-          onSelectYear={selectYear}
-          sessionsCount={sessions.length}
-          year={year}
-        />
-
-        <button
-          type="button"
-          onClick={openAdd}
-          title={t("app.addSessionTitle")}
-          aria-label={t("app.addSessionAria")}
-          className="floatingAddButton"
-          aria-expanded={addOpen}
-          aria-controls="add-session-composer"
-        >
-          {t("app.addSessionButton")}
-        </button>
-
-        <main id="main-content" className="layout premiumLayout" tabIndex={-1} aria-busy={loading || refreshing ? "true" : "false"}>
-          {err ? <div className="errorBox">{err}</div> : null}
-
-          <section className="premiumScreenBar" aria-label={t("app.screenNavLabel")}>
-            <div className="toggle premiumScreenToggle" role="navigation" aria-label={t("app.screenNavLabel")}>
-              {screenOptions.map((option) => {
-                const isActive = activeScreen === option.id;
-                return (
-                  <button
-                    key={option.id}
-                    type="button"
-                    className={isActive ? "toggleBtn active" : "toggleBtn"}
-                    onClick={() => selectScreen(option.id)}
-                    aria-current={isActive ? "page" : undefined}
-                    aria-pressed={isActive}
-                  >
-                    {option.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="premiumScreenMeta" aria-live="polite">
-              <span className="screenMetaCurrent">{activeScreenOption.label}</span>
-              <span>{activeScreenOption.meta}</span>
-            </div>
-          </section>
-
-          {noYearData ? (
-            <section className="row">
-              <div className="card glassStrong premiumEmptyNotice">
-                <div className="emptyStateCard">{t("app.emptyYear", { year })}</div>
-              </div>
-            </section>
-          ) : null}
-
-          <DashboardHeroStage
-            displayStats={displayStats}
-            heroMetrics={heroMetrics}
-            latestDateLabel={latestSession?.date ? datumDE(latestSession.date) : null}
-            spotlightCard={spotlightCard}
-            vehicleProfile={vehicleProfile}
-            year={year}
-            yearWeekdayFact={yearWeekdayFact}
+        <div className="appShell">
+          <AppNavigation
+            activeScreen={activeScreen}
+            addLabel={t("app.shell.addSession")}
+            addOpen={addOpen}
+            label={t("app.screenNavLabel")}
+            onAdd={openAdd}
+            onSelectScreen={selectScreen}
+            options={screenOptions}
+            showAddAction={!noYearData}
           />
 
-          <Suspense fallback={<LazySectionFallback label={t("common.loadingSection")} />}>
+          <div className="appWorkspace">
+            <DashboardHeader
+              availableYears={effectiveAvailableYears}
+              dashboardTitle={dashboardTitle}
+              demo={demo}
+              latestSession={latestSession}
+              loading={loading}
+              refreshing={refreshing}
+              onSelectYear={selectYear}
+              onOpenOnboarding={() => setOnboardingOpen(true)}
+              sessionsCount={sessions.length}
+              year={year}
+            />
+
+            {!noYearData ? (
+              <button
+                type="button"
+                onClick={openAdd}
+                title={t("app.addSessionTitle")}
+                aria-label={t("app.addSessionAria")}
+                className="floatingAddButton"
+                aria-expanded={addOpen}
+                aria-controls="add-session-composer"
+              >
+                {t("app.addSessionButton")}
+              </button>
+            ) : null}
+
+            <main
+              id="main-content"
+              ref={mainContentRef}
+              className="layout premiumLayout"
+              tabIndex={-1}
+              aria-labelledby="active-screen-title"
+              aria-busy={loading || refreshing ? "true" : "false"}
+            >
+              {err ? <div className="errorBox">{err}</div> : null}
+
+              <section className="appScreenIntro" aria-live="polite">
+                <div>
+                  <div className="screenMetaCurrent">{t("app.shell.currentSection")}</div>
+                  <h2 id="active-screen-title">{activeScreenOption.label}</h2>
+                  <p>{activeScreenOption.meta}</p>
+                </div>
+                <div className="appScreenContext" aria-label={t("app.shell.contextLabel")}>
+                  <span>{year}</span>
+                  <span>{t("header.sessionsCount", { count: num(sessions.length, 0) })}</span>
+                </div>
+              </section>
+
+              {noYearData ? (
+                <section className="row">
+                  <div className="card glassStrong premiumEmptyNotice">
+                    <GuidedEmptyState
+                      onAdd={openAdd}
+                      onSelectYear={selectYear}
+                      recoveryYear={recoveryYear}
+                      year={year}
+                    />
+                  </div>
+                </section>
+              ) : null}
+
+              {activeScreen === "overview" ? (
+                <DashboardHeroStage
+                  displayStats={displayStats}
+                  heroMetrics={heroMetrics}
+                  latestDateLabel={latestSession?.date ? datumDE(latestSession.date) : null}
+                  spotlightCard={spotlightCard}
+                  vehicleProfile={vehicleProfile}
+                  year={year}
+                  yearWeekdayFact={yearWeekdayFact}
+                />
+              ) : null}
+
+              <Suspense fallback={<LazySectionFallback label={t("common.loadingSection")} />}>
             {activeScreen === "overview" ? (
               <OverviewScreen
                 activeMonths={activeMonths}
@@ -658,14 +745,26 @@ export default function App() {
                 year={year}
               />
             ) : null}
-          </Suspense>
-        </main>
+              </Suspense>
+            </main>
 
-        <footer className="footer">
-          <span>{t("app.footer")}</span>
-        </footer>
+            <footer className="footer">
+              <span>{t("app.footer")}</span>
+            </footer>
+          </div>
+        </div>
 
         <RuntimeFeedbackHost />
+        {onboardingOpen ? (
+          <OnboardingFlow
+            activeScreen={activeScreen}
+            onAdd={completeOnboardingWithAdd}
+            onComplete={completeOnboardingAtScreen}
+            onDismiss={dismissOnboarding}
+            open
+            screenOptions={screenOptions}
+          />
+        ) : null}
       </div>
     </ErrorBoundary>
   );

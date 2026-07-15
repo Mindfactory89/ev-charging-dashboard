@@ -125,7 +125,7 @@ export default function Charts({ sessions = [] }) {
 
       <div className="chartWrap">
         <p id={chartSummaryId} className="srOnly">{chartSummary}</p>
-        <ResponsiveContainer width="100%" height={260}>
+        <ResponsiveContainer width="100%" height={260} initialDimension={{ width: 800, height: 260 }}>
           <ComposedChart
             data={data}
             accessibilityLayer
@@ -134,15 +134,15 @@ export default function Charts({ sessions = [] }) {
           >
             <defs>
               <linearGradient id="energyFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="rgba(205,132,64,0.34)" />
-                <stop offset="55%" stopColor="rgba(205,132,64,0.10)" />
-                <stop offset="100%" stopColor="rgba(205,132,64,0.00)" />
+                <stop offset="0%" stopColor="var(--chart-series-copper-fill-strong)" />
+                <stop offset="55%" stopColor="var(--chart-series-copper-fill)" />
+                <stop offset="100%" stopColor="transparent" />
               </linearGradient>
             </defs>
-            <CartesianGrid stroke="rgba(255,255,255,0.055)" vertical={false} strokeDasharray="2 8" />
+            <CartesianGrid stroke="var(--chart-grid)" vertical={false} strokeDasharray="2 8" />
             <XAxis
               dataKey="datum"
-              tick={{ fill: "rgba(255,255,255,0.48)", fontSize: 11 }}
+              tick={{ fill: "var(--chart-axis)", fontSize: 11 }}
               axisLine={false}
               tickLine={false}
               tickMargin={12}
@@ -150,7 +150,7 @@ export default function Charts({ sessions = [] }) {
             <YAxis
               yAxisId="left"
               width={56}
-              tick={{ fill: "rgba(255,255,255,0.46)", fontSize: 11 }}
+              tick={{ fill: "var(--chart-axis)", fontSize: 11 }}
               axisLine={false}
               tickLine={false}
               tickMargin={10}
@@ -159,14 +159,14 @@ export default function Charts({ sessions = [] }) {
               yAxisId="right"
               orientation="right"
               width={56}
-              tick={{ fill: "rgba(255,255,255,0.46)", fontSize: 11 }}
+              tick={{ fill: "var(--chart-axis)", fontSize: 11 }}
               axisLine={false}
               tickLine={false}
               tickMargin={10}
             />
 
             <RTooltip
-              cursor={{ stroke: "rgba(255,255,255,0.10)", strokeWidth: 1, strokeDasharray: "4 6" }}
+              cursor={{ stroke: "var(--chart-cursor)", strokeWidth: 1, strokeDasharray: "4 6" }}
               content={<PremiumTooltip t={t} />}
             />
 
@@ -182,7 +182,7 @@ export default function Charts({ sessions = [] }) {
               yAxisId="left"
               type="monotone"
               dataKey="energie"
-              stroke="rgba(205,132,64,0.90)"
+              stroke="var(--chart-series-copper)"
               strokeWidth={2.8}
               dot={(props) => (
                 <SeriesEndMarker
@@ -195,13 +195,13 @@ export default function Charts({ sessions = [] }) {
                   dy={-8}
                 />
               )}
-              activeDot={{ r: 5, fill: "rgba(205,132,64,1)", stroke: "rgba(255,255,255,0.82)", strokeWidth: 1.5 }}
+              activeDot={{ r: 5, fill: "var(--chart-series-copper-strong)", stroke: "var(--chart-dot-stroke)", strokeWidth: 1.5 }}
             />
             <Line
               yAxisId="right"
               type="monotone"
               dataKey="kosten"
-              stroke="rgba(196,212,255,0.82)"
+              stroke="var(--chart-series-blue)"
               strokeWidth={2.1}
               dot={(props) => (
                 <SeriesEndMarker
@@ -215,7 +215,7 @@ export default function Charts({ sessions = [] }) {
                 />
               )}
               opacity={0.92}
-              activeDot={{ r: 4.5, fill: "rgba(196,212,255,0.94)", stroke: "rgba(14,14,20,0.95)", strokeWidth: 1.2 }}
+              activeDot={{ r: 4.5, fill: "var(--chart-series-blue)", stroke: "var(--chart-dot-stroke-inverse)", strokeWidth: 1.2 }}
             />
           </ComposedChart>
         </ResponsiveContainer>

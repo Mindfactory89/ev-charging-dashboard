@@ -1,0 +1,185 @@
+/*
+ * Design System · Layer 2: Semantics
+ * Dark is the product default. Theme overrides only remap meaning.
+ */
+:root,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-background: var(--ds-neutral-950);
+  --color-background-end: #0b0f16;
+  --color-surface: var(--ds-neutral-900);
+  --color-surface-raised: var(--ds-neutral-850);
+  --color-surface-sunken: var(--ds-neutral-1000);
+  --color-surface-translucent: rgb(16 22 31 / 0.92);
+  --color-overlay: rgb(1 3 6 / 0.66);
+
+  --color-text-primary: #f4f7fa;
+  --color-text-secondary: var(--ds-neutral-300);
+  --color-text-tertiary: var(--ds-neutral-400);
+  --color-text-disabled: #6f7b8a;
+  --color-text-inverse: #181008;
+
+  --color-border: #2b3542;
+  --color-border-subtle: #202936;
+  --color-border-strong: #465364;
+
+  --color-primary: var(--ds-copper-400);
+  --color-primary-hover: var(--ds-copper-300);
+  --color-primary-active: var(--ds-copper-500);
+  --color-primary-foreground: #1b1108;
+  --color-primary-soft: rgb(217 154 90 / 0.14);
+  --color-primary-border: rgb(217 154 90 / 0.36);
+
+  --color-accent: var(--ds-blue-400);
+  --color-accent-soft: rgb(120 170 255 / 0.13);
+  --color-focus: var(--ds-blue-300);
+  --color-selection: rgb(120 170 255 / 0.28);
+
+  --color-success: var(--ds-mint-400);
+  --color-success-soft: rgb(94 214 170 / 0.13);
+  --color-warning: var(--ds-amber-300);
+  --color-warning-soft: rgb(245 207 137 / 0.14);
+  --color-danger: var(--ds-red-400);
+  --color-danger-soft: rgb(255 129 135 / 0.13);
+  --color-info: var(--ds-blue-300);
+  --color-info-soft: rgb(159 194 255 / 0.13);
+
+  --shadow-surface: var(--ds-shadow-sm-dark);
+  --shadow-raised: var(--ds-shadow-md-dark);
+  --shadow-overlay: var(--ds-shadow-lg-dark);
+
+  --chart-grid: #27313d;
+  --chart-axis: #aab5c2;
+  --chart-cursor: #526174;
+  --chart-dot-stroke: #eef2f6;
+  --chart-dot-stroke-inverse: #111720;
+  --chart-series-copper: var(--ds-copper-400);
+  --chart-series-copper-strong: var(--ds-copper-300);
+  --chart-series-copper-fill: rgb(217 154 90 / 0.10);
+  --chart-series-copper-fill-strong: rgb(217 154 90 / 0.30);
+  --chart-series-blue: var(--ds-blue-300);
+  --chart-series-blue-fill: rgb(159 194 255 / 0.24);
+  --chart-series-mint: var(--ds-mint-300);
+  --chart-series-mint-fill: rgb(139 228 195 / 0.25);
+  --chart-series-violet: var(--ds-violet-400);
+  --chart-series-price: var(--ds-blue-400);
+  --chart-series-price-fill: rgb(120 170 255 / 0.25);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --color-background: var(--ds-neutral-50);
+  --color-background-end: #e9eef4;
+  --color-surface: var(--ds-neutral-0);
+  --color-surface-raised: var(--ds-neutral-25);
+  --color-surface-sunken: var(--ds-neutral-100);
+  --color-surface-translucent: rgb(255 255 255 / 0.94);
+  --color-overlay: rgb(18 27 39 / 0.52);
+
+  --color-text-primary: #141b25;
+  --color-text-secondary: var(--ds-neutral-600);
+  --color-text-tertiary: var(--ds-neutral-500);
+  --color-text-disabled: #8792a0;
+  --color-text-inverse: #ffffff;
+
+  --color-border: var(--ds-neutral-200);
+  --color-border-subtle: #e4e8ee;
+  --color-border-strong: #aab4c1;
+
+  --color-primary: var(--ds-copper-700);
+  --color-primary-hover: var(--ds-copper-800);
+  --color-primary-active: #472412;
+  --color-primary-foreground: #ffffff;
+  --color-primary-soft: rgb(166 95 43 / 0.10);
+  --color-primary-border: rgb(126 69 34 / 0.34);
+
+  --color-accent: var(--ds-blue-600);
+  --color-accent-soft: rgb(37 99 217 / 0.09);
+  --color-focus: var(--ds-blue-700);
+  --color-selection: rgb(37 99 217 / 0.18);
+
+  --color-success: var(--ds-mint-600);
+  --color-success-soft: rgb(22 134 94 / 0.10);
+  --color-warning: var(--ds-amber-600);
+  --color-warning-soft: rgb(168 102 17 / 0.10);
+  --color-danger: var(--ds-red-600);
+  --color-danger-soft: rgb(185 48 58 / 0.09);
+  --color-info: var(--ds-blue-700);
+  --color-info-soft: rgb(25 75 169 / 0.09);
+
+  --shadow-surface: var(--ds-shadow-sm-light);
+  --shadow-raised: var(--ds-shadow-md-light);
+  --shadow-overlay: var(--ds-shadow-lg-light);
+
+  --chart-grid: #d5dce5;
+  --chart-axis: #566476;
+  --chart-cursor: #8d9aaa;
+  --chart-dot-stroke: #ffffff;
+  --chart-dot-stroke-inverse: #18202a;
+  --chart-series-copper: var(--ds-copper-700);
+  --chart-series-copper-strong: var(--ds-copper-600);
+  --chart-series-copper-fill: rgb(166 95 43 / 0.08);
+  --chart-series-copper-fill-strong: rgb(166 95 43 / 0.20);
+  --chart-series-blue: var(--ds-blue-600);
+  --chart-series-blue-fill: rgb(37 99 217 / 0.16);
+  --chart-series-mint: var(--ds-mint-600);
+  --chart-series-mint-fill: rgb(22 134 94 / 0.16);
+  --chart-series-violet: var(--ds-violet-600);
+  --chart-series-price: var(--ds-blue-700);
+  --chart-series-price-fill: rgb(25 75 169 / 0.16);
+}
+
+:root {
+  /* Semantic layout */
+  --spacing-control-x: var(--ds-space-4);
+  --spacing-control-y: var(--ds-space-2-5);
+  --spacing-card: var(--ds-space-5);
+  --spacing-card-compact: var(--ds-space-4);
+  --spacing-section: var(--ds-space-8);
+  --spacing-page-x: clamp(var(--ds-space-3-5), 3vw, var(--ds-space-6));
+  --spacing-page-y: var(--ds-space-6);
+
+  /* Semantic typography */
+  --font-display: clamp(2.25rem, 4.8vw, 4rem);
+  --font-heading-1: clamp(1.875rem, 3vw, 2.5rem);
+  --font-heading-2: clamp(1.5rem, 2vw, 2rem);
+  --font-heading-3: var(--ds-font-size-xl);
+  --font-body: var(--ds-font-size-base);
+  --font-body-sm: var(--ds-font-size-sm);
+  --font-label: var(--ds-font-size-xs);
+
+  /* Semantic state */
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 3px;
+  --opacity-disabled: 0.48;
+  --control-min-height: 44px;
+  --touch-target-min: 44px;
+  --transition-interactive: color var(--ds-duration-fast) var(--ds-ease-standard), background-color var(--ds-duration-fast) var(--ds-ease-standard), border-color var(--ds-duration-fast) var(--ds-ease-standard), box-shadow var(--ds-duration-normal) var(--ds-ease-standard), transform var(--ds-duration-normal) var(--ds-ease-standard);
+
+  /* Legacy aliases. Existing screens inherit the new system immediately. */
+  --bg0: var(--color-background);
+  --bg1: var(--color-background-end);
+  --glass: var(--color-surface-raised);
+  --border: var(--color-border);
+  --text: var(--color-text-primary);
+  --muted: var(--color-text-secondary);
+  --cupra: var(--color-primary);
+  --cupraSoft: var(--color-primary-soft);
+  --ux-bg: var(--color-background);
+  --ux-surface: var(--color-surface);
+  --ux-surface-raised: var(--color-surface-raised);
+  --ux-line: var(--color-border);
+  --ux-line-soft: var(--color-border-subtle);
+  --ux-text: var(--color-text-primary);
+  --ux-muted: var(--color-text-secondary);
+  --ux-dim: var(--color-text-tertiary);
+  --ux-copper: var(--color-primary);
+  --ux-blue: var(--chart-series-blue);
+  --ux-mint: var(--color-success);
+  --ux-radius-panel: var(--ds-radius-lg);
+  --ux-radius-tile: var(--ds-radius-md);
+  --ux-shadow-panel: var(--shadow-raised);
+  --ux-shadow-soft: var(--shadow-surface);
+}

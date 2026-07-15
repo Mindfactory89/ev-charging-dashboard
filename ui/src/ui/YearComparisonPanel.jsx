@@ -552,59 +552,59 @@ export default function YearComparisonPanel({ availableYears = [], initialLeftYe
                 </div>
                 <div className="comparisonLegendMeta">{selectedMetricTitle}</div>
               </div>
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={300} initialDimension={{ width: 800, height: 300 }}>
                 {chartScope === "month" ? (
                   <BarChart data={selectedMonthChartData} margin={{ top: 22, right: 20, left: 12, bottom: 4 }} barCategoryGap={42}>
-                    <CartesianGrid stroke="rgba(255,255,255,0.055)" vertical={false} strokeDasharray="2 8" />
+                    <CartesianGrid stroke="var(--chart-grid)" vertical={false} strokeDasharray="2 8" />
                     <XAxis
                       dataKey="label"
                       height={38}
-                      tick={{ fill: "rgba(255,255,255,0.48)", fontSize: 10.5 }}
+                      tick={{ fill: "var(--chart-axis)", fontSize: 10.5 }}
                       axisLine={false}
                       tickLine={false}
                       tickMargin={14}
                     />
                     <YAxis
                       width={58}
-                      tick={{ fill: "rgba(255,255,255,0.46)", fontSize: 11 }}
+                      tick={{ fill: "var(--chart-axis)", fontSize: 11 }}
                       axisLine={false}
                       tickLine={false}
                       tickMargin={10}
                     />
                     <RTooltip
-                      cursor={{ fill: "rgba(255,255,255,0.04)" }}
+                      cursor={{ fill: "var(--color-accent-soft)" }}
                       content={<FocusTooltip mode={mode} leftLabel={leftSelectionLabel} rightLabel={rightSelectionLabel} t={t} />}
                     />
-                    <Bar yAxisId={undefined} dataKey="leftValue" name={leftSelectionLabel} fill="rgba(205,132,64,0.94)" radius={[12, 12, 4, 4]} maxBarSize={84} />
-                    <Bar yAxisId={undefined} dataKey="rightValue" name={rightSelectionLabel} fill="rgba(126,192,255,0.94)" radius={[12, 12, 4, 4]} maxBarSize={84} />
+                    <Bar yAxisId={undefined} dataKey="leftValue" name={leftSelectionLabel} fill="var(--chart-series-copper)" radius={[12, 12, 4, 4]} maxBarSize={84} />
+                    <Bar yAxisId={undefined} dataKey="rightValue" name={rightSelectionLabel} fill="var(--chart-series-blue)" radius={[12, 12, 4, 4]} maxBarSize={84} />
                   </BarChart>
                 ) : (
                   <ComposedChart data={yearChartData} margin={{ top: 22, right: 20, left: 12, bottom: 4 }}>
                     <defs>
                       <linearGradient id="comparisonLeftFill" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="rgba(205,132,64,0.22)" />
-                        <stop offset="100%" stopColor="rgba(205,132,64,0.00)" />
+                        <stop offset="0%" stopColor="var(--chart-series-copper-fill-strong)" />
+                        <stop offset="100%" stopColor="transparent" />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid stroke="rgba(255,255,255,0.055)" vertical={false} strokeDasharray="2 8" />
+                    <CartesianGrid stroke="var(--chart-grid)" vertical={false} strokeDasharray="2 8" />
                     <XAxis
                       dataKey="label"
                       height={38}
-                      tick={{ fill: "rgba(255,255,255,0.48)", fontSize: 10.5 }}
+                      tick={{ fill: "var(--chart-axis)", fontSize: 10.5 }}
                       axisLine={false}
                       tickLine={false}
                       tickMargin={14}
                     />
                     <YAxis
                       width={58}
-                      tick={{ fill: "rgba(255,255,255,0.46)", fontSize: 11 }}
+                      tick={{ fill: "var(--chart-axis)", fontSize: 11 }}
                       axisLine={false}
                       tickLine={false}
                       tickMargin={10}
                     />
 
                     <RTooltip
-                      cursor={{ stroke: "rgba(255,255,255,0.10)", strokeWidth: 1, strokeDasharray: "4 6" }}
+                      cursor={{ stroke: "var(--chart-cursor)", strokeWidth: 1, strokeDasharray: "4 6" }}
                       content={<CompareTooltip leftYear={leftYear} rightYear={rightYear} mode={mode} t={t} />}
                     />
 
@@ -612,19 +612,19 @@ export default function YearComparisonPanel({ availableYears = [], initialLeftYe
                     <Line
                       type="monotone"
                       dataKey="leftValue"
-                      stroke="rgba(205,132,64,0.94)"
+                      stroke="var(--chart-series-copper)"
                       strokeWidth={2.45}
                       dot={false}
-                      activeDot={{ r: 4.4, fill: "rgba(205,132,64,1)", stroke: "rgba(255,255,255,0.82)", strokeWidth: 1.2 }}
+                      activeDot={{ r: 4.4, fill: "var(--chart-series-copper-strong)", stroke: "var(--chart-dot-stroke)", strokeWidth: 1.2 }}
                     />
                     <Line
                       type="monotone"
                       dataKey="rightValue"
-                      stroke="rgba(126,192,255,0.94)"
+                      stroke="var(--chart-series-blue)"
                       strokeWidth={2.1}
                       dot={false}
                       strokeDasharray="5 6"
-                      activeDot={{ r: 4.4, fill: "rgba(126,192,255,0.96)", stroke: "rgba(14,14,20,0.95)", strokeWidth: 1.2 }}
+                      activeDot={{ r: 4.4, fill: "var(--chart-series-blue)", stroke: "var(--chart-dot-stroke-inverse)", strokeWidth: 1.2 }}
                     />
                   </ComposedChart>
                 )}

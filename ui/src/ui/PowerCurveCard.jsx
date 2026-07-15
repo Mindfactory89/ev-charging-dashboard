@@ -100,25 +100,25 @@ export default function PowerCurveCard({ analysis, year = 2026 }) {
         <div className="chartPanel premiumCurvePanel">
           {data.length ? (
             <>
-              <ResponsiveContainer width="100%" height={280}>
+              <ResponsiveContainer width="100%" height={280} initialDimension={{ width: 800, height: 280 }}>
                 <ComposedChart data={data} margin={{ top: 16, right: 18, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="powerCurveFill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="rgba(205,132,64,0.26)" />
-                      <stop offset="100%" stopColor="rgba(205,132,64,0.00)" />
+                      <stop offset="0%" stopColor="var(--chart-series-copper-fill-strong)" />
+                      <stop offset="100%" stopColor="transparent" />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid stroke="rgba(255,255,255,0.055)" vertical={false} strokeDasharray="2 8" />
+                  <CartesianGrid stroke="var(--chart-grid)" vertical={false} strokeDasharray="2 8" />
                   <XAxis
                     dataKey="label"
-                    tick={{ fill: "rgba(255,255,255,0.48)", fontSize: 11 }}
+                    tick={{ fill: "var(--chart-axis)", fontSize: 11 }}
                     axisLine={false}
                     tickLine={false}
                     tickMargin={12}
                   />
                   <YAxis
                     yAxisId="left"
-                    tick={{ fill: "rgba(255,255,255,0.46)", fontSize: 11 }}
+                    tick={{ fill: "var(--chart-axis)", fontSize: 11 }}
                     axisLine={false}
                     tickLine={false}
                     tickMargin={10}
@@ -126,27 +126,27 @@ export default function PowerCurveCard({ analysis, year = 2026 }) {
                   <YAxis
                     yAxisId="right"
                     orientation="right"
-                    tick={{ fill: "rgba(255,255,255,0.34)", fontSize: 11 }}
+                    tick={{ fill: "var(--chart-axis)", fontSize: 11 }}
                     axisLine={false}
                     tickLine={false}
                     tickMargin={10}
                   />
 
                   <RTooltip
-                    cursor={{ stroke: "rgba(255,255,255,0.10)", strokeWidth: 1, strokeDasharray: "4 6" }}
+                    cursor={{ stroke: "var(--chart-cursor)", strokeWidth: 1, strokeDasharray: "4 6" }}
                     content={<ChartTooltip t={t} />}
                   />
 
-                  <Bar yAxisId="right" dataKey="count" fill="rgba(132,218,174,0.28)" radius={[10, 10, 0, 0]} />
+                  <Bar yAxisId="right" dataKey="count" fill="var(--chart-series-mint-fill)" radius={[10, 10, 0, 0]} />
                   <Area yAxisId="left" type="monotone" dataKey="power" stroke="none" fill="url(#powerCurveFill)" isAnimationActive={false} />
                   <Line
                     yAxisId="left"
                     type="monotone"
                     dataKey="power"
-                    stroke="rgba(205,132,64,0.92)"
+                    stroke="var(--chart-series-copper)"
                     strokeWidth={2.8}
                     dot={false}
-                    activeDot={{ r: 5, fill: "rgba(205,132,64,1)", stroke: "rgba(255,255,255,0.82)", strokeWidth: 1.5 }}
+                    activeDot={{ r: 5, fill: "var(--chart-series-copper-strong)", stroke: "var(--chart-dot-stroke)", strokeWidth: 1.5 }}
                   />
                 </ComposedChart>
               </ResponsiveContainer>

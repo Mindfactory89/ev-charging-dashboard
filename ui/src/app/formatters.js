@@ -48,11 +48,11 @@ export function trendPctLabel(value) {
 
 export function scoreTone(score) {
   const numeric = Number(score);
-  if (!Number.isFinite(numeric)) return "rgba(255,255,255,0.78)";
-  if (numeric >= 80) return "rgba(86, 214, 156, 0.95)";
-  if (numeric >= 65) return "rgba(216, 140, 78, 0.95)";
-  if (numeric >= 50) return "rgba(255, 210, 120, 0.95)";
-  return "rgba(255, 132, 132, 0.95)";
+  if (!Number.isFinite(numeric)) return "var(--color-text-secondary)";
+  if (numeric >= 80) return "var(--color-success)";
+  if (numeric >= 65) return "var(--color-primary)";
+  if (numeric >= 50) return "var(--color-warning)";
+  return "var(--color-danger)";
 }
 
 export function scoreLabel(score) {

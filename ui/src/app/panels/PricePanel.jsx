@@ -45,7 +45,7 @@ export default function PricePanel({ priceSummary, year }) {
 
               <div className="summaryCard mint">
                 <div className="summaryLabel">{t("pricePanel.cheapestMonth")}</div>
-                <div className="summaryValue" style={{ color: "rgba(120,210,160,0.92)" }}>
+                <div className="summaryValue" style={{ color: "var(--color-success)" }}>
                   {num(priceSummary.cheapest?.price_per_kwh, 3)} €/kWh
                 </div>
                 <div className="summarySub">{priceSummary.cheapest ? monthLabel(priceSummary.cheapest.month) : "–"}</div>
@@ -53,7 +53,7 @@ export default function PricePanel({ priceSummary, year }) {
 
               <div className="summaryCard danger">
                 <div className="summaryLabel">{t("pricePanel.priciestMonth")}</div>
-                <div className="summaryValue" style={{ color: "rgba(255,132,132,0.92)" }}>
+                <div className="summaryValue" style={{ color: "var(--color-danger)" }}>
                   {num(priceSummary.priciest?.price_per_kwh, 3)} €/kWh
                 </div>
                 <div className="summarySub">{priceSummary.priciest ? monthLabel(priceSummary.priciest.month) : "–"}</div>
