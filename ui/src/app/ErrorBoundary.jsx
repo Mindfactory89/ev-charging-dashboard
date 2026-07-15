@@ -1,5 +1,6 @@
 import React from "react";
 import { useI18n } from "../i18n/I18nProvider.jsx";
+import { reloadCurrentPage } from "../platform/runtime.js";
 
 class ErrorBoundaryContainer extends React.Component {
   constructor(props) {
@@ -12,7 +13,7 @@ class ErrorBoundaryContainer extends React.Component {
   }
 
   componentDidCatch(err, info) {
-    console.error("🚨 UI Crash:", err, info);
+    console.error("UI crash:", err, info);
     this.setState({ info });
   }
 
@@ -23,37 +24,26 @@ class ErrorBoundaryContainer extends React.Component {
       const comp = String(this.state.info?.componentStack || "");
 
       return (
-        <div className="app">
-          <div className="card glassStrong" style={{ padding: 16, border: "1px solid var(--color-danger)" }}>
+        <div className="app fatalErrorPage" role="alert">
+          <section className="card glassStrong fatalErrorCard">
+            <span className="fatalErrorIcon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M12 8v5m0 3.5v.1M10.3 4.8 3.5 17a2 2 0 0 0 1.8 3h13.4a2 2 0 0 0 1.8-3L13.7 4.8a2 2 0 0 0-3.4 0Z" /></svg>
+            </span>
             <div className="sectionKicker">{this.props.t("errorBoundary.kicker")}</div>
-            <div className="sectionTitle" style={{ marginTop: 6 }}>
-              {this.props.t("errorBoundary.title")}
-            </div>
-
-            <div style={{ marginTop: 10, fontSize: 13, color: "var(--color-text-primary)", lineHeight: 1.5 }}>
-              <b>{this.props.t("errorBoundary.messageLabel")}</b> {msg}
-              <div style={{ marginTop: 8, opacity: 0.8 }}>
-                {this.props.t("errorBoundary.help")}
-              </div>
-            </div>
-
-            <pre
-              style={{
-                marginTop: 12,
-                padding: 12,
-                borderRadius: 14,
-                overflow: "auto",
-                background: "var(--color-surface-sunken)",
-                border: "1px solid var(--color-border)",
-                fontSize: 12,
-                color: "var(--color-text-secondary)",
-                whiteSpace: "pre-wrap",
-              }}
-            >
-              {stack || this.props.t("errorBoundary.noStack")}
-              {comp ? `\n\n${this.props.t("errorBoundary.componentStack")}\n${comp}` : ""}
-            </pre>
-          </div>
+            <h1 className="sectionTitle">{this.props.t("errorBoundary.title")}</h1>
+            <p>{this.props.t("errorBoundary.help")}</p>
+            <button type="button" className="pill pillWarm" onClick={reloadCurrentPage}>
+              {this.props.t("errorBoundary.reload")}
+            </button>
+            <details>
+              <summary>{this.props.t("errorBoundary.details")}</summary>
+              <pre>
+                {this.props.t("errorBoundary.messageLabel")} {msg}
+                {`\n\n${stack || this.props.t("errorBoundary.noStack")}`}
+                {comp ? `\n\n${this.props.t("errorBoundary.componentStack")}\n${comp}` : ""}
+              </pre>
+            </details>
+          </section>
         </div>
       );
     }

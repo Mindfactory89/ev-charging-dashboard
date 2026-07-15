@@ -1,0 +1,467 @@
+.importWorkflowCard {
+  --space-1: var(--ds-space-1);
+  --space-2: var(--ds-space-2);
+  --space-3: var(--ds-space-3);
+  --space-4: var(--ds-space-4);
+  --space-5: var(--ds-space-5);
+  --space-6: var(--ds-space-6);
+  --space-7: var(--ds-space-8);
+  --radius-md: var(--ds-radius-md);
+  --radius-lg: var(--ds-radius-lg);
+  --radius-xl: var(--ds-radius-xl);
+  --radius-full: var(--ds-radius-full);
+  --font-size-xs: var(--ds-font-size-xs);
+  --font-size-sm: var(--ds-font-size-sm);
+  --font-size-lg: var(--ds-font-size-lg);
+  --font-size-2xl: var(--ds-font-size-2xl);
+  --font-weight-semibold: var(--ds-font-semibold);
+  --font-weight-bold: var(--ds-font-bold);
+  --letter-spacing-wide: .08em;
+  --line-height-snug: 1.35;
+  --duration-fast: var(--ds-duration-fast);
+  --duration-normal: var(--ds-duration-normal);
+  --ease-standard: var(--ds-ease-standard);
+  --color-text-muted: var(--color-text-secondary);
+  --color-text-accent: var(--color-accent);
+  --color-text-on-accent: var(--color-primary-foreground);
+  --color-text-success: var(--color-success);
+  --color-text-danger: var(--color-danger);
+  --color-surface-subtle: var(--color-surface-raised);
+  --color-surface-accent-subtle: var(--color-accent-soft);
+  --color-surface-danger-subtle: var(--color-danger-soft);
+  --color-surface-warning-subtle: var(--color-warning-soft);
+  --color-border-accent: var(--color-accent);
+  --color-border-danger: var(--color-danger);
+  --color-border-warning: var(--color-warning);
+  --color-action-primary: var(--color-primary);
+  display: grid;
+  gap: var(--space-6);
+}
+
+.importWorkflowHeader,
+.importStageHeading,
+.importPreviewHeader,
+.importReviewActions,
+.importProgress,
+.importResult {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.importWorkflowHeader p,
+.importStageHeading small,
+.importPreviewHeader span,
+.importReviewActions span,
+.importProgress span,
+.importResult p,
+.importResult small {
+  color: var(--color-text-muted);
+}
+
+.importSteps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.importSteps li {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-subtle);
+}
+
+.importSteps li > span,
+.importResultIcon,
+.importDropzoneIcon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  color: var(--color-text-muted);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-subtle);
+  font-weight: var(--font-weight-semibold);
+}
+
+.importSteps svg,
+.importResultIcon svg,
+.importDropzoneIcon svg {
+  width: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.importSteps li > div {
+  display: grid;
+  min-width: 0;
+}
+
+.importSteps small {
+  overflow: hidden;
+  color: var(--color-text-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.importSteps li.active {
+  border-color: var(--color-border-accent);
+  background: var(--color-surface-accent-subtle);
+}
+
+.importSteps li.active > span,
+.importSteps li.complete > span,
+.importResultIcon {
+  color: var(--color-text-on-accent);
+  border-color: var(--color-action-primary);
+  background: var(--color-action-primary);
+}
+
+.importFileStage,
+.importReviewStage {
+  display: grid;
+  gap: var(--space-4);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.importStageHeading > div:first-child {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.importStageHeading h4 {
+  margin: 0;
+  font-size: var(--font-size-lg);
+}
+
+.importStageHeading div > span {
+  color: var(--color-text-accent);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--letter-spacing-wide);
+  text-transform: uppercase;
+}
+
+.importDropzone {
+  display: grid;
+  place-items: center;
+  min-height: 210px;
+  padding: var(--space-7);
+  border: 1.5px dashed var(--color-border-strong);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface-subtle);
+  cursor: pointer;
+  text-align: center;
+  transition: border-color var(--duration-fast) var(--ease-standard), background var(--duration-fast) var(--ease-standard), transform var(--duration-fast) var(--ease-standard);
+}
+
+.importDropzone:hover,
+.importDropzone:focus-within {
+  border-color: var(--color-border-accent);
+  background: var(--color-surface-accent-subtle);
+  transform: translateY(-1px);
+}
+
+.importDropzone.hasError {
+  border-color: var(--color-border-danger);
+}
+
+.importDropzone input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.importDropzone strong {
+  margin-top: var(--space-3);
+  font-size: var(--font-size-lg);
+}
+
+.importDropzone small {
+  margin: var(--space-1) 0 var(--space-4);
+  color: var(--color-text-muted);
+}
+
+.importInlineError {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-4);
+  color: var(--color-text-danger);
+  border: 1px solid var(--color-border-danger);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-danger-subtle);
+}
+
+.importConfiguration {
+  display: grid;
+  grid-template-columns: minmax(240px, 1.4fr) repeat(2, minmax(120px, .55fr)) minmax(200px, 1fr);
+  gap: var(--space-3);
+}
+
+.importConfiguration label {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.importConfiguration label > span {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.importConfiguration small {
+  color: var(--color-text-muted);
+  line-height: var(--line-height-snug);
+}
+
+.importSummaryGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.importSummaryCard {
+  display: grid;
+  min-height: 116px;
+  padding: var(--space-4);
+  text-align: left;
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-subtle);
+  cursor: pointer;
+}
+
+.importSummaryCard:hover,
+.importSummaryCard.active {
+  border-color: var(--color-border-accent);
+  background: var(--color-surface-accent-subtle);
+}
+
+.importSummaryCard strong {
+  font-size: var(--font-size-2xl);
+}
+
+.importSummaryCard span,
+.importSummaryCard small {
+  color: var(--color-text-muted);
+}
+
+.importPreviewList {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.importPreviewHeader {
+  padding: var(--space-2) 0;
+}
+
+.importPreviewRow {
+  display: grid;
+  grid-template-columns: 56px minmax(180px, 1.4fr) minmax(160px, 1fr) minmax(160px, auto);
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-subtle);
+}
+
+.importPreviewRow.invalid {
+  border-color: var(--color-border-danger);
+}
+
+.importRowNumber,
+.importRowMain span,
+.importRowMetric span {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.importRowMain,
+.importRowMetric {
+  display: grid;
+  min-width: 0;
+}
+
+.importRowMain span,
+.importRowMetric span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.importRowStatus {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  justify-self: end;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.importRowStatus > span {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-text-muted);
+}
+
+.importRowStatus.ready { color: var(--color-text-success); }
+.importRowStatus.ready > span { background: var(--color-text-success); }
+.importRowStatus.invalid { color: var(--color-text-danger); }
+.importRowStatus.invalid > span { background: var(--color-text-danger); }
+
+.importEmptyFilter {
+  padding: var(--space-7);
+  color: var(--color-text-muted);
+  border: 1px dashed var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  text-align: center;
+}
+
+.importReviewActions {
+  align-items: flex-start;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.importReviewActions > div {
+  display: grid;
+  max-width: 720px;
+  gap: var(--space-1);
+}
+
+.importReviewActions .pill {
+  flex: 0 0 auto;
+}
+
+.importProgress,
+.importResult {
+  padding: var(--space-4);
+  border: 1px solid var(--color-border-accent);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-accent-subtle);
+}
+
+.importProgress > div:first-child,
+.importResult > div {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.importProgressTrack {
+  flex: 1 1 280px;
+  height: 8px;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-raised);
+}
+
+.importProgressTrack span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-origin: left;
+  background: var(--color-action-primary);
+  transition: transform var(--duration-normal) var(--ease-standard);
+}
+
+.importResult p {
+  margin: 0;
+}
+
+.importResult.partial {
+  border-color: var(--color-border-warning);
+  background: var(--color-surface-warning-subtle);
+}
+
+@media (max-width: 900px) {
+  .importConfiguration {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .importWorkflowHeader,
+  .importStageHeading,
+  .importReviewActions,
+  .importResult {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .importSteps li {
+    padding: var(--space-2);
+  }
+
+  .importSteps li > div {
+    display: none;
+  }
+
+  .importSteps li > span {
+    margin: auto;
+  }
+
+  .importSummaryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .importPreviewRow {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .importRowMetric,
+  .importRowStatus {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .importProgress {
+    display: grid;
+  }
+}
+
+@media (max-width: 480px) {
+  .importConfiguration,
+  .importSummaryGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .importDropzone {
+    min-height: 180px;
+    padding: var(--space-5);
+  }
+
+  .importSummaryCard {
+    min-height: 96px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .importDropzone,
+  .importProgressTrack span {
+    transition: none;
+  }
+}

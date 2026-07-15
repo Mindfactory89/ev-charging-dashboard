@@ -17,6 +17,7 @@ import GuidedEmptyState from "./app/GuidedEmptyState.jsx";
 import OnboardingFlow from "./app/OnboardingFlow.jsx";
 import ErrorBoundary from "./app/ErrorBoundary.jsx";
 import LazySectionFallback from "./app/LazySectionFallback.jsx";
+import DataStatePanel from "./app/DataStatePanel.jsx";
 import RuntimeFeedbackHost from "./app/RuntimeFeedbackHost.jsx";
 import { YEARS } from "./app/constants.js";
 import {
@@ -43,7 +44,7 @@ const HistoryScreen = lazy(() => import("./app/screens/HistoryScreen.jsx"));
 const OverviewScreen = lazy(() => import("./app/screens/OverviewScreen.jsx"));
 
 export default function App() {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const dashboardTitle = t("app.dashboardTitle");
   const vehicleProfile = useMemo(() => resolveVehicleProfile(), []);
   const demo = typeof isDemoMode === "function" ? isDemoMode() : !!isDemoMode;
@@ -302,6 +303,7 @@ export default function App() {
   const hasYearData = (Number(stats?.count) || 0) > 0 || sessions.length > 0;
   const noYearData = !loading && !err && !hasYearData;
   const displayStats = hasYearData ? stats : null;
+  const initialLoading = loading && !stats && sessions.length === 0 && !err;
   const displayEfficiency = hasYearData ? efficiency : null;
   const effectiveAvailableYears = useMemo(() => {
     const values = Array.isArray(availableYears) ? availableYears : [];
@@ -443,7 +445,7 @@ export default function App() {
 
   const primaryInsight = insights[0] || null;
   const latestSessionPrice = useMemo(() => sessionPricePerKwh(latestSession), [latestSession]);
-  const yearWeekdayFact = useMemo(() => getWeekdayUsage(sessions, { year }).top, [sessions, year]);
+  const yearWeekdayFact = useMemo(() => getWeekdayUsage(sessions, { year }).top, [locale, sessions, year]);
   const focusMonthWeekdayFact = useMemo(
     () => (currentPrev.current?.month ? getWeekdayUsage(sessions, { year, month: currentPrev.current.month }).top : null),
     [currentPrev.current, sessions, year]
@@ -613,7 +615,7 @@ export default function App() {
               year={year}
             />
 
-            {!noYearData ? (
+            {!noYearData && !addOpen ? (
               <button
                 type="button"
                 onClick={openAdd}
@@ -635,7 +637,24 @@ export default function App() {
               aria-labelledby="active-screen-title"
               aria-busy={loading || refreshing ? "true" : "false"}
             >
-              {err ? <div className="errorBox">{err}</div> : null}
+              {err ? (
+                <DataStatePanel
+                  actionLabel={t("dataState.retry")}
+                  details={{ label: t("dataState.details"), content: err }}
+                  kind="error"
+                  message={t("dataState.errorMessage")}
+                  onAction={refresh}
+                  title={t("dataState.errorTitle")}
+                />
+              ) : null}
+
+              {initialLoading ? (
+                <DataStatePanel
+                  kind="loading"
+                  message={t("dataState.loadingMessage")}
+                  title={t("dataState.loadingTitle")}
+                />
+              ) : null}
 
               <section className="appScreenIntro" aria-live="polite">
                 <div>

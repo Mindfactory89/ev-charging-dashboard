@@ -4,7 +4,7 @@ export default function LazySectionFallback({ label = "Bereich wird geladen…" 
   const { t } = useI18n();
 
   return (
-    <section className="row">
+    <section className="row" role="status" aria-live="polite">
       <div className="card glassStrong lazySectionCard">
         <div className="lazySectionHeader">
           <div className="lazySectionEyebrow">{t("lazyFallback.eyebrow")}</div>
@@ -23,6 +23,7 @@ export default function LazySectionFallback({ label = "Bereich wird geladen…" 
             <span />
           </div>
         </div>
+        <span className="srOnly">{label || t("common.loadingSection")}</span>
       </div>
     </section>
   );

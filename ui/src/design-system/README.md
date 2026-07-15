@@ -45,3 +45,36 @@ The design system uses three layers:
 - Charts expose peak, average, and low values before the plot and provide the same data in an accessible table.
 - Metric switches are limited to primary modes, remain at least 44px high, and use a compact two-column layout on small screens.
 - `dashboard-overhaul.css` owns the overview hierarchy and may only consume semantic or component tokens.
+
+## Session management contract
+
+- Details and editing stay inside one predictable side-drawer workflow; editing never expands the data table or shifts its rows.
+- The editor separates charging data from optional context, previews derived values live, and validates required fields next to the input.
+- Closing a changed draft requires confirmation, successful saves are announced, and deletion remains reversible through the existing undo feedback.
+- Both drawers trap keyboard focus, restore it to the launcher, support Escape, and keep their primary actions reachable above mobile safe areas.
+- `session-management.css` owns package 7 and only consumes semantic design-system tokens.
+
+## CSV import contract
+
+- Import follows three visible stages: select a file, review the detected data, and confirm the final result.
+- File type, size, empty content, and unusable structures fail next to the upload control before any request is sent.
+- Profile and fallback settings recalculate the preview immediately; status summaries double as accessible row filters.
+- Valid rows continue importing when an individual request fails, and the final result identifies partial failures without losing the successful work.
+- `import-overhaul.css` owns package 8 and only consumes semantic design-system tokens.
+
+## Data state and recovery contract
+
+- Initial loading, recoverable data errors, empty results, and fatal rendering failures each have a distinct visual and semantic state.
+- Recoverable failures preserve the surrounding context, explain that stored data is safe, expose optional technical details, and offer one retry action.
+- Lazy boundaries announce their label to assistive technology while decorative skeletons stay hidden.
+- Fatal errors offer a direct reload action and keep diagnostic output behind a disclosure control.
+- `state-overhaul.css` owns package 9 and only consumes semantic design-system tokens.
+
+## Accessibility and responsive contract
+
+- Dense history views render an initial twelve rows and expose more records progressively, reducing initial DOM work without hiding the total.
+- History rows preserve a responsive card layout while exposing table, row, header, and cell semantics to assistive technology.
+- Form controls use a mobile-safe font size, long headings wrap, and primary controls remain full width where horizontal space is limited.
+- Forced-colors, increased-contrast, reduced-motion, keyboard-focus, and screen-reader states remain functional independently of visual styling.
+- Shared session-edit parsing, validation, change detection, and payload construction live in `sessionEditForm.js` instead of being duplicated in the history component.
+- `accessibility-polish.css` owns package 10 and only consumes semantic design-system tokens.

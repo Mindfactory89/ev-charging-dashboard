@@ -1,0 +1,501 @@
+/* Package 6: guided session entry and field-level feedback. */
+
+.sessionEntryCard {
+  padding: var(--ds-space-5);
+  overflow: visible;
+  border-color: var(--color-border);
+  background: var(--color-surface);
+}
+
+.sessionEntryCard > .sessionEntryHeader {
+  align-items: flex-start;
+  padding: 0;
+}
+
+.sessionEntryIntro {
+  max-width: 66ch;
+  margin: var(--ds-space-3) 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-body-sm);
+  line-height: var(--ds-leading-relaxed);
+}
+
+.sessionEntryMeta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--ds-space-2);
+}
+
+.sessionReadiness {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: var(--ds-space-1) var(--ds-space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--ds-radius-full);
+  color: var(--color-text-secondary);
+  background: var(--color-surface-raised);
+  font-size: var(--ds-font-size-xs);
+  font-weight: var(--ds-font-semibold);
+  white-space: nowrap;
+}
+
+.sessionReadiness::before {
+  width: 7px;
+  height: 7px;
+  margin-right: var(--ds-space-2);
+  border-radius: var(--ds-radius-full);
+  background: currentColor;
+  content: "";
+}
+
+.sessionReadiness.ready {
+  color: var(--color-success);
+  border-color: color-mix(in srgb, var(--color-success) 34%, transparent);
+  background: var(--color-success-soft);
+}
+
+.sessionReadiness.review {
+  color: var(--color-warning);
+  border-color: color-mix(in srgb, var(--color-warning) 34%, transparent);
+  background: var(--color-warning-soft);
+}
+
+.sessionEntryCard > .formPreviewGrid {
+  gap: var(--ds-space-3);
+  margin-top: var(--ds-space-5);
+  padding: 0;
+}
+
+.sessionEntryCard .formPreviewCard {
+  min-height: 116px;
+  padding: var(--ds-space-4);
+  border-color: var(--color-border-subtle);
+  border-radius: var(--ds-radius-lg);
+  background: var(--color-surface-raised);
+  box-shadow: none;
+}
+
+.sessionEntryCard .formPreviewCard.warm {
+  border-color: var(--color-primary-border);
+  background:
+    linear-gradient(135deg, var(--color-primary-soft), transparent 62%),
+    var(--color-surface-raised);
+}
+
+.sessionEntryCard .formPreviewCard.cool {
+  border-color: color-mix(in srgb, var(--color-accent) 28%, var(--color-border));
+  background:
+    linear-gradient(135deg, var(--color-accent-soft), transparent 62%),
+    var(--color-surface-raised);
+}
+
+.sessionEntryCard .formPreviewLabel {
+  color: var(--color-text-tertiary);
+}
+
+.sessionEntryCard .formPreviewValue {
+  color: var(--color-text-primary);
+}
+
+.sessionEntryCard .formPreviewSub {
+  color: var(--color-text-secondary);
+}
+
+.sessionEntryForm {
+  display: grid;
+  gap: var(--ds-space-4);
+  margin-top: var(--ds-space-5);
+}
+
+.sessionFormSection,
+.sessionOptionalSection,
+.sessionFormActionBar,
+.sessionFormFeedback {
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--ds-radius-lg);
+  background: var(--color-surface-raised);
+}
+
+.sessionFormSection {
+  display: grid;
+  gap: var(--ds-space-5);
+  padding: var(--ds-space-5);
+}
+
+.sessionFormSection.primary {
+  border-color: var(--color-primary-border);
+  background:
+    linear-gradient(145deg, var(--color-primary-soft), transparent 46%),
+    var(--color-surface-raised);
+}
+
+.sessionFormSectionHeader {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: var(--ds-space-3);
+}
+
+.sessionFormSectionIcon,
+.sessionFormFeedbackIcon {
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--ds-radius-md);
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+}
+
+.sessionFormSection.primary .sessionFormSectionIcon {
+  color: var(--color-primary);
+  border-color: var(--color-primary-border);
+  background: var(--color-primary-soft);
+}
+
+.sessionFormSectionIcon svg,
+.sessionFormFeedbackIcon svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.sessionFormSectionMeta {
+  color: var(--color-text-tertiary);
+  font-size: var(--ds-font-size-xs);
+  font-weight: var(--ds-font-semibold);
+  letter-spacing: var(--ds-tracking-label);
+  text-transform: uppercase;
+}
+
+.sessionFormSectionHeader h4 {
+  margin: var(--ds-space-1) 0 0;
+  color: var(--color-text-primary);
+  font-size: var(--ds-font-size-lg);
+  line-height: var(--ds-leading-tight);
+}
+
+.sessionFormSectionHeader p {
+  max-width: 66ch;
+  margin: var(--ds-space-2) 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-body-sm);
+  line-height: var(--ds-leading-normal);
+}
+
+.sessionFormGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: start;
+  gap: var(--ds-space-4);
+}
+
+.sessionEntryCard .sessionField {
+  gap: var(--ds-space-2);
+}
+
+.sessionFieldLabel {
+  color: var(--color-text-secondary);
+  font-size: var(--ds-font-size-sm);
+  font-weight: var(--ds-font-semibold);
+  line-height: var(--ds-leading-normal);
+  letter-spacing: 0;
+}
+
+.sessionRequiredMarker {
+  margin-left: var(--ds-space-1);
+  color: var(--color-primary);
+}
+
+.sessionEntryCard .sessionField .input {
+  width: 100%;
+  height: auto;
+  min-height: var(--touch-target-min);
+  color: var(--input-fg);
+  border-color: var(--input-border);
+  border-radius: var(--input-radius);
+  background: var(--input-bg);
+  font-size: var(--font-body);
+}
+
+.sessionEntryCard .sessionField.hasError .input {
+  border-color: var(--color-danger);
+  background:
+    linear-gradient(90deg, var(--color-danger-soft), transparent 58%),
+    var(--input-bg);
+}
+
+.sessionEntryCard .sessionField.hasError .input:focus {
+  border-color: var(--color-danger);
+  box-shadow: 0 0 0 3px var(--color-danger-soft);
+}
+
+.sessionFieldHelp,
+.sessionFieldError {
+  display: block;
+  font-size: var(--ds-font-size-xs);
+  line-height: var(--ds-leading-normal);
+}
+
+.sessionFieldHelp {
+  color: var(--color-text-tertiary);
+}
+
+.sessionFieldError {
+  color: var(--color-danger);
+  font-weight: var(--ds-font-semibold);
+}
+
+.sessionOptionalSection {
+  overflow: hidden;
+}
+
+.sessionOptionalSection > summary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--ds-space-3);
+  min-height: 84px;
+  padding: var(--ds-space-4) var(--ds-space-5);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  list-style: none;
+}
+
+.sessionOptionalSection > summary::-webkit-details-marker {
+  display: none;
+}
+
+.sessionOptionalSection > summary strong,
+.sessionOptionalSection > summary small {
+  display: block;
+}
+
+.sessionOptionalSection > summary strong {
+  margin-top: var(--ds-space-1);
+  font-size: var(--ds-font-size-lg);
+}
+
+.sessionOptionalSection > summary small {
+  margin-top: var(--ds-space-1);
+  color: var(--color-text-secondary);
+  font-size: var(--font-body-sm);
+  line-height: var(--ds-leading-normal);
+}
+
+.sessionOptionalSection > summary:hover .sessionFormSectionIcon {
+  color: var(--color-primary);
+  border-color: var(--color-primary-border);
+}
+
+.sessionOptionalState {
+  display: grid;
+  place-items: center;
+  width: var(--touch-target-min);
+  height: var(--touch-target-min);
+  border-radius: var(--ds-radius-full);
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  font-size: var(--ds-font-size-xl);
+  transition: transform var(--ds-duration-normal) var(--ds-ease-standard);
+}
+
+.sessionOptionalSection[open] .sessionOptionalState {
+  transform: rotate(45deg);
+}
+
+.sessionOptionalContent {
+  padding: var(--ds-space-5);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.sessionFormGrid.optional .sessionNoteField {
+  grid-column: span 3;
+}
+
+.sessionEntryCard .sessionNoteField .inputArea {
+  min-height: 116px;
+}
+
+.sessionFormFeedback {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: var(--ds-space-3);
+  padding: var(--ds-space-4);
+}
+
+.sessionFormFeedback.success {
+  border-color: color-mix(in srgb, var(--color-success) 34%, transparent);
+  background: var(--color-success-soft);
+}
+
+.sessionFormFeedback.danger {
+  border-color: color-mix(in srgb, var(--color-danger) 34%, transparent);
+  background: var(--color-danger-soft);
+}
+
+.sessionFormFeedback.success .sessionFormFeedbackIcon {
+  color: var(--color-success);
+  border-color: color-mix(in srgb, var(--color-success) 34%, transparent);
+}
+
+.sessionFormFeedback.danger .sessionFormFeedbackIcon {
+  color: var(--color-danger);
+  border-color: color-mix(in srgb, var(--color-danger) 34%, transparent);
+}
+
+.sessionFormFeedback strong {
+  color: var(--color-text-primary);
+  font-size: var(--font-body);
+}
+
+.sessionFormFeedback p {
+  margin: var(--ds-space-1) 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-body-sm);
+  line-height: var(--ds-leading-normal);
+}
+
+.sessionFormActionBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space-5);
+  padding: var(--ds-space-4) var(--ds-space-5);
+}
+
+.sessionFormActionCopy {
+  display: grid;
+  gap: var(--ds-space-1);
+  max-width: 74ch;
+}
+
+.sessionFormActionCopy strong {
+  color: var(--color-text-primary);
+  font-size: var(--font-body-sm);
+}
+
+.sessionFormActionCopy span {
+  color: var(--color-text-secondary);
+  font-size: var(--ds-font-size-xs);
+  line-height: var(--ds-leading-normal);
+}
+
+.sessionEntryCard .sessionSaveButton {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ds-space-2);
+  min-width: 180px;
+  min-height: var(--touch-target-min);
+  height: auto;
+  padding-inline: var(--ds-space-5);
+  color: var(--button-fg);
+  border-color: var(--button-border);
+  background: var(--button-bg);
+}
+
+.sessionEntryCard .sessionSaveButton:hover:not(:disabled) {
+  color: var(--button-fg);
+  background: var(--button-bg-hover);
+}
+
+.sessionSaveSpinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid color-mix(in srgb, currentColor 35%, transparent);
+  border-top-color: currentColor;
+  border-radius: var(--ds-radius-full);
+  animation: session-save-spin 700ms linear infinite;
+}
+
+@keyframes session-save-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 980px) {
+  .sessionFormGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sessionFormGrid.optional .sessionNoteField {
+    grid-column: span 1;
+  }
+}
+
+@media (max-width: 640px) {
+  .sessionEntryCard {
+    padding: var(--ds-space-4);
+  }
+
+  .sessionEntryCard > .sessionEntryHeader,
+  .sessionFormActionBar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .sessionEntryMeta {
+    justify-content: flex-start;
+  }
+
+  .sessionEntryCard > .formPreviewGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sessionFormGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .sessionEntryCard .formPreviewCard {
+    min-height: 104px;
+    padding: var(--ds-space-3);
+  }
+
+  .sessionEntryCard .formPreviewValue,
+  .sessionEntryCard .formPreviewCard.cool .formPreviewValue {
+    font-size: var(--ds-font-size-xl);
+  }
+
+  .sessionFormSection,
+  .sessionOptionalContent {
+    padding: var(--ds-space-4);
+  }
+
+  .sessionOptionalSection > summary {
+    padding: var(--ds-space-3) var(--ds-space-4);
+  }
+
+  .sessionOptionalSection > summary small {
+    font-size: var(--ds-font-size-xs);
+  }
+
+  .sessionEntryCard .sessionSaveButton {
+    width: 100%;
+  }
+}
+
+@media (max-width: 340px) {
+  .sessionEntryCard > .formPreviewGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sessionOptionalState {
+    transition: none;
+  }
+
+  .sessionSaveSpinner {
+    animation-duration: 1400ms;
+  }
+}

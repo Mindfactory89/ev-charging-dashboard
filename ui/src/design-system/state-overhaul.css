@@ -1,0 +1,147 @@
+.dataStatePanel {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--ds-space-4);
+  overflow: hidden;
+  padding: var(--ds-space-5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--ds-radius-lg);
+  background: var(--color-surface-raised);
+}
+
+.dataStatePanel.error {
+  border-color: color-mix(in srgb, var(--color-danger) 48%, var(--color-border));
+  background: color-mix(in srgb, var(--color-danger-soft) 60%, var(--color-surface));
+}
+
+.dataStateIcon,
+.fatalErrorIcon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  color: var(--color-danger);
+  border-radius: var(--ds-radius-full);
+  background: var(--color-danger-soft);
+}
+
+.dataStatePanel.loading .dataStateIcon {
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+
+.dataStateIcon svg,
+.fatalErrorIcon svg {
+  width: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.dataStatePanel.loading .dataStateIcon svg {
+  animation: data-state-spin 1.1s linear infinite;
+}
+
+.dataStateCopy {
+  display: grid;
+  gap: var(--ds-space-1);
+}
+
+.dataStateCopy > strong {
+  font-size: var(--ds-font-size-lg);
+}
+
+.dataStateCopy p,
+.fatalErrorCard p {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.dataStateCopy details,
+.fatalErrorCard details {
+  margin-top: var(--ds-space-2);
+  color: var(--color-text-secondary);
+  font-size: var(--ds-font-size-sm);
+}
+
+.dataStateCopy summary,
+.fatalErrorCard summary {
+  min-height: var(--touch-target-min);
+  width: fit-content;
+  cursor: pointer;
+  line-height: var(--touch-target-min);
+}
+
+.dataStateCopy pre,
+.fatalErrorCard pre {
+  max-height: 280px;
+  overflow: auto;
+  padding: var(--ds-space-3);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--ds-radius-md);
+  background: var(--color-surface-sunken);
+  font-family: var(--ds-font-mono);
+  font-size: var(--ds-font-size-xs);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.dataStatePulse {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--color-accent), transparent);
+  animation: data-state-pulse 1.6s var(--ds-ease-standard) infinite;
+}
+
+.fatalErrorPage {
+  display: grid;
+  min-height: var(--app-height, 100vh);
+  place-items: center;
+  padding: var(--ds-space-6);
+}
+
+.fatalErrorCard {
+  display: grid;
+  justify-items: start;
+  width: min(680px, 100%);
+  gap: var(--ds-space-4);
+  padding: var(--ds-space-8);
+  border-color: color-mix(in srgb, var(--color-danger) 48%, var(--color-border));
+}
+
+.fatalErrorCard h1 {
+  margin: 0;
+}
+
+@keyframes data-state-spin { to { transform: rotate(360deg); } }
+@keyframes data-state-pulse { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+
+@media (max-width: 640px) {
+  .dataStatePanel {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .dataStatePanel > .pill {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .fatalErrorCard {
+    padding: var(--ds-space-5);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dataStatePanel.loading .dataStateIcon svg,
+  .dataStatePulse {
+    animation: none;
+  }
+}

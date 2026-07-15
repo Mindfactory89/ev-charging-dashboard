@@ -1,5 +1,6 @@
 import React from "react";
 import { createPlatformImage } from "../platform/runtime.js";
+import { useI18n } from "../i18n/I18nProvider.jsx";
 
 function SpecIcon({ kind }) {
   if (kind === "trim") {
@@ -43,6 +44,7 @@ function SpecIcon({ kind }) {
 }
 
 export default function VehicleHero({ profile, latestDateLabel, year }) {
+  const { t } = useI18n();
   const [heroStatus, setHeroStatus] = React.useState("idle");
   const hasImage = Boolean(profile?.imageSrc);
 
@@ -83,11 +85,11 @@ export default function VehicleHero({ profile, latestDateLabel, year }) {
     <div className="card glassStrong heroCard">
       <div className="heroHeader heroHeaderHybrid">
         <div className="heroLeft">
-          <div className="sectionKicker">{profile?.sectionKicker || "Fahrzeugprofil"}</div>
-          <h3 className="heroTitle">{profile?.name || "Fahrzeug"}</h3>
+          <div className="sectionKicker">{t("hero.vehicleProfile")}</div>
+          <h3 className="heroTitle">{profile?.name || t("hero.vehicle")}</h3>
 
           {Array.isArray(profile?.specs) && profile.specs.length ? (
-            <div className="heroChips" aria-label="Fahrzeug-Spezifikationen">
+            <div className="heroChips" aria-label={t("hero.vehicleSpecs")}>
               {profile.specs.map((spec) => (
                 <span key={spec.id || spec.label} className={`chipSpec chipText ${spec.accent ? "accent" : ""}`.trim()}>
                   <SpecIcon kind={spec.icon} />
@@ -100,7 +102,9 @@ export default function VehicleHero({ profile, latestDateLabel, year }) {
 
         <div className="heroRight heroPillStack heroMetaRail">
           <div className="pill heroStatusPill">
-            {latestDateLabel ? `Letzter Ladevorgang: ${latestDateLabel}` : `Keine Daten für ${year}`}
+            {latestDateLabel
+              ? t("hero.latestSession", { date: latestDateLabel })
+              : t("hero.noDataForYear", { year })}
           </div>
         </div>
       </div>
@@ -112,16 +116,16 @@ export default function VehicleHero({ profile, latestDateLabel, year }) {
         {hasImage ? (
           <img
             src={profile.imageSrc}
-            alt={profile?.imageAlt || profile?.name || "Fahrzeug"}
+            alt={profile?.imageAlt || profile?.name || t("hero.vehicle")}
             style={{ display: heroStatus === "ready" ? "block" : "none" }}
           />
         ) : null}
 
         {heroStatus === "error" || heroStatus === "missing" ? (
           <div className="heroFallback">
-            {profile?.fallbackLabel || "Hero-Bild"}
+            {profile?.fallbackLabel || t("hero.imageFallback")}
             <br />
-            <span>{profile?.fallbackHint || `Datei: ${profile?.imageSrc || "kein Asset konfiguriert"}`}</span>
+            <span>{profile?.fallbackHint || t("hero.assetMissing")}</span>
           </div>
         ) : null}
       </div>

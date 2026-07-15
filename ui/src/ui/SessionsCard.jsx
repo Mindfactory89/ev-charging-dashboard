@@ -5,12 +5,19 @@ import { monthLabel } from "./monthLabels.js";
 import { deleteSession, getSessionsCsvUrl, restoreSession, updateSession } from "./api.js";
 import Tooltip from "./Tooltip.jsx";
 import SessionDetailDrawer from "./SessionDetailDrawer.jsx";
-import { deriveMobilityForSession, getSessionOdometerKm } from "./sessionIntelligence.js";
+import SessionEditDrawer from "./SessionEditDrawer.jsx";
 import { downloadFileFromUrl } from "../platform/download.js";
 import { confirmAction, reloadCurrentPage, showAlert } from "../platform/runtime.js";
-import { formatTags, parseTags } from "./sessionMetadata.js";
+import { parseTags } from "./sessionMetadata.js";
 import { buildSessionMetadataOptions } from "./sessionMetadataOptions.js";
 import { CONNECTOR_OPTIONS as SHARED_CONNECTOR_OPTIONS } from "../app/constants.js";
+import {
+  buildSessionEditDraft,
+  effectivePricePerKwh,
+  sessionEditHasChanges,
+  sessionEditPayload,
+  validateSessionEditDraft,
+} from "./sessionEditForm.js";
 
 const DEFAULT_CONNECTORS = SHARED_CONNECTOR_OPTIONS;
 const PROVIDER_LIST_ID = "history-session-provider-options";
@@ -30,61 +37,6 @@ function monthNumber(value) {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date.getMonth() + 1;
 }
-function hhmmToSeconds(hhmm) {
-  const raw = String(hhmm || "").trim();
-  const match = raw.match(/^(\d{1,2}):(\d{2})$/);
-  if (!match) return null;
-  const hh = Number(match[1]);
-  const mm = Number(match[2]);
-  if (!Number.isFinite(hh) || !Number.isFinite(mm) || mm > 59) return null;
-  return hh * 3600 + mm * 60;
-}
-
-function parseDecimalInput(value) {
-  const normalized = String(value ?? "")
-    .trim()
-    .replace(",", ".");
-  if (!normalized) return Number.NaN;
-  return Number(normalized);
-}
-
-function parseIntegerInput(value) {
-  const raw = String(value ?? "").trim();
-  if (!raw) return null;
-  if (!/^\d+$/.test(raw)) return Number.NaN;
-  return Number(raw);
-}
-
-function resolveDecimalInput(value, fallback = null) {
-  const raw = String(value ?? "").trim();
-  if (!raw) return fallback;
-  return parseDecimalInput(raw);
-}
-
-function resolveDurationInput(value, fallback = null) {
-  const raw = String(value ?? "").trim();
-  if (!raw) return fallback;
-  return hhmmToSeconds(raw);
-}
-
-function resolveBoundedIntegerInput(value, fallback = null) {
-  const raw = String(value ?? "").trim();
-  if (!raw) return fallback;
-  const parsed = Number.parseInt(raw, 10);
-  if (!Number.isInteger(parsed)) return Number.NaN;
-  return parsed;
-}
-
-function effectivePricePerKwh(row) {
-  const direct = Number(row?.price_per_kwh);
-  if (Number.isFinite(direct) && direct > 0) return direct;
-
-  const energy = Number(row?.energy_kwh);
-  const cost = Number(row?.total_cost);
-  if (!Number.isFinite(energy) || energy <= 0 || !Number.isFinite(cost) || cost < 0) return null;
-  return cost / energy;
-}
-
 function sessionScoreTone(score) {
   const value = Number(score);
   if (!Number.isFinite(value)) return "neutral";
@@ -101,122 +53,6 @@ function sessionScoreLabel(score, t) {
   if (value >= 65) return t("sessionsCard.scoreLabels.efficient");
   if (value >= 50) return t("sessionsCard.scoreLabels.solid");
   return t("sessionsCard.scoreLabels.notable");
-}
-
-function buildEditDraft(row) {
-  const pricePerKwh = effectivePricePerKwh(row);
-  const duration = secsToHHMM(row?.duration_seconds);
-  const odometerKm = getSessionOdometerKm(row);
-  return {
-    date: row?.date ? new Date(row.date).toISOString().slice(0, 10) : "",
-    provider: row?.provider || "",
-    location: row?.location || "",
-    vehicle: row?.vehicle || "",
-    tags: row?.tags || "",
-    connector: row?.connector || DEFAULT_CONNECTORS[0],
-    soc_start: String(row?.soc_start ?? 10),
-    soc_end: String(row?.soc_end ?? 80),
-    energy_kwh: row?.energy_kwh != null ? String(row.energy_kwh) : "",
-    price_per_kwh: pricePerKwh != null ? String(Number(pricePerKwh).toFixed(3)) : "",
-    duration_hhmm: duration === "–" ? "" : duration,
-    odometer_km: odometerKm != null ? String(odometerKm) : "",
-    note: row?.note || "",
-  };
-}
-
-function normalizeDraftForCompare(draft) {
-  return {
-    date: String(draft?.date || ""),
-    provider: String(draft?.provider || "").trim(),
-    location: String(draft?.location || "").trim(),
-    vehicle: String(draft?.vehicle || "").trim(),
-    tags: formatTags(draft?.tags || ""),
-    connector: String(draft?.connector || DEFAULT_CONNECTORS[0]),
-    soc_start: Number.parseInt(String(draft?.soc_start || ""), 10),
-    soc_end: Number.parseInt(String(draft?.soc_end || ""), 10),
-    energy_kwh: Number.isFinite(parseDecimalInput(draft?.energy_kwh)) ? Number(parseDecimalInput(draft?.energy_kwh).toFixed(3)) : null,
-    price_per_kwh: Number.isFinite(parseDecimalInput(draft?.price_per_kwh)) ? Number(parseDecimalInput(draft?.price_per_kwh).toFixed(3)) : null,
-    duration_seconds: hhmmToSeconds(draft?.duration_hhmm),
-    odometer_km: parseIntegerInput(draft?.odometer_km),
-    note: String(draft?.note || "").trim(),
-  };
-}
-
-function draftHasChanges(row, draft) {
-  if (!row || !draft) return false;
-  const current = normalizeDraftForCompare(draft);
-  const baseline = normalizeDraftForCompare(buildEditDraft(row));
-  return JSON.stringify(current) !== JSON.stringify(baseline);
-}
-
-function buildDraftPreview(draft, sessions = [], sessionId = null, baseRow = null) {
-  const fallbackPrice = effectivePricePerKwh(baseRow);
-  const energy = resolveDecimalInput(draft?.energy_kwh, Number(baseRow?.energy_kwh));
-  const price = resolveDecimalInput(draft?.price_per_kwh, fallbackPrice);
-  const durationSeconds = resolveDurationInput(draft?.duration_hhmm, Number(baseRow?.duration_seconds));
-  const socStart = resolveBoundedIntegerInput(draft?.soc_start, Number(baseRow?.soc_start));
-  const socEnd = resolveBoundedIntegerInput(draft?.soc_end, Number(baseRow?.soc_end));
-  const odometerKm = parseIntegerInput(draft?.odometer_km);
-  const socDelta = Number.isInteger(socStart) && Number.isInteger(socEnd) ? socEnd - socStart : null;
-  const totalCost = Number.isFinite(energy) && energy > 0 && Number.isFinite(price) && price > 0 ? energy * price : null;
-  const avgPowerKw =
-    Number.isFinite(energy) && energy > 0 && Number.isFinite(durationSeconds) && durationSeconds > 0
-      ? energy / (durationSeconds / 3600)
-      : null;
-  const odometerValid = odometerKm == null || Number.isInteger(odometerKm);
-  const candidate = odometerValid
-    ? deriveMobilityForSession(sessions, {
-        id: sessionId || "__draft__",
-        date: draft?.date || (baseRow?.date ? new Date(baseRow.date).toISOString().slice(0, 10) : new Date().toISOString()),
-        energy_kwh: energy,
-        total_cost: totalCost,
-        duration_seconds: durationSeconds,
-        price_per_kwh: price,
-        soc_start: socStart,
-        soc_end: socEnd,
-        odo_end_km: odometerKm,
-      })
-    : null;
-  const distanceKm = candidate?.distanceKm ?? null;
-  const costPer100Km = candidate?.costPer100Km ?? null;
-  const sequenceValid =
-    odometerKm == null ||
-    ((candidate?.previousOdometerKm == null || odometerKm >= candidate.previousOdometerKm) &&
-      (candidate?.nextOdometerKm == null || odometerKm <= candidate.nextOdometerKm));
-  const canSave =
-    !!(draft?.date || baseRow?.date) &&
-    Number.isFinite(energy) &&
-    energy > 0 &&
-    Number.isFinite(price) &&
-    price > 0 &&
-    Number.isFinite(durationSeconds) &&
-    durationSeconds > 0 &&
-    Number.isInteger(socStart) &&
-    socStart >= 0 &&
-    socStart <= 100 &&
-    Number.isInteger(socEnd) &&
-    socEnd >= 0 &&
-    socEnd <= 100 &&
-    socEnd >= socStart &&
-    odometerValid &&
-    sequenceValid;
-
-  return {
-    totalCost,
-    avgPowerKw,
-    durationSeconds,
-    odometerKm,
-    previousOdometerKm: candidate?.previousOdometerKm ?? null,
-    nextOdometerKm: candidate?.nextOdometerKm ?? null,
-    distanceKm,
-    costPer100Km,
-    socDelta,
-    energy,
-    price,
-    socStart,
-    socEnd,
-    canSave,
-  };
 }
 
 export default function SessionsCard({
@@ -238,6 +74,7 @@ export default function SessionsCard({
   const [undoState, setUndoState] = React.useState(null);
   const [flashState, setFlashState] = React.useState(null);
   const [detailSessionId, setDetailSessionId] = React.useState(null);
+  const [visibleCount, setVisibleCount] = React.useState(12);
   const latestDate = sessions.reduce((latest, row) => {
     const ts = row?.date ? new Date(row.date).getTime() : NaN;
     if (!Number.isFinite(ts)) return latest;
@@ -269,6 +106,14 @@ export default function SessionsCard({
     () => sessions.find((session) => String(session.id) === String(detailSessionId)) || null,
     [detailSessionId, sessions]
   );
+  const visibleSessions = React.useMemo(
+    () => filteredSessions.slice(0, visibleCount),
+    [filteredSessions, visibleCount]
+  );
+
+  React.useEffect(() => {
+    setVisibleCount(12);
+  }, [filters?.location, filters?.month, filters?.provider, filters?.tag, filters?.vehicle, sessions.length]);
 
   React.useEffect(() => {
     if (!undoState) return undefined;
@@ -289,12 +134,25 @@ export default function SessionsCard({
 
   function beginEdit(row) {
     setEditingId(row.id);
-    setDraft(buildEditDraft(row));
+    setDraft(buildSessionEditDraft(row));
   }
 
   function cancelEdit() {
     setEditingId(null);
     setDraft(null);
+  }
+
+  async function requestCloseEdit() {
+    const editingSession = sessions.find((row) => String(row.id) === String(editingId));
+    if (editingSession && sessionEditHasChanges(editingSession, draft)) {
+      const discard = await confirmAction(t("sessionsCard.edit.discardMessage"), {
+        title: t("sessionsCard.edit.discardTitle"),
+        confirmLabel: t("sessionsCard.edit.discardConfirm"),
+        cancelLabel: t("sessionsCard.edit.discardCancel"),
+      });
+      if (!discard) return;
+    }
+    cancelEdit();
   }
 
   function openDetails(row) {
@@ -316,7 +174,7 @@ export default function SessionsCard({
       cancelLabel: t("sessionsCard.deleteConfirm.cancel"),
       tone: "danger",
     });
-    if (!ok) return;
+    if (!ok) return false;
 
     try {
       setBusyId(`delete-${row.id}`);
@@ -325,10 +183,13 @@ export default function SessionsCard({
         row: result?.deleted || row,
         label: datumDE(row?.date),
       });
+      if (String(detailSessionId) === String(row.id)) closeDetails();
       cancelEdit();
       await refreshData();
+      return true;
     } catch (e) {
       showAlert(String(e?.message || e));
+      return false;
     } finally {
       setBusyId(null);
     }
@@ -352,68 +213,22 @@ export default function SessionsCard({
   }
 
   async function onSaveEdit(row) {
-    const draftPreview = buildDraftPreview(draft, sessions, row.id, row);
-    const energy = draftPreview.energy;
-    const price = draftPreview.price;
-    const durationSeconds = draftPreview.durationSeconds;
-    const socStart = draftPreview.socStart;
-    const socEnd = draftPreview.socEnd;
-    const odometer = parseIntegerInput(draft?.odometer_km);
-    const mobilityCandidate =
-      odometer == null || Number.isNaN(odometer)
-        ? null
-        : deriveMobilityForSession(sessions, {
-            ...row,
-            id: row.id,
-            date: draft?.date || new Date(row.date).toISOString().slice(0, 10),
-            energy_kwh: energy,
-            total_cost: Number.isFinite(energy) && energy > 0 && Number.isFinite(price) && price > 0 ? energy * price : row.total_cost,
-            duration_seconds: durationSeconds,
-            price_per_kwh: price,
-            soc_start: socStart,
-            soc_end: socEnd,
-            odo_end_km: odometer,
-          });
-
-    if (!(draft?.date || row?.date)) return showAlert(t("sessionsCard.validation.date"));
-    if (!Number.isFinite(energy) || energy <= 0) return showAlert(t("sessionsCard.validation.energy"));
-    if (!Number.isFinite(price) || price <= 0) return showAlert(t("sessionsCard.validation.price"));
-    if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) return showAlert(t("sessionsCard.validation.duration"));
-    if (Number.isNaN(odometer)) return showAlert(t("sessionsCard.validation.odometer"));
-    if (mobilityCandidate?.previousOdometerKm != null && odometer != null && odometer < mobilityCandidate.previousOdometerKm) {
-      return showAlert(
-        t("sessionsCard.validation.odometerMin", { value: num(mobilityCandidate.previousOdometerKm, 0) })
-      );
+    const validation = validateSessionEditDraft(draft, sessions, row);
+    if (!validation.valid) {
+      const firstError = validation.errors[Object.keys(validation.errors)[0]];
+      return showAlert(t(`sessionsCard.validation.${firstError.key}`, firstError.params));
     }
-    if (mobilityCandidate?.nextOdometerKm != null && odometer != null && odometer > mobilityCandidate.nextOdometerKm) {
-      return showAlert(
-        t("sessionsCard.validation.odometerMax", { value: num(mobilityCandidate.nextOdometerKm, 0) })
-      );
-    }
-    if (!Number.isInteger(socStart) || socStart < 0 || socStart > 100) return showAlert(t("sessionsCard.validation.socStart"));
-    if (!Number.isInteger(socEnd) || socEnd < 0 || socEnd > 100) return showAlert(t("sessionsCard.validation.socEnd"));
-    if (socEnd < socStart) return showAlert(t("sessionsCard.validation.socOrder"));
 
     try {
       setBusyId(`save-${row.id}`);
-      await updateSession(row.id, {
-        date: draft?.date || new Date(row.date).toISOString().slice(0, 10),
-        provider: draft?.provider || null,
-        location: draft?.location || null,
-        vehicle: draft?.vehicle || null,
-        tags: formatTags(draft?.tags || ""),
-        connector: draft?.connector || row.connector,
-        soc_start: socStart,
-        soc_end: socEnd,
-        energy_kwh: energy,
-        price_per_kwh: price,
-        duration_seconds: durationSeconds,
-        odometer_km: odometer,
-        note: draft?.note || null,
-      });
+      await updateSession(row.id, sessionEditPayload(draft, validation.preview));
       setFlashState({ id: row.id, tone: "saved" });
       cancelEdit();
       await refreshData();
+      showAlert(t("sessionsCard.edit.savedMessage"), {
+        title: t("sessionsCard.edit.savedTitle"),
+        tone: "success",
+      });
     } catch (e) {
       showAlert(String(e?.message || e));
     } finally {
@@ -523,25 +338,25 @@ export default function SessionsCard({
         </label>
       </div>
 
-      <div className="tableWrap">
-        <div className="tableHead">
-          <div>{t("sessionsCard.table.date")}</div>
-          <div>{t("sessionsCard.table.connector")}</div>
-          <div>{t("sessionsCard.table.soc")}</div>
-          <div>{t("sessionsCard.table.energy")}</div>
-          <div>{t("sessionsCard.table.duration")}</div>
-          <div>{t("sessionsCard.table.cost")}</div>
+      <div className="tableWrap" role="table" aria-label={t("sessionsCard.table.ariaLabel")} aria-rowcount={filteredSessions.length + 1}>
+        <div className="tableHead" role="row">
+          <div role="columnheader">{t("sessionsCard.table.date")}</div>
+          <div role="columnheader">{t("sessionsCard.table.connector")}</div>
+          <div role="columnheader">{t("sessionsCard.table.soc")}</div>
+          <div role="columnheader">{t("sessionsCard.table.energy")}</div>
+          <div role="columnheader">{t("sessionsCard.table.duration")}</div>
+          <div role="columnheader">{t("sessionsCard.table.cost")}</div>
         </div>
 
-        <div className={`tableBody ${hasMany ? "tableBodyScroll" : ""}`}>
+        <div className={`tableBody ${hasMany ? "tableBodyScroll" : ""}`} role="rowgroup">
           {filteredSessions.length === 0 ? (
-            <div className="emptyRow">
+            <div className="emptyRow" role="row"><span role="cell">
               {filters?.month || filters?.provider || filters?.location || filters?.vehicle || filters?.tag
                 ? t("sessionsCard.table.emptyFiltered")
                 : t("sessionsCard.table.emptyInitial")}
-            </div>
+            </span></div>
           ) : (
-            filteredSessions.map((session) => {
+            visibleSessions.map((session, index) => {
               const pricePerKwh = effectivePricePerKwh(session);
               const score = sessionScoresById[String(session.id)] || null;
               const outlier = sessionOutliersById[String(session.id)] || null;
@@ -550,14 +365,11 @@ export default function SessionsCard({
               const saveBusy = busyId === `save-${session.id}`;
               const deleteBusy = busyId === `delete-${session.id}`;
               const isFlashing = flashState?.id === session.id ? flashState.tone : null;
-              const hasPendingChanges = isEditing ? draftHasChanges(session, draft) : false;
-              const draftPreview = isEditing ? buildDraftPreview(draft, sessions, session.id, session) : null;
-              const saveDisabled = saveBusy || !hasPendingChanges || !draftPreview?.canSave;
 
               return (
                 <React.Fragment key={session.id}>
-                  <div className={`tableRow ${isEditing ? "editing" : ""} ${isFlashing ? `flash-${isFlashing}` : ""}`}>
-                    <div className="tableCell tableCellLead" data-label={t("sessionsCard.table.date")}>
+                  <div className={`tableRow ${isEditing ? "editing" : ""} ${isFlashing ? `flash-${isFlashing}` : ""}`} role="row" aria-rowindex={index + 2}>
+                    <div className="tableCell tableCellLead" data-label={t("sessionsCard.table.date")} role="cell">
                       <div className="tablePrimary">{datumDE(session.date)}</div>
                       <div className="tableSecondary">
                         {[session.provider, session.location].filter(Boolean).join(" • ") || session.note || t("sessionsCard.table.recordedSession")}
@@ -591,25 +403,25 @@ export default function SessionsCard({
                         ) : null}
                       </div>
                     </div>
-                    <div className="tableCell" data-label={t("sessionsCard.table.connector")}>
+                    <div className="tableCell" data-label={t("sessionsCard.table.connector")} role="cell">
                       <span className="tableBadge">{session.connector || "–"}</span>
                     </div>
-                    <div className="tableCell" data-label={t("sessionsCard.table.soc")}>
+                    <div className="tableCell" data-label={t("sessionsCard.table.soc")} role="cell">
                       <span className="tableSoc">
                         {session.soc_start} → {session.soc_end} %
                       </span>
                       <div className="sessionMiniMeta">{socDelta ? t("sessionsCard.table.socDelta", { value: num(socDelta, 0) }) : "–"}</div>
                     </div>
-                    <div className="tableCell tableValueStrong" data-label={t("sessionsCard.table.energy")}>
+                    <div className="tableCell tableValueStrong" data-label={t("sessionsCard.table.energy")} role="cell">
                       <span>{num(session.energy_kwh, 1)} kWh</span>
                       <div className="sessionMiniMeta">{score?.avg_power_kw != null ? `${num(score.avg_power_kw, 1)} kW` : t("sessionsCard.table.scorePending")}</div>
                     </div>
-                    <div className="tableCell tableValueSoft" data-label={t("sessionsCard.table.duration")}>
+                    <div className="tableCell tableValueSoft" data-label={t("sessionsCard.table.duration")} role="cell">
                       <span>{secsToHHMM(session.duration_seconds)}</span>
                       <div className="sessionMiniMeta">{score?.breakdown?.speed_score != null ? t("sessionsCard.table.speed", { value: num(score.breakdown.speed_score, 0) }) : "–"}</div>
                     </div>
 
-                    <div className="tableCell tableCostCell" data-label={t("sessionsCard.table.cost")}>
+                    <div className="tableCell tableCostCell" data-label={t("sessionsCard.table.cost")} role="cell">
                       <div className="tableCostStack">
                         <span className="tableValueStrong">{euro(session.total_cost)}</span>
                         {pricePerKwh != null ? (
@@ -649,8 +461,10 @@ export default function SessionsCard({
                         <button
                           type="button"
                           className="rowEditBtn"
-                          onClick={() => (isEditing ? cancelEdit() : beginEdit(session))}
+                          onClick={() => (isEditing ? requestCloseEdit() : beginEdit(session))}
                           disabled={saveBusy || deleteBusy}
+                          aria-haspopup="dialog"
+                          aria-expanded={isEditing}
                         >
                           {isEditing ? t("sessionsCard.buttons.cancel") : t("sessionsCard.buttons.edit")}
                         </button>
@@ -668,157 +482,21 @@ export default function SessionsCard({
                     </div>
                   </div>
 
-                  {isEditing ? (
-                    <div className={`tableEditRow ${hasPendingChanges ? "isDirty" : "isPristine"}`}>
-                      <div className="tableEditGrid">
-                        <label className="field">
-                          <span>{t("common.date")}</span>
-                          <input className="input" type="date" value={draft?.date || ""} onChange={(event) => updateDraft("date", event.target.value)} />
-                        </label>
-
-                        <label className="field">
-                          <span>{t("common.provider")}</span>
-                          <input
-                            className="input"
-                            list={filterOptions.providers.length ? PROVIDER_LIST_ID : undefined}
-                            value={draft?.provider || ""}
-                            onChange={(event) => updateDraft("provider", event.target.value)}
-                          />
-                        </label>
-
-                        <label className="field">
-                          <span>{t("common.location")}</span>
-                          <input
-                            className="input"
-                            list={filterOptions.locations.length ? LOCATION_LIST_ID : undefined}
-                            value={draft?.location || ""}
-                            onChange={(event) => updateDraft("location", event.target.value)}
-                          />
-                        </label>
-
-                        <label className="field">
-                          <span>{t("common.vehicle")}</span>
-                          <input
-                            className="input"
-                            list={filterOptions.vehicles.length ? VEHICLE_LIST_ID : undefined}
-                            value={draft?.vehicle || ""}
-                            onChange={(event) => updateDraft("vehicle", event.target.value)}
-                          />
-                        </label>
-
-                        <label className="field">
-                          <span>{t("common.tags")}</span>
-                          <input
-                            className="input"
-                            list={filterOptions.tags.length ? TAG_LIST_ID : undefined}
-                            value={draft?.tags || ""}
-                            onChange={(event) => updateDraft("tags", event.target.value)}
-                          />
-                        </label>
-
-                        <label className="field">
-                          <span>{t("common.connector")}</span>
-                          <select className="input" value={draft?.connector || ""} onChange={(event) => updateDraft("connector", event.target.value)}>
-                            {connectorOptions.map((connector) => (
-                              <option key={`${session.id}-${connector}`} value={connector}>
-                                {connector}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-
-                        <label className="field">
-                          <span>{t("addSession.fields.socStart")}</span>
-                          <input className="input" type="number" min="0" max="100" value={draft?.soc_start || ""} onChange={(event) => updateDraft("soc_start", event.target.value)} />
-                        </label>
-
-                        <label className="field">
-                          <span>{t("addSession.fields.socEnd")}</span>
-                          <input className="input" type="number" min="0" max="100" value={draft?.soc_end || ""} onChange={(event) => updateDraft("soc_end", event.target.value)} />
-                        </label>
-
-                        <label className="field">
-                          <span>{t("common.energy")}</span>
-                          <input className="input" value={draft?.energy_kwh || ""} onChange={(event) => updateDraft("energy_kwh", event.target.value)} />
-                        </label>
-
-                        <label className="field">
-                          <span>{t("common.pricePerKwh")}</span>
-                          <input className="input" value={draft?.price_per_kwh || ""} onChange={(event) => updateDraft("price_per_kwh", event.target.value)} />
-                        </label>
-
-                        <label className="field">
-                          <span>{t("common.duration")}</span>
-                          <input className="input" value={draft?.duration_hhmm || ""} onChange={(event) => updateDraft("duration_hhmm", event.target.value)} />
-                        </label>
-
-                        <label className="field">
-                          <span>{t("addSession.fields.odometer")}</span>
-                          <input className="input" type="number" min="0" value={draft?.odometer_km || ""} onChange={(event) => updateDraft("odometer_km", event.target.value)} />
-                        </label>
-
-                        <label className="field fieldWide">
-                          <span>{t("common.note")}</span>
-                          <input className="input" value={draft?.note || ""} onChange={(event) => updateDraft("note", event.target.value)} />
-                        </label>
-                      </div>
-
-                      <div className="tableEditPreview">
-                        <div className={`editStatusPill ${hasPendingChanges ? "dirty" : "pristine"} ${draftPreview?.canSave ? "ready" : "needsAttention"}`}>
-                          {hasPendingChanges ? t("sessionsCard.edit.statusDirty") : t("sessionsCard.edit.statusClean")}
-                        </div>
-                        <div className="editPreviewGrid">
-                          <div className="editPreviewMetric">
-                            <div className="editPreviewLabel">{t("sessionsCard.edit.liveCost")}</div>
-                            <div className="editPreviewValue">{draftPreview?.totalCost != null ? euro(draftPreview.totalCost) : "–"}</div>
-                          </div>
-                          <div className="editPreviewMetric">
-                            <div className="editPreviewLabel">{t("sessionsCard.edit.liveAvg")}</div>
-                            <div className="editPreviewValue">{draftPreview?.avgPowerKw != null ? `${num(draftPreview.avgPowerKw, 1)} kW` : "–"}</div>
-                          </div>
-                          <div className="editPreviewMetric">
-                            <div className="editPreviewLabel">{t("sessionsCard.edit.socDelta")}</div>
-                            <div className="editPreviewValue">{draftPreview?.socDelta != null ? `${num(draftPreview.socDelta, 0)} %` : "–"}</div>
-                          </div>
-                          <div className="editPreviewMetric">
-                            <div className="editPreviewLabel">{t("sessionsCard.edit.duration")}</div>
-                            <div className="editPreviewValue">{draftPreview?.durationSeconds ? secsToHHMM(draftPreview.durationSeconds) : "–"}</div>
-                          </div>
-                          <div className="editPreviewMetric">
-                            <div className="editPreviewLabel">{t("sessionsCard.edit.distance")}</div>
-                            <div className="editPreviewValue">{draftPreview?.distanceKm != null ? `${num(draftPreview.distanceKm, 0)} km` : "–"}</div>
-                          </div>
-                          <div className="editPreviewMetric">
-                            <div className="editPreviewLabel">{t("sessionsCard.edit.costPer100Km")}</div>
-                            <div className="editPreviewValue">{draftPreview?.costPer100Km != null ? `${num(draftPreview.costPer100Km, 2)} €` : "–"}</div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="tableEditActions">
-                        <div className="formHint">
-                          {hasPendingChanges
-                            ? draftPreview?.canSave
-                              ? t("sessionsCard.edit.ready")
-                              : draftPreview?.previousOdometerKm != null && draftPreview?.odometerKm != null && draftPreview.odometerKm < draftPreview.previousOdometerKm
-                                ? t("sessionsCard.edit.odometerMin", { value: num(draftPreview.previousOdometerKm, 0) })
-                                : draftPreview?.nextOdometerKm != null && draftPreview?.odometerKm != null && draftPreview.odometerKm > draftPreview.nextOdometerKm
-                                  ? t("sessionsCard.edit.odometerMax", { value: num(draftPreview.nextOdometerKm, 0) })
-                                : t("sessionsCard.edit.invalid")
-                            : t("sessionsCard.edit.noChanges")}
-                        </div>
-                        <button type="button" className="pill pillWarm" onClick={() => onSaveEdit(session)} disabled={saveDisabled}>
-                          {saveBusy ? t("sessionsCard.buttons.saving") : t("common.save")}
-                        </button>
-                      </div>
-                    </div>
-                  ) : null}
                 </React.Fragment>
               );
             })
           )}
         </div>
       </div>
+
+      {visibleCount < filteredSessions.length ? (
+        <div className="sessionPagination" role="status">
+          <span>{t("sessionsCard.pagination.status", { visible: visibleSessions.length, total: filteredSessions.length })}</span>
+          <button type="button" className="pill ghostPill" onClick={() => setVisibleCount((count) => count + 12)}>
+            {t("sessionsCard.pagination.more")}
+          </button>
+        </div>
+      ) : null}
 
       <SessionDetailDrawer
         session={detailSession}
@@ -829,6 +507,23 @@ export default function SessionsCard({
         onEdit={(row) => {
           closeDetails();
           beginEdit(row);
+        }}
+        onDelete={onDeleteRow}
+        deleteBusy={detailSession ? busyId === `delete-${detailSession.id}` : false}
+      />
+
+      <SessionEditDrawer
+        session={sessions.find((row) => String(row.id) === String(editingId)) || null}
+        sessions={sessions}
+        draft={draft}
+        connectorOptions={connectorOptions}
+        filterOptions={filterOptions}
+        busy={editingId != null && busyId === `save-${editingId}`}
+        onDraftChange={updateDraft}
+        onRequestClose={requestCloseEdit}
+        onSave={() => {
+          const row = sessions.find((entry) => String(entry.id) === String(editingId));
+          if (row) onSaveEdit(row);
         }}
       />
 

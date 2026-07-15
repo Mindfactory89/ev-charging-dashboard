@@ -22,26 +22,60 @@ function secsToHHMM(value) {
   return `${String(hours).padStart(2, "0")}:${String(rest).padStart(2, "0")}`;
 }
 
-export default function SessionDetailDrawer({ session, sessions = [], score, outlier, onClose, onEdit }) {
+function CloseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M6 6l12 12M18 6L6 18" />
+    </svg>
+  );
+}
+
+export default function SessionDetailDrawer({ session, sessions = [], score, outlier, onClose, onEdit, onDelete, deleteBusy = false }) {
   const { t } = useI18n();
   const panelRef = React.useRef(null);
+  const closeRef = React.useRef(onClose);
+
+  React.useEffect(() => {
+    closeRef.current = onClose;
+  }, [onClose]);
 
   React.useEffect(() => {
     if (!session) return undefined;
+    const previousFocus = document.activeElement;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    window.setTimeout(() => panelRef.current?.focus?.(), 40);
+    const focusTimer = window.setTimeout(() => panelRef.current?.focus?.(), 40);
 
     function onKeyDown(event) {
-      if (event.key === "Escape") onClose?.();
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeRef.current?.();
+        return;
+      }
+      if (event.key !== "Tab" || !panelRef.current) return;
+      const focusable = Array.from(panelRef.current.querySelectorAll(
+        'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])'
+      ));
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     }
 
     window.addEventListener("keydown", onKeyDown);
     return () => {
       document.body.style.overflow = previousOverflow;
+      window.clearTimeout(focusTimer);
       window.removeEventListener("keydown", onKeyDown);
+      previousFocus?.focus?.();
     };
-  }, [session, onClose]);
+  }, [session?.id]);
 
   if (!session) return null;
 
@@ -62,32 +96,41 @@ export default function SessionDetailDrawer({ session, sessions = [], score, out
   };
 
   return (
-    <div className="sessionDrawerOverlay" role="presentation" onClick={onClose}>
+    <div className="sessionDrawerOverlay" role="presentation" onMouseDown={(event) => {
+      if (event.target === event.currentTarget) onClose?.();
+    }}>
       <aside
         className="sessionDrawer"
         role="dialog"
         aria-modal="true"
-        aria-label={t("sessionDetail.ariaLabel", { date: datumDE(session.date) })}
+        aria-labelledby="session-detail-title"
+        aria-describedby="session-detail-description"
         tabIndex={-1}
         ref={panelRef}
-        onClick={(event) => event.stopPropagation()}
       >
-        <div className="sessionDrawerHeader">
-          <div>
-            <div className="sectionKicker">{t("sessionDetail.kicker")}</div>
-            <div className="sessionDrawerTitle">{datumDE(session.date)}</div>
+        <header className="sessionDrawerHeader sessionDetailHeader">
+          <div className="sessionDrawerIdentity">
+            <span className="sessionDrawerGlyph" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M13 2 6.5 13H12l-1 9 6.5-11H12l1-9Z" /></svg>
+            </span>
+            <div>
+              <div className="sectionKicker">{t("sessionDetail.kicker")}</div>
+              <h2 className="sessionDrawerTitle" id="session-detail-title">{datumDE(session.date)}</h2>
+              <p className="sessionDrawerDescription" id="session-detail-description">{t("sessionDetail.description")}</p>
             <div className="sessionDrawerMeta">
-              <span>{session.connector || "–"}</span>
-              <span>{pricePerKwh != null ? `${num(pricePerKwh, 3)} €/kWh` : t("sessionDetail.noPrice")}</span>
+                <span className="sessionMetaChip">{session.connector || "–"}</span>
+                <span className="sessionMetaChip">{pricePerKwh != null ? `${num(pricePerKwh, 3)} €/kWh` : t("sessionDetail.noPrice")}</span>
+                {score?.score != null ? <span className="sessionMetaChip accent">{num(score.score, 1)}/100</span> : null}
+              </div>
             </div>
           </div>
 
-          <button type="button" className="pill ghostPill" onClick={onClose}>
-            {t("sessionDetail.close")}
+          <button type="button" className="sessionDrawerClose" onClick={onClose} aria-label={t("sessionDetail.close")}>
+            <CloseIcon />
           </button>
-        </div>
+        </header>
 
-        <div className="summaryGrid compactSummaryGrid">
+        <section className="summaryGrid compactSummaryGrid sessionDetailSummary" aria-label={t("sessionDetail.summaryLabel")}>
           <article className="summaryCard warm">
             <div className="summaryLabel">{t("common.cost")}</div>
             <div className="summaryValue">{euro(session.total_cost)}</div>
@@ -117,6 +160,13 @@ export default function SessionDetailDrawer({ session, sessions = [], score, out
             <div className="summaryValue">{recoveredRangeKm != null ? `${num(recoveredRangeKm, 0)} km` : "–"}</div>
             <div className="summarySub">{t("sessionDetail.rangeRecoveredSub")}</div>
           </article>
+        </section>
+
+        <div className="sessionDrawerSectionHeading">
+          <div>
+            <div className="sectionKicker">{t("sessionDetail.metricsKicker")}</div>
+            <h3>{t("sessionDetail.metricsTitle")}</h3>
+          </div>
         </div>
 
         <div className="sessionDrawerInfoGrid">
@@ -167,16 +217,22 @@ export default function SessionDetailDrawer({ session, sessions = [], score, out
           </div>
         ) : null}
 
-        {session.note ? <div className="metricNarrative">{session.note}</div> : null}
+        {session.note ? (
+          <section className="sessionDrawerNote" aria-label={t("sessionDetail.noteTitle")}>
+            <span>{t("sessionDetail.noteTitle")}</span>
+            <p>{session.note}</p>
+          </section>
+        ) : null}
 
-        <div className="sessionDrawerActions">
+        <footer className="sessionDrawerActions sessionDetailActions">
           <button type="button" className="pill pillWarm" onClick={() => onEdit?.(session)}>
             {t("sessionDetail.actions.edit")}
           </button>
-          <button type="button" className="pill ghostPill" onClick={onClose}>
-            {t("sessionDetail.actions.back")}
+          <button type="button" className="pill sessionDeleteAction" onClick={() => onDelete?.(session)} disabled={deleteBusy}>
+            {deleteBusy ? t("sessionsCard.buttons.deleting") : t("sessionDetail.actions.delete")}
           </button>
-        </div>
+          <button type="button" className="pill ghostPill sessionBackAction" onClick={onClose}>{t("sessionDetail.actions.back")}</button>
+        </footer>
       </aside>
     </div>
   );
