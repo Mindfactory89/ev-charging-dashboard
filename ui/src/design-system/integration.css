@@ -1,8 +1,4 @@
-/*
- * Foundation integration layer
- * Loaded after the legacy stylesheet so existing screens consume the new
- * component contracts while the visual overhaul is delivered package by package.
- */
+/* Foundation integration layer for shared design-system contracts. */
 
 html {
   min-height: 100%;
@@ -111,9 +107,7 @@ textarea,
   letter-spacing: var(--ds-tracking-label);
 }
 
-/* Legacy header rules use fixed white values and appear with higher cascade
- * priority in the bundled stylesheet. Theme-scoped selectors keep both modes
- * readable without introducing mode-specific component colors. */
+/* Theme-scoped selectors keep both modes readable. */
 html[data-theme] .chipLabel {
   color: var(--color-text-tertiary);
 }

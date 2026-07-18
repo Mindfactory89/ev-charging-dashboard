@@ -1,16 +1,10 @@
 import React, { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
-/**
- * Premium Tooltip (Cupra Glass)
- * - Renders via Portal into document.body (never clipped by overflow)
- * - Stays open on hover of trigger OR tooltip
- * - Supports focus (keyboard)
- * - Uses existing CSS classes: tt, ttOpen, ttInner, ttCopper, ttContent
- */
+/** Accessible portal-based tooltip that supports hover and keyboard focus. */
 export default function Tooltip({
   content,
-  placement = "top", // top | bottom
+  placement = "top",
   children,
   openDelayMs = 60,
   closeDelayMs = 180,

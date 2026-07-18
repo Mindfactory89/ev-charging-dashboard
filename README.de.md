@@ -28,7 +28,6 @@ Die oeffentliche Demo nimmt bewusst keine Fahrzeugbilder an. In der eigenen Inst
 Fuer die Zukunft plane ich noch einiges 🚀
 
 - [Experimentelle Mobile App] Eine experimentelle Mobile App fuer iOS und Android, damit das Dashboard auch unterwegs easy zu bedienen ist
-- Eine Home Assistant Integration
 - Weitere Ideen fuer Struktur, Features und den gesamten Produktaufbau
 
 ### Feedback 💬
