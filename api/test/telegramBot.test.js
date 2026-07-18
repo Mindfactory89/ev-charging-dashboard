@@ -116,7 +116,7 @@ test('telegram bot creates a charging session from the guided draft flow', async
 
   assert.equal(createdRows.length, 1);
   assert.equal(createdRows[0].provider, 'Ionity');
-  assert.equal(createdRows[0].vehicle, 'CUPRA Born 79 kWh');
+  assert.equal(createdRows[0].vehicle, 'Elektroauto');
   assert.equal(createdRows[0].duration_seconds, 32 * 60);
   assert.equal(createdRows[0].total_cost, 25.07);
   assert.match(sentMessages[0].text, /Schön, dass du da bist/i);
@@ -270,4 +270,32 @@ test('telegram bot rejects unauthorized chats', async () => {
 
   assert.equal(sentMessages.length, 1);
   assert.match(sentMessages[0].text, /privat/i);
+});
+
+test('telegram bot returns a compact annual summary', async () => {
+  const sentMessages = [];
+  const bot = createTelegramBot({
+    telegramConfig: {
+      enabled: true,
+      botToken: '123:abc',
+      allowedChatIds: ['12345'],
+    },
+    prisma: {
+      chargingSession: {
+        findMany: async () => [
+          { date: new Date('2026-07-15T10:00:00Z'), energy_kwh: 30, total_cost: 12 },
+          { date: new Date('2026-05-10T10:00:00Z'), energy_kwh: 20, total_cost: 6 },
+        ],
+      },
+    },
+    logger: {},
+    fetchImpl: createFetchStub(sentMessages),
+    now: () => new Date('2026-07-16T10:00:00Z'),
+  });
+
+  await bot.handleUpdate(createMessage('/summary'));
+  assert.match(sentMessages.at(-1).text, /Ladeübersicht 2026/);
+  assert.match(sentMessages.at(-1).text, /Sessions: 2/);
+  assert.match(sentMessages.at(-1).text, /50,0 kWh/);
+  assert.match(sentMessages.at(-1).text, /0,360 EUR\/kWh/);
 });

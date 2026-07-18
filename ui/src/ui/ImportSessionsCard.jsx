@@ -3,7 +3,14 @@ import { useI18n } from "../i18n/I18nProvider.jsx";
 import { num } from "../app/formatters.js";
 import { createSession } from "./api.js";
 import { getImportProfiles } from "./importProfiles.js";
-import { buildImportPreview } from "./sessionImport.js";
+import { buildImportPreview, IMPORT_MAPPING_FIELDS, REQUIRED_IMPORT_MAPPING_FIELDS } from "./sessionImport.js";
+import {
+  deleteImportMappingProfile,
+  readImportMappingProfiles,
+  saveImportMappingProfile,
+} from "./importMappingProfiles.js";
+import { confirmAction } from "../platform/runtime.js";
+import { DEFAULT_VEHICLE } from "../app/constants.js";
 
 const MAX_IMPORT_FILE_BYTES = 5 * 1024 * 1024;
 
@@ -45,25 +52,46 @@ function rowStatus(row, t) {
   return { tone: "invalid", label: t("importSessions.status.review") };
 }
 
-export default function ImportSessionsCard({ onImported, sessions = [] }) {
+function mappingFieldLabel(field, t) {
+  return t(`importSessions.mapping.fields.${field}`);
+}
+
+export default function ImportSessionsCard({ onImported, sessions = [], vehicleProfile = null }) {
   const { locale, t } = useI18n();
+  const profileVehicleName = vehicleProfile?.sessionVehicleName || vehicleProfile?.name || DEFAULT_VEHICLE;
   const inputRef = React.useRef(null);
   const availableProfiles = React.useMemo(() => getImportProfiles(), [locale]);
   const [fileName, setFileName] = React.useState("");
   const [sourceText, setSourceText] = React.useState("");
   const [profileId, setProfileId] = React.useState("generic");
-  const [fallbacks, setFallbacks] = React.useState({ soc_start: 10, soc_end: 80, vehicle: "CUPRA Born 79 kWh" });
+  const [fallbacks, setFallbacks] = React.useState({ soc_start: 10, soc_end: 80, vehicle: profileVehicleName });
   const [preview, setPreview] = React.useState(null);
   const [filter, setFilter] = React.useState("all");
   const [fileError, setFileError] = React.useState("");
   const [busy, setBusy] = React.useState(false);
   const [progress, setProgress] = React.useState({ current: 0, total: 0 });
   const [result, setResult] = React.useState(null);
+  const [mappingOverrides, setMappingOverrides] = React.useState({});
+  const [mappingOpen, setMappingOpen] = React.useState(false);
+  const [savedProfiles, setSavedProfiles] = React.useState(() => readImportMappingProfiles());
+  const [selectedSavedProfileId, setSelectedSavedProfileId] = React.useState("");
+  const [profileName, setProfileName] = React.useState("");
+  const [profileMessage, setProfileMessage] = React.useState(null);
+  const previousProfileVehicleRef = React.useRef(profileVehicleName);
+
+  React.useEffect(() => {
+    const previousName = previousProfileVehicleRef.current;
+    setFallbacks((current) => {
+      if (current.vehicle && current.vehicle !== DEFAULT_VEHICLE && current.vehicle !== previousName) return current;
+      return { ...current, vehicle: profileVehicleName };
+    });
+    previousProfileVehicleRef.current = profileVehicleName;
+  }, [profileVehicleName]);
 
   React.useEffect(() => {
     if (!sourceText) return;
-    setPreview(buildImportPreview(sourceText, sessions, { profileId, fallbacks }));
-  }, [fallbacks, locale, profileId, sessions, sourceText]);
+    setPreview(buildImportPreview(sourceText, sessions, { profileId, fallbacks, mapping: mappingOverrides }));
+  }, [fallbacks, locale, mappingOverrides, profileId, sessions, sourceText]);
 
   const visibleRows = React.useMemo(() => {
     const rows = preview?.rows || [];
@@ -99,6 +127,11 @@ export default function ImportSessionsCard({ onImported, sessions = [] }) {
     setFileName(file.name);
     setSourceText(text);
     setProfileId(nextPreview.profile.activeId || "generic");
+    setMappingOverrides({});
+    setSelectedSavedProfileId("");
+    setProfileName("");
+    setProfileMessage(null);
+    setMappingOpen(nextPreview.summary.invalid > 0);
     setPreview(nextPreview);
     setFilter("all");
   }
@@ -109,8 +142,86 @@ export default function ImportSessionsCard({ onImported, sessions = [] }) {
     setPreview(null);
     setFileError("");
     setResult(null);
+    setMappingOverrides({});
+    setMappingOpen(false);
+    setSelectedSavedProfileId("");
+    setProfileName("");
+    setProfileMessage(null);
     setProgress({ current: 0, total: 0 });
     if (inputRef.current) inputRef.current.value = "";
+  }
+
+  function selectBaseProfile(nextProfileId) {
+    setProfileId(nextProfileId);
+    setMappingOverrides({});
+    setSelectedSavedProfileId("");
+    setProfileName("");
+    setProfileMessage(null);
+  }
+
+  function updateMapping(field, header) {
+    setMappingOverrides((current) => ({ ...current, [field]: header }));
+    setProfileMessage(null);
+  }
+
+  function resetAutomaticMapping() {
+    setMappingOverrides({});
+    setSelectedSavedProfileId("");
+    setProfileName("");
+    setProfileMessage({ tone: "success", text: t("importSessions.mapping.autoRestored") });
+  }
+
+  function applySavedProfile(profileIdValue) {
+    setSelectedSavedProfileId(profileIdValue);
+    const savedProfile = savedProfiles.find((profile) => profile.id === profileIdValue);
+    if (!savedProfile) {
+      setProfileName("");
+      return;
+    }
+    setProfileId(savedProfile.baseProfileId || "generic");
+    setFallbacks(savedProfile.fallbacks || fallbacks);
+    setMappingOverrides(savedProfile.mapping || {});
+    setProfileName(savedProfile.name);
+    setMappingOpen(true);
+    setProfileMessage({ tone: "success", text: t("importSessions.savedProfiles.applied", { name: savedProfile.name }) });
+  }
+
+  function saveCurrentProfile() {
+    const name = profileName.trim();
+    if (!name) {
+      setProfileMessage({ tone: "error", text: t("importSessions.savedProfiles.nameRequired") });
+      return;
+    }
+    const mapping = Object.fromEntries(
+      IMPORT_MAPPING_FIELDS.map((field) => [field, preview?.mapping?.[field] || ""])
+    );
+    const resultState = saveImportMappingProfile({
+      id: selectedSavedProfileId || undefined,
+      name,
+      baseProfileId: profileId,
+      mapping,
+      fallbacks,
+    }, savedProfiles);
+    if (!resultState.profile) return;
+    setSavedProfiles(resultState.profiles);
+    setSelectedSavedProfileId(resultState.profile.id);
+    setProfileMessage({ tone: "success", text: t("importSessions.savedProfiles.saved", { name }) });
+  }
+
+  async function deleteCurrentProfile() {
+    const savedProfile = savedProfiles.find((profile) => profile.id === selectedSavedProfileId);
+    if (!savedProfile) return;
+    const confirmed = await confirmAction(t("importSessions.savedProfiles.deleteMessage", { name: savedProfile.name }), {
+      title: t("importSessions.savedProfiles.deleteTitle"),
+      confirmLabel: t("importSessions.savedProfiles.deleteConfirm"),
+      cancelLabel: t("common.cancel"),
+      tone: "danger",
+    });
+    if (!confirmed) return;
+    setSavedProfiles(deleteImportMappingProfile(savedProfile.id, savedProfiles));
+    setSelectedSavedProfileId("");
+    setProfileName("");
+    setProfileMessage({ tone: "success", text: t("importSessions.savedProfiles.deleted") });
   }
 
   async function runImport() {
@@ -128,7 +239,11 @@ export default function ImportSessionsCard({ onImported, sessions = [] }) {
 
     for (const row of rows) {
       try {
-        await createSession(row.payload);
+        const belongsToSelectedProfile = row.payload?.vehicle === profileVehicleName;
+        await createSession({
+          ...row.payload,
+          vehicle_profile_id: belongsToSelectedProfile ? vehicleProfile?.id || null : null,
+        });
         imported += 1;
       } catch (error) {
         failures.push({ index: row.index, error: String(error?.message || error) });
@@ -143,6 +258,13 @@ export default function ImportSessionsCard({ onImported, sessions = [] }) {
 
   const activeStep = result ? 3 : preview ? 2 : 1;
   const progressPercent = progress.total ? Math.round((progress.current / progress.total) * 100) : 0;
+  const mappedFieldCount = IMPORT_MAPPING_FIELDS.filter((field) => preview?.mapping?.[field]).length;
+  const missingRequiredMappings = preview
+    ? [
+        ...REQUIRED_IMPORT_MAPPING_FIELDS.filter((field) => !preview.mapping?.[field]),
+        ...(!preview.mapping?.price_per_kwh && !preview.mapping?.total_cost ? ["price"] : []),
+      ]
+    : [];
 
   return (
     <div className="card glassStrong importWorkflowCard">
@@ -196,11 +318,86 @@ export default function ImportSessionsCard({ onImported, sessions = [] }) {
           </div>
 
           <div className="importConfiguration">
-            <label><span>{t("importSessions.profileLabel")}</span><select className="input" value={profileId} onChange={(event) => setProfileId(event.target.value)}>{(preview.availableProfiles || availableProfiles).map((profile) => <option key={profile.id} value={profile.id}>{profile.label}</option>)}</select><small>{preview.profile.activeDescription}</small></label>
+            <label><span>{t("importSessions.profileLabel")}</span><select className="input" value={profileId} onChange={(event) => selectBaseProfile(event.target.value)}>{(preview.availableProfiles || availableProfiles).map((profile) => <option key={profile.id} value={profile.id}>{profile.label}</option>)}</select><small>{preview.profile.activeDescription}</small></label>
             <label><span>{t("importSessions.fallbacks.socStart")}</span><input className="input" type="number" min="0" max="100" value={fallbacks.soc_start} onChange={(event) => setFallbacks((current) => ({ ...current, soc_start: Number(event.target.value) }))} /></label>
             <label><span>{t("importSessions.fallbacks.socEnd")}</span><input className="input" type="number" min="0" max="100" value={fallbacks.soc_end} onChange={(event) => setFallbacks((current) => ({ ...current, soc_end: Number(event.target.value) }))} /></label>
             <label><span>{t("importSessions.fallbacks.vehicle")}</span><input className="input" value={fallbacks.vehicle} onChange={(event) => setFallbacks((current) => ({ ...current, vehicle: event.target.value }))} /></label>
           </div>
+
+          <details
+            className={`importMappingPanel ${missingRequiredMappings.length ? "needsAttention" : ""}`}
+            open={mappingOpen}
+            onToggle={(event) => setMappingOpen(event.currentTarget.open)}
+          >
+            <summary>
+              <span className="importMappingSummaryIcon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M4 7h10m4 0h2M10 17h10M4 17h2M14 4v6M10 14v6" /></svg>
+              </span>
+              <span><strong>{t("importSessions.mapping.title")}</strong><small>{t("importSessions.mapping.text")}</small></span>
+              <span className={`importMappingCoverage ${missingRequiredMappings.length ? "warning" : "ready"}`}>
+                {missingRequiredMappings.length
+                  ? t("importSessions.mapping.missing", { count: missingRequiredMappings.length })
+                  : t("importSessions.mapping.coverage", { mapped: mappedFieldCount, total: IMPORT_MAPPING_FIELDS.length })}
+              </span>
+            </summary>
+
+            <div className="importMappingBody">
+              <section className="importSavedProfiles" aria-labelledby="saved-import-profile-title">
+                <div className="importMappingSectionHeading">
+                  <div><strong id="saved-import-profile-title">{t("importSessions.savedProfiles.title")}</strong><span>{t("importSessions.savedProfiles.text")}</span></div>
+                </div>
+                <div className="importSavedProfileControls">
+                  <label>
+                    <span>{t("importSessions.savedProfiles.select")}</span>
+                    <select className="input" value={selectedSavedProfileId} onChange={(event) => applySavedProfile(event.target.value)}>
+                      <option value="">{t("importSessions.savedProfiles.newProfile")}</option>
+                      {savedProfiles.map((profile) => <option key={profile.id} value={profile.id}>{profile.name}</option>)}
+                    </select>
+                  </label>
+                  <label>
+                    <span>{t("importSessions.savedProfiles.name")}</span>
+                    <input className="input" maxLength="60" value={profileName} onChange={(event) => { setProfileName(event.target.value); setProfileMessage(null); }} placeholder={t("importSessions.savedProfiles.namePlaceholder")} />
+                  </label>
+                  <div className="importSavedProfileActions">
+                    <button type="button" className="pill pillWarm" onClick={saveCurrentProfile}>{selectedSavedProfileId ? t("importSessions.savedProfiles.update") : t("importSessions.savedProfiles.save")}</button>
+                    {selectedSavedProfileId ? <button type="button" className="pill ghostPill dangerPill" onClick={deleteCurrentProfile}>{t("importSessions.savedProfiles.delete")}</button> : null}
+                  </div>
+                </div>
+                {profileMessage ? <div className={`importProfileMessage ${profileMessage.tone}`} role="status">{profileMessage.text}</div> : null}
+              </section>
+
+              <section className="importColumnMapping" aria-labelledby="column-mapping-title">
+                <div className="importMappingSectionHeading">
+                  <div><strong id="column-mapping-title">{t("importSessions.mapping.columnsTitle")}</strong><span>{t("importSessions.mapping.columnsText")}</span></div>
+                  <button type="button" className="pill ghostPill" onClick={resetAutomaticMapping}>{t("importSessions.mapping.resetAuto")}</button>
+                </div>
+                {missingRequiredMappings.length ? (
+                  <div className="importMappingAlert" role="alert">
+                    <strong>{t("importSessions.mapping.attentionTitle")}</strong>
+                    <span>{t("importSessions.mapping.attentionText")}</span>
+                  </div>
+                ) : null}
+                <div className="importMappingGrid">
+                  {IMPORT_MAPPING_FIELDS.map((field) => {
+                    const selectedHeader = preview.mapping?.[field] || "";
+                    const sampleValue = selectedHeader ? preview.rows[0]?.record?.[selectedHeader] : "";
+                    const required = REQUIRED_IMPORT_MAPPING_FIELDS.includes(field);
+                    const priceAlternative = field === "price_per_kwh" || field === "total_cost";
+                    return (
+                      <label key={field} className={!selectedHeader && (required || (priceAlternative && missingRequiredMappings.includes("price"))) ? "hasError" : ""}>
+                        <span>{mappingFieldLabel(field, t)}{required ? <b>{t("importSessions.mapping.required")}</b> : priceAlternative ? <b>{t("importSessions.mapping.alternative")}</b> : null}</span>
+                        <select className="input" value={selectedHeader} onChange={(event) => updateMapping(field, event.target.value)}>
+                          <option value="">{t("importSessions.mapping.ignore")}</option>
+                          {preview.headers.map((header) => <option key={`${field}-${header}`} value={header}>{header}</option>)}
+                        </select>
+                        <small>{sampleValue ? t("importSessions.mapping.sample", { value: String(sampleValue).slice(0, 80) }) : t("importSessions.mapping.noSample")}</small>
+                      </label>
+                    );
+                  })}
+                </div>
+              </section>
+            </div>
+          </details>
 
           <div className="importSummaryGrid">
             {["total", "ready", "duplicates", "invalid"].map((key) => (

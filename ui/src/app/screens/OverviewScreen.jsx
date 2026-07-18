@@ -1,6 +1,8 @@
 import { Suspense, lazy } from "react";
 import MonthlyChart from "../../ui/MonthlyChart.jsx";
-import MonthlyReportCard from "../../ui/MonthlyReportCard.jsx";
+import ChargingGoalCompass from "../../ui/ChargingGoalCompass.jsx";
+import PersonalActionCenter from "../../ui/PersonalActionCenter.jsx";
+import ChargingProfileCard from "../../ui/ChargingProfileCard.jsx";
 import Tooltip from "../../ui/Tooltip.jsx";
 import LazySectionFallback from "../LazySectionFallback.jsx";
 import { monthLabel } from "../../ui/monthLabels.js";
@@ -10,6 +12,7 @@ import { useI18n } from "../../i18n/I18nProvider.jsx";
 const ForecastCard = lazy(() => import("../../ui/ForecastCard.jsx"));
 const PowerCurveCard = lazy(() => import("../../ui/PowerCurveCard.jsx"));
 const YearComparisonPanel = lazy(() => import("../../ui/YearComparisonPanel.jsx"));
+const MonthlyReportCard = lazy(() => import("../../ui/MonthlyReportCard.jsx"));
 
 function comparisonRightYear(year, availableYears) {
   const alternatives = (availableYears || []).filter((entry) => Number(entry) !== Number(year));
@@ -20,22 +23,31 @@ export default function OverviewScreen({
   activeMonths,
   availableYears,
   currentPrev,
+  chargingGoalProgress,
+  chargingGoals,
+  chargingProfile,
   displayStats,
   focusMonthWeekdayFact,
+  intelligence,
   loading,
   latestSession,
   monthlySorted,
   noYearData,
+  onOpenChargingGoals,
+  onOpenChargingProfiles,
   onOpenHistoryDrilldown,
+  onPersonalActionNavigate,
   onOverviewModeChange,
   overviewMode,
   priceSummary,
+  outliers,
   sessions,
   socWindowAnalysis,
   spotlightCard,
   spotlightImpulseValue,
   year,
   yearWeekdayFact,
+  vehicleScope,
 }) {
   const { t } = useI18n();
 
@@ -58,6 +70,7 @@ export default function OverviewScreen({
           availableYears={availableYears}
           initialLeftYear={year}
           initialRightYear={comparisonRightYear(year, availableYears)}
+          vehicleScope={vehicleScope}
         />,
         t("overview.loading.compare")
       );
@@ -144,6 +157,26 @@ export default function OverviewScreen({
 
   return (
     <>
+      <ChargingGoalCompass
+        goals={chargingGoals}
+        items={chargingGoalProgress}
+        onOpen={onOpenChargingGoals}
+        sessions={sessions}
+        year={year}
+      />
+
+      <ChargingProfileCard onOpen={onOpenChargingProfiles} profile={chargingProfile} />
+
+      <PersonalActionCenter
+        goalProgress={chargingGoalProgress}
+        intelligence={intelligence}
+        onNavigate={onPersonalActionNavigate}
+        outliers={outliers}
+        sessions={sessions}
+        stats={displayStats}
+        year={year}
+      />
+
       <section className="premiumModeBar">
         <div className="premiumModeIntro">
           <div className="sectionKicker">{t("overview.focusKicker")}</div>
@@ -190,7 +223,10 @@ export default function OverviewScreen({
 
       <div className="premiumSecondaryGrid">
         <div className="premiumSecondarySlot">
-          <MonthlyReportCard months={monthlySorted} sessions={sessions} year={year} />
+          {renderDeferredOverview(
+            <MonthlyReportCard months={monthlySorted} sessions={sessions} year={year} />,
+            t("overview.loading.report")
+          )}
         </div>
 
         <div className="premiumSecondarySlot premiumSecondarySpotlight">

@@ -794,6 +794,7 @@ function buildDemoSessionFromTemplate(template, year, idx) {
     provider: template.provider,
     location: template.location,
     vehicle: DEFAULT_VEHICLE,
+    vehicle_profile_id: "generic-ev",
     tags:
       templateKind(template) === "wallbox"
         ? "zuhause, alltag"
@@ -1279,6 +1280,16 @@ function buildDashboardBundleFromSessions(rows, year) {
       meta: buildStaticSessionMeta(yearRows.length),
     },
   };
+}
+
+function filterByVehicleScope(rows, vehicleScope) {
+  if (!vehicleScope?.id && !vehicleScope?.name) return rows;
+  const profileId = normalizeSessionText(vehicleScope?.id);
+  const vehicleName = normalizeSessionText(vehicleScope?.name).toLocaleLowerCase();
+  return (Array.isArray(rows) ? rows : []).filter((row) => {
+    if (profileId && normalizeSessionText(row?.vehicle_profile_id) === profileId) return true;
+    return vehicleName && normalizeSessionText(row?.vehicle).toLocaleLowerCase() === vehicleName;
+  });
 }
 
 function computeMonthlyFromSessions(rows, year) {
@@ -2032,6 +2043,7 @@ function normalizePayloadToSession(payload) {
     provider: normalizeSessionText(payload?.provider || payload?.anbieter) || "DemoNet",
     location: normalizeSessionText(payload?.location || payload?.ort) || "Demo Charger",
     vehicle,
+    vehicle_profile_id: normalizeSessionText(payload?.vehicle_profile_id) || null,
     tags: tags.join(", "),
     connector: payload?.connector || payload?.anschluss || CONNECTOR_OPTIONS[0] || "CCS - DC",
     soc_start: payload?.soc_start ?? payload?.socStart ?? 10,
@@ -2112,8 +2124,9 @@ function getDemoSessionsResult(year) {
   };
 }
 
-function getDemoDashboardBundleValue(cacheKey, year) {
-  return setDashboardCacheValue(cacheKey, buildDashboardBundleFromSessions(getAllDemoRows(), year));
+function getDemoDashboardBundleValue(cacheKey, year, vehicleScope = null) {
+  const scopedRows = filterByVehicleScope(getAllDemoRows(), vehicleScope);
+  return setDashboardCacheValue(cacheKey, buildDashboardBundleFromSessions(scopedRows, year));
 }
 
 function resolveDemoOrRemote(year, demoResolver, remoteResolver) {
@@ -2175,18 +2188,19 @@ export async function getStats(year = 2026) {
   return resolveDemoOrRemote(year, (selectedYear) => computeStatsFromSessions(getDemoYearRows(selectedYear), selectedYear), getStatsRemote);
 }
 
-export async function getDashboardBundle(year = 2026) {
+export async function getDashboardBundle(year = 2026, vehicleScope = null) {
   const cacheMode = isDemoMode ? "demo" : "real";
-  const cacheKey = dashboardCacheKey(year, cacheMode);
+  const scopeKey = vehicleScope?.id || vehicleScope?.name || "";
+  const cacheKey = dashboardCacheKey(year, cacheMode, scopeKey);
   const cachedEntry = getDashboardCacheEntry(cacheKey);
   if (cachedEntry?.value) return cachedEntry.value;
   if (cachedEntry?.promise) return cachedEntry.promise;
 
   if (isDemoMode) {
-    return getDemoDashboardBundleValue(cacheKey, year);
+    return getDemoDashboardBundleValue(cacheKey, year, vehicleScope);
   }
 
-  const request = getDashboardBundleRemote(year)
+  const request = getDashboardBundleRemote(year, vehicleScope)
     .then((bundle) => setDashboardCacheValue(cacheKey, bundle))
     .catch((error) => {
       deleteDashboardCacheEntry(cacheKey);

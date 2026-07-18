@@ -8,9 +8,22 @@ Self-hosted EV-Ladedashboard mit Analysen, Forecasts, Lade-Insights und lokalem 
 
 Willkommen zu meinem EV Charging Dashboard ⚡🚗
 
-Das ist mein erstes Projekt in dieser Form, und ich lerne aktuell noch vieles Schritt fuer Schritt 🙂 Ich sitze jetzt seit etwa 1-2 Monaten daran und freue mich sehr, dass ich es endlich veroeffentlichen kann.
+Angefangen hat das Ganze als mein erstes Projekt in dieser Form. Seitdem ist ziemlich viel dazugekommen. Mit jedem Update lerne ich selbst wieder etwas Neues – und genau das macht fuer mich auch einen grossen Teil des Projekts aus 🙂
 
-Dieses Projekt ist genau so entstanden, wie ich es mir selbst gewuenscht habe: ein Dashboard nach meinen eigenen Vorstellungen, ohne unnoetige Apps installieren zu muessen, mit Fokus auf Uebersicht, Analysen und einfache Nutzung.
+Urspruenglich habe ich das Dashboard fuer mich selbst gebaut: keine unnoetige App, keine ueberladene Oberflaeche und keine Ladedaten, die irgendwo in einer fremden Cloud verschwinden. Das Ziel ist bis heute gleich geblieben – eine klare und hilfreiche Uebersicht, die ich auf meinem eigenen Server betreiben kann.
+
+### Neu in v1.6.0
+
+Das Dashboard ist nicht mehr auf ein bestimmtes Auto zugeschnitten. Mit der neuen E-Garage ist es jetzt fuer unterschiedliche Marken, mehrere Fahrzeuge und eigene Fahrzeugprofile offen.
+
+- Durchsuchbarer Startkatalog mit bekannten Elektroautos verschiedener Hersteller
+- Eigene Fahrzeuge mit Akku, Verbrauch, Ladeleistung, Modelldaten und optionalem persoenlichen Bild
+- Eine globale Fahrzeugauswahl fuer Uebersicht, Analyse, Verlauf, Forecasts und Jahresvergleiche
+- Gemeinsame Flottenansicht, wenn alle Fahrzeuge zusammen ausgewertet werden sollen
+- Mehr Personalisierung durch Ziele, Ladeprofile, Benachrichtigungen, Empfehlungen und bessere Datenqualitaetswerkzeuge
+- Installierbare PWA, klare Offline-Hinweise und globaler Schnellzugriff mit `Cmd/Strg + K`
+
+Die oeffentliche Demo nimmt bewusst keine Fahrzeugbilder an. In der eigenen Installation bleibt die Funktion vollstaendig erhalten, ohne Bilder an einen externen Dienst zu senden.
 
 Fuer die Zukunft plane ich noch einiges 🚀
 
@@ -32,7 +45,8 @@ Wenn du dir das Projekt erst einmal nur anschauen willst, ohne etwas zu installi
 - [edashboard.bjornlabs.app](https://edashboard.bjornlabs.app/)
 - Die Demo laeuft komplett clientseitig und speichert keine Aenderungen dauerhaft
 - Pro Demo-Jahr wird ein realistisch wirkender Datensatz mit etwa `30` bis `50` Ladesessions erzeugt
-- Preise, Energie und Verbrauch sind absichtlich naeher an echten AC/DC-Mustern, Saisoneffekten und einem `79 kWh`-Referenzakku modelliert
+- Preise, Energie und Verbrauch sind absichtlich naeher an echten AC/DC-Mustern, Saisoneffekten und mehreren Fahrzeugprofilen modelliert
+- Fahrzeugbilder koennen in der oeffentlichen Demo bewusst nicht hochgeladen werden; diese Funktion bleibt persoenlichen Installationen vorbehalten
 
 ### Funktionen
 
@@ -40,9 +54,15 @@ Wenn du dir das Projekt erst einmal nur anschauen willst, ohne etwas zu installi
 - Smart Insights, SoC-Analyse und Ausreisser-Erkennung
 - Zweisprachige UI in Deutsch und Englisch fuer Uebersicht, Analyse, Verlauf, Import und Session-Details
 - Session-Verwaltung mit Inline-Edit, Detail-Drawer, Undo und CSV-Export
+- Aktive Datenqualitaetspruefung, Sammelaktionen und automatische Wiederherstellung unfertiger Session-Entwuerfe
+- Konfigurierbare Benachrichtigungen plus Telegram-Jahreszusammenfassung auf Abruf
+- Installierbare PWA mit lokalem App-Rahmen, erkennbarem Offline-Status und kontrollierten Updates
+- Globaler Schnellzugriff mit Tastaturkuerzeln und Suche in Funktionen sowie Ladevorgaengen
 - Demo-Modus zum Testen ohne laufende API oder Datenbank
 - Realistischere Demo-Daten mit mehr Sessions, variierenden AC/DC-Preisen und EV-typischen Ladefenstern
-- Visuelle Fahrzeugprofile fuer CUPRA Born, CUPRA Tavascan, CUPRA Raval und Generic EV
+- Markenoffene E-Garage mit durchsuchbarem Fahrzeugkatalog, eigenen Profilen und optionalen persoenlichen Fahrzeugbildern
+- Globale Fahrzeugauswahl fuer Uebersicht, Analyse, Verlauf, Forecasts und Jahresvergleiche inklusive gemeinsamer Flottenansicht
+- Stabile Fahrzeugprofil-IDs fuer neue Ladevorgaenge mit automatischer Kompatibilitaet zu bestehenden Fahrzeugnamen
 - Versionierter VPS-Backup-Workflow mit automatischen Pre-Deploy-Snapshots, Mittwoch/Samstag-Backups und Restore-Helfern
 
 ### Screenshots 📸
@@ -206,9 +226,10 @@ Hinweise:
 
 - `VITE_API_BASE` kann leer bleiben, dann leitet die UI automatisch `hostname:18800` ab.
 - `VITE_MOBILE_API_BASE` ist fuer native Android/iOS-Builds gedacht.
-- `VITE_VEHICLE_PROFILE` aendert nur die visuelle Hero-/Profil-Darstellung. Eingebaute IDs sind `cupra-born`, `cupra-tavascan`, `cupra-raval` und `generic-ev`.
+- `VITE_VEHICLE_PROFILE` waehlt das anfaengliche visuelle Fahrzeugprofil. Der vollstaendige markenoffene Katalog liegt in `ui/src/config/vehicleProfiles.js`.
 - `docker-compose.yml` erwartet eine explizite `TAILSCALE_IP`.
 - Der Demo-Modus kann mit `?demo=1` oder ueber `VITE_DEMO_HOST_PREFIX` aktiviert werden.
+- Im Demo-Modus sind Auswahl und Speicherung eigener Fahrzeugbilder technisch deaktiviert und nicht nur optisch ausgeblendet.
 - Das Dashboard kann im Header GitHub Releases pruefen. Direktinstallation bleibt deaktiviert, bis `MOBILITY_UPDATE_INSTALL_COMMAND` bewusst auf einer vertrauenswuerdigen Host-Laufzeit gesetzt wird.
 
 ### Telegram Bot fuer private Session-Erfassung
@@ -238,7 +259,7 @@ Praktische Hinweise:
 
 - mehrere Chat-IDs koennen komma-separiert eingetragen werden
 - unbekannte Chat-IDs werden im API-Log protokolliert, damit du neue Geraete spaeter freischalten kannst
-- verfuegbare Bot-Befehle aktuell: `/start`, `/new`, `/cancel`, `/whoami`
+- verfuegbare Bot-Befehle aktuell: `/start`, `/new`, `/summary`, `/cancel`, `/whoami`
 - bei optionalen Feldern kannst du ueber Inline-Buttons direkt "Ohne Angabe" auswaehlen oder alternativ einfach die passende Zahl senden
 
 ### Deploy-Helfer
@@ -285,6 +306,25 @@ Der Backup-Workflow deckt jetzt ab:
 - VPS-lokale Backups mittwochs und samstags mit 4er-Rotation
 - einen Restore-Helfer fuer einen ausgewaehlten Zeitstempel
 - eine SSH-Login-Uebersicht mit letztem Backup-Namen, Alter, naechstem Lauf und Download-Befehl
+
+### Persoenlicher Aktionsplan
+
+Die Uebersicht macht aus Zielen und Ladesignalen einen kurzen, priorisierten Aktionsplan:
+
+- verfehlte Budget-, Preis- und Effizienzziele stehen vor allgemeinen Hinweisen
+- ungewoehnliche Sessions, Sparpotenziale bei Anbietern und haeufig hohe Ladestaende werden zu konkreten naechsten Schritten
+- jede Empfehlung fuehrt direkt in die passende Analyse oder einen vorgefilterten Verlauf
+- Empfehlungen lassen sich pro Jahr ausblenden, sofort wiederherstellen und mit den lokalen Einstellungen sichern
+
+### Installierbare App und Schnellzugriff
+
+Das Web-Dashboard kann jetzt direkt aus einem unterstuetzten Browser installiert werden, ohne dass dafuer die experimentellen nativen Builds notwendig sind:
+
+- App-Rahmen, Symbole, Manifest und Offline-Fallback werden lokal bereitgehalten
+- ein Verbindungsabbruch wird klar angezeigt, statt alte Daten unkommentiert stehen zu lassen
+- vorbereitete Service-Worker-Updates werden bewusst im Dashboard aktiviert
+- `Cmd/Strg + K` oder `/` oeffnet die globale Suche nach Bereichen, Einstellungen, Aktionen, Anbietern, Orten, Fahrzeugen und Ladevorgaengen
+- ein ausgewaehlter Ladevorgang oeffnet sich direkt im vorhandenen Bearbeitungsablauf
 
 ### Mobile Builds 📱
 

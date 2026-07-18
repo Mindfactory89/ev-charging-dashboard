@@ -572,7 +572,7 @@ html[data-theme] .heroCard .chipSpec.accent {
   background: var(--color-surface);
 }
 
-:root[data-theme="light"] .heroCupraSlash,
+:root[data-theme="light"] .heroBrandAccent,
 :root[data-theme="light"] .addComposerGlow,
 :root[data-theme="light"] .heroGlow {
   opacity: 0.42;

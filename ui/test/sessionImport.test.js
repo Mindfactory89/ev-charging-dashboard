@@ -41,3 +41,35 @@ test("buildImportPreview parses fully quoted semicolon exports with BOM", () => 
   assert.equal(preview.rows[0].payload.energy_kwh, 46.518);
   assert.equal(preview.rows[0].payload.odometer_km, 7556);
 });
+
+test("buildImportPreview applies manual column mappings over automatic detection", () => {
+  const preview = buildImportPreview(
+    "Started,Operator,Power,Amount\n2026-05-04,FastCharge,42.5,25.50",
+    [],
+    {
+      mapping: {
+        date: "Started",
+        provider: "Operator",
+        energy_kwh: "Power",
+        total_cost: "Amount",
+      },
+    }
+  );
+
+  assert.equal(preview.rows[0].payload.date, "2026-05-04");
+  assert.equal(preview.rows[0].payload.provider, "FastCharge");
+  assert.equal(preview.rows[0].payload.energy_kwh, 42.5);
+  assert.equal(preview.rows[0].payload.price_per_kwh, 0.6);
+  assert.equal(preview.rows[0].ready, true);
+});
+
+test("empty manual mappings can intentionally clear an automatic match", () => {
+  const preview = buildImportPreview(
+    "date,energy_kwh,total_cost\n2026-05-04,42.5,25.50",
+    [],
+    { mapping: { date: "" } }
+  );
+
+  assert.equal(preview.mapping.date, undefined);
+  assert.ok(preview.rows[0].missing.includes("date"));
+});

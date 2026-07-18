@@ -1,0 +1,75 @@
+/* Package 18: installable, resilient web-app experience. */
+
+.pwaStatusStack {
+  display: grid;
+  width: min(100%, 1320px);
+  gap: var(--ds-space-2);
+  margin: 0 auto var(--ds-space-3);
+}
+
+.pwaStatusRail {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-3);
+  min-height: 56px;
+  padding: var(--ds-space-2) var(--ds-space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--ds-radius-lg);
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-surface);
+}
+
+.pwaStatusRail > svg {
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.pwaStatusRail > div {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pwaStatusRail strong { font-size: var(--ds-font-size-sm); }
+.pwaStatusRail span { color: var(--color-text-secondary); font-size: var(--ds-font-size-xs); line-height: var(--ds-leading-normal); }
+.pwaStatusOffline { border-color: color-mix(in srgb, var(--color-warning) 34%, var(--color-border)); color: var(--color-warning); }
+.pwaStatusUpdate { border-color: var(--color-primary-border); color: var(--color-primary); }
+.pwaStatusRail > div > strong { color: var(--color-text-primary); }
+
+.pwaSettingsStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  min-height: 28px;
+  color: var(--color-text-secondary);
+  font-size: var(--ds-font-size-xs);
+}
+
+.pwaSettingsStatus::before {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--ds-radius-full);
+  content: "";
+  background: var(--color-text-tertiary);
+}
+
+.pwaSettingsStatus.online::before,
+.pwaSettingsStatus.installed::before { background: var(--color-success); }
+.pwaSettingsStatus.offline::before { background: var(--color-warning); }
+
+@media (max-width: 620px) {
+  .pwaStatusRail { align-items: flex-start; flex-wrap: wrap; }
+  .pwaStatusRail .pill { width: 100%; }
+}
+
+@media (forced-colors: active) {
+  .pwaSettingsStatus::before { border: 1px solid CanvasText; }
+}

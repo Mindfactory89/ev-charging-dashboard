@@ -8,9 +8,22 @@ Self-hosted EV charging dashboard with analytics, forecasts, charging insights, 
 
 Welcome to my EV Charging Dashboard ⚡🚗
 
-This is my first project of this kind, and I am still learning a lot step by step 🙂 I have been working on it for around 1-2 months now, and I am really happy to finally share it publicly.
+This started as my first project of this kind and has grown quite a bit since then. I still learn something new with every update, but that is also one of the reasons why I enjoy working on it so much 🙂
 
-This project is built the way I personally wanted it to be: a dashboard based on my own ideas, without needing to install unnecessary apps, with a strong focus on clarity, analytics, and simple usability.
+I originally built the dashboard for myself: no unnecessary app, no overloaded interface, and no charging data disappearing into somebody else's cloud. The goal is still the same today – a clear, useful overview that I can run on my own server.
+
+### New in v1.6.0
+
+The dashboard is no longer tied to one specific car. The new EV garage opens it up to different brands, multiple vehicles, and personal vehicle profiles.
+
+- Searchable starter catalogue with popular EVs from several manufacturers
+- Custom vehicles with battery, consumption, charging power, model details, and an optional personal image
+- One global vehicle selector for the overview, analysis, history, forecasts, and year comparisons
+- A shared fleet view when you want to look at all vehicles together
+- A more personal dashboard with goals, charging profiles, notifications, recommendations, and better data-quality tools
+- Installable PWA, offline feedback, and global quick access with `Cmd/Ctrl + K`
+
+The public demo deliberately does not accept vehicle-image uploads. Personal installations keep the full feature without sending those images to an external service.
 
 There is still a lot planned for the future 🚀
 
@@ -32,7 +45,8 @@ If you just want to take a quick look before installing anything, you can open t
 - [edashboard.bjornlabs.app](https://edashboard.bjornlabs.app/)
 - The demo runs fully client-side and does not persist any changes
 - Demo years generate a realistic sample set with roughly `30` to `50` charging sessions
-- Demo prices and energy amounts are intentionally more lifelike, with AC/DC variance, seasonal consumption, and a `79 kWh` reference battery profile
+- Demo prices and energy amounts are intentionally more lifelike, with AC/DC variance, seasonal consumption, and several vehicle profiles
+- Vehicle image uploads are intentionally unavailable in the public demo and remain available only in personal installations
 
 ### Features
 
@@ -40,10 +54,16 @@ If you just want to take a quick look before installing anything, you can open t
 - Smart charging insights, SoC analysis, and outlier detection
 - Bilingual UI in German and English across overview, analysis, history, import, and session detail flows
 - Session management with inline editing, detail drawer, undo, and CSV export
+- Actionable data-quality checks, bulk review tools, and automatic restoration of unfinished session drafts
+- A configurable in-app notification centre plus an on-demand Telegram annual summary
+- Installable PWA with a cached app shell, explicit offline status, and controlled update activation
+- Global quick access with keyboard shortcuts and search across dashboard actions and charging sessions
 - Demo mode for testing without a running API or database
 - More realistic demo data with higher session counts, variable AC/DC pricing, and EV-like charging windows
-- Visual vehicle profiles for CUPRA Born, CUPRA Tavascan, CUPRA Raval, and Generic EV
-- Versioned VPS backup workflow with automatic pre-deploy snapshots, daily retention-based backups, and restore helpers
+- Multi-brand EV garage with a searchable starter catalogue, custom vehicle profiles, and optional personal vehicle images
+- Global vehicle scope for overview, analysis, history, forecasts, and year comparisons, including a combined fleet view
+- Stable vehicle-profile IDs for new charging sessions with automatic compatibility for existing vehicle names
+- Versioned VPS backup workflow with automatic pre-deploy snapshots, scheduled retention-based backups, and restore helpers
 
 ### Screenshots 📸
 
@@ -206,9 +226,10 @@ Notes:
 
 - Leave `VITE_API_BASE` empty when the UI should derive `hostname:18800` automatically.
 - `VITE_MOBILE_API_BASE` is intended for native Android/iOS builds.
-- `VITE_VEHICLE_PROFILE` only changes the visual hero/profile presentation. Built-in IDs are `cupra-born`, `cupra-tavascan`, `cupra-raval`, and `generic-ev`.
+- `VITE_VEHICLE_PROFILE` selects the initial visual vehicle profile. The complete built-in multi-brand catalogue is defined in `ui/src/config/vehicleProfiles.js`.
 - `docker-compose.yml` requires an explicit `TAILSCALE_IP`.
 - Demo mode can be activated with `?demo=1` or via `VITE_DEMO_HOST_PREFIX`.
+- In demo mode, local vehicle-image selection and image persistence are disabled by capability, not just hidden visually.
 - The dashboard can check GitHub releases from the header. Direct install is disabled unless `MOBILITY_UPDATE_INSTALL_COMMAND` is explicitly configured on a trusted host runtime.
 
 ### Telegram Bot For Private Session Entry
@@ -238,7 +259,7 @@ Helpful notes:
 
 - you can add multiple chat IDs as a comma-separated list
 - unknown chat IDs are logged by the API so you can allow new devices later
-- current bot commands: `/start`, `/new`, `/cancel`, `/whoami`
+- current bot commands: `/start`, `/new`, `/summary`, `/cancel`, `/whoami`
 - for optional fields you can use the inline "Without value" button or simply send the matching number
 
 ### Deploy Helper
@@ -285,6 +306,25 @@ The backup workflow now covers:
 - daily VPS-local backups with retention cleanup
 - a restore helper for a selected timestamp
 - an SSH login summary with last backup name, age, next run, and download command
+
+### Personal Action Center
+
+The overview turns goals and charging signals into a short, prioritised action plan:
+
+- missed budget, price, and efficiency goals take priority over general insights
+- unusual sessions, provider savings, and frequent high states of charge become concrete next steps
+- each action opens the matching analysis or a pre-filtered charging history
+- recommendations can be hidden per year, restored immediately, and included in the local settings backup
+
+### Installable App and Quick Access
+
+The web dashboard can now be installed directly from a supported browser without relying on the experimental native builds:
+
+- the app shell, icons, manifest, and offline fallback are cached locally
+- connection loss is shown explicitly instead of leaving stale data unexplained
+- prepared service-worker updates are activated deliberately from inside the dashboard
+- `Cmd/Ctrl + K` or `/` opens a global search for sections, settings, actions, providers, locations, vehicles, and charging sessions
+- selecting a charging session opens it directly in the existing editor workflow
 
 ### Mobile Builds 📱
 

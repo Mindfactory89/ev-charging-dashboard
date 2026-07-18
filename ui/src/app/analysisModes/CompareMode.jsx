@@ -5,13 +5,14 @@ function comparisonRightYear(year, availableYears) {
   return alternatives[0] ?? year;
 }
 
-export default function CompareMode({ availableYears, year }) {
+export default function CompareMode({ availableYears, vehicleScope, year }) {
   return (
     <YearComparisonPanel
       key={`analysis-comparison-${year}`}
       availableYears={availableYears}
       initialLeftYear={year}
       initialRightYear={comparisonRightYear(year, availableYears)}
+      vehicleScope={vehicleScope}
     />
   );
 }

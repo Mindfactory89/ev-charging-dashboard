@@ -69,8 +69,8 @@ function latestActiveMonthNumber(months) {
   return latest ? Number(latest.month) : null;
 }
 
-async function loadYearBundle(year) {
-  return getDashboardBundle(year);
+async function loadYearBundle(year, vehicleScope) {
+  return getDashboardBundle(year, vehicleScope);
 }
 
 function CompareTooltip({ active, payload, label, leftYear, rightYear, mode, t }) {
@@ -147,7 +147,7 @@ function ComparisonMetricCard({ label, value, subline, tone = "neutral", emphasi
   );
 }
 
-export default function YearComparisonPanel({ availableYears = [], initialLeftYear = 2026, initialRightYear = 2027 }) {
+export default function YearComparisonPanel({ availableYears = [], initialLeftYear = 2026, initialRightYear = 2027, vehicleScope = null }) {
   const { locale, t } = useI18n();
   const [leftYear, setLeftYear] = React.useState(initialLeftYear);
   const [rightYear, setRightYear] = React.useState(initialRightYear);
@@ -177,7 +177,10 @@ export default function YearComparisonPanel({ availableYears = [], initialLeftYe
       setError(null);
 
       try {
-        const [left, right] = await Promise.all([loadYearBundle(leftYear), loadYearBundle(rightYear)]);
+        const [left, right] = await Promise.all([
+          loadYearBundle(leftYear, vehicleScope),
+          loadYearBundle(rightYear, vehicleScope),
+        ]);
         if (!active) return;
         setBundle({ left, right });
       } catch (err) {
@@ -192,7 +195,7 @@ export default function YearComparisonPanel({ availableYears = [], initialLeftYe
     return () => {
       active = false;
     };
-  }, [leftYear, rightYear]);
+  }, [leftYear, rightYear, vehicleScope?.id, vehicleScope?.name]);
 
   React.useEffect(() => {
     const nextLeftMonth = latestActiveMonthNumber(bundle.left?.monthly?.months) || 1;

@@ -1,6 +1,7 @@
 import { getWeekdayLabels, parseSessionDate } from "./loadRhythm.js";
 import { monthLabel } from "./monthLabels.js";
 import { getActiveLocale, translate } from "../i18n/runtime.js";
+import { getVehicleReferenceConsumption } from "../config/vehicleProfilePreferences.js";
 
 const DRIVING_EFFICIENCY_TIERS = [
   { maxEnergyPer100Km: 15.0, key: "veryEfficient", iconKey: "veryEfficient", tone: "mint" },
@@ -94,7 +95,7 @@ export function getCostPer100Km(session) {
   return round((cost / distanceKm) * 100, 2);
 }
 
-export function getRecoveredRangeKm(session, referenceConsumptionPer100Km = 17.2) {
+export function getRecoveredRangeKm(session, referenceConsumptionPer100Km = getVehicleReferenceConsumption(session?.vehicle)) {
   const energy = Number(session?.energy_kwh);
   const reference = Number(referenceConsumptionPer100Km);
   if (!Number.isFinite(energy) || energy <= 0 || !Number.isFinite(reference) || reference <= 0) return null;

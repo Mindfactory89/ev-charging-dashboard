@@ -38,6 +38,7 @@ function registerExportRoutes(fastify) {
       'provider',
       'location',
       'vehicle',
+      'vehicle_profile_id',
       'tags',
       'connector',
       'soc_start',

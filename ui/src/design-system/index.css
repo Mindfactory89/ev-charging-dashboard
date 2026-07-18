@@ -11,3 +11,14 @@
 @import "./import-overhaul.css";
 @import "./state-overhaul.css";
 @import "./accessibility-polish.css";
+@import "./history-tools.css";
+@import "./vehicle-profiles.css";
+@import "./charging-goals.css";
+@import "./data-control.css";
+@import "./personal-action-center.css";
+@import "./data-quality.css";
+@import "./notifications.css";
+@import "./pwa-experience.css";
+@import "./quick-access.css";
+@import "./explainability.css";
+@import "./charging-profiles.css";

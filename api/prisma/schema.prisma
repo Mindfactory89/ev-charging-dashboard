@@ -15,6 +15,7 @@ model ChargingSession {
   provider        String?
   location        String?
   vehicle         String?
+  vehicle_profile_id String?
   tags            String?
   soc_start       Int
   soc_end         Int
@@ -31,4 +32,5 @@ model ChargingSession {
 
   @@index([date])
   @@index([connector])
+  @@index([vehicle_profile_id])
 }

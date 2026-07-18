@@ -1010,7 +1010,7 @@ a{ color:inherit; text-decoration:none; }
 
 /* Hybrid extras */
 .heroImgHybrid{ position: relative; }
-.heroCupraSlash{
+.heroBrandAccent{
   position: absolute;
   top: -22px;
   left: -30px;
@@ -1962,7 +1962,7 @@ body::before{
     contrast(1.03);
 }
 
-.heroCupraSlash{ opacity: 0.52; }
+.heroBrandAccent{ opacity: 0.52; }
 .heroGlow{ opacity: 0.72; filter: blur(16px); }
 
 .heroRowGrid{
@@ -5064,7 +5064,7 @@ body::before{
     contrast(1.02);
 }
 
-.heroCupraSlash{
+.heroBrandAccent{
   top: -16px;
   left: -22px;
   width: 170px;

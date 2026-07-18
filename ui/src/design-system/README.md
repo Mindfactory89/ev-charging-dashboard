@@ -60,6 +60,8 @@ The design system uses three layers:
 - File type, size, empty content, and unusable structures fail next to the upload control before any request is sent.
 - Profile and fallback settings recalculate the preview immediately; status summaries double as accessible row filters.
 - Valid rows continue importing when an individual request fails, and the final result identifies partial failures without losing the successful work.
+- Automatic mapping remains the default; manual column mapping is progressively disclosed and shows required fields plus first-row examples next to each selection.
+- Custom profiles persist mapping, provider profile, and fallback values locally, can be updated or deleted, and never require a server account.
 - `import-overhaul.css` owns package 8 and only consumes semantic design-system tokens.
 
 ## Data state and recovery contract
@@ -78,3 +80,107 @@ The design system uses three layers:
 - Forced-colors, increased-contrast, reduced-motion, keyboard-focus, and screen-reader states remain functional independently of visual styling.
 - Shared session-edit parsing, validation, change detection, and payload construction live in `sessionEditForm.js` instead of being duplicated in the history component.
 - `accessibility-polish.css` owns package 10 and only consumes semantic design-system tokens.
+
+## History discovery contract
+
+- Search and sorting remain in the first interaction layer; metadata filters open progressively when needed.
+- Search matches provider, location, vehicle, connector, tags, notes, and both ISO and localized dates without requiring submission.
+- Active criteria remain visible as removable chips, result counts update accessibly, and empty results explain how to recover.
+- Saved views include search, sorting, and metadata filters, persist only in the current browser, and can be updated or deleted without an account.
+- Sorting is stable, missing numeric values remain at the end, and the corresponding table header exposes its sort state where applicable.
+- `history-tools.css` owns package 11 and only consumes semantic design-system tokens.
+
+## Vehicle profile contract
+
+- Built-in and user-created vehicle profiles share one selector; only custom profiles can be edited or deleted.
+- A custom profile requires a name, usable battery capacity, and reference consumption; charging power remains optional.
+- The active profile persists locally and supplies the default vehicle for new sessions and CSV imports.
+- Reference consumption is matched to the session vehicle and drives recovered-range estimates instead of relying on one global constant.
+- Custom profiles render without external image dependencies and remain fully usable offline.
+- `vehicle-profiles.css` owns package 12 and only consumes semantic design-system tokens.
+
+## Personal charging goals contract
+
+- Annual budget, maximum weighted kWh price, and minimum efficiency score are independent optional targets; at least one is required to activate the compass.
+- Targets are stored only in the current browser, apply consistently to every selected year, and never mutate charging data.
+- Lower-is-better and higher-is-better metrics expose their direction in plain language instead of relying on color or progress alone.
+- The overview shows only configured targets, current values, explicit thresholds, and an accessible status summary.
+- Target editing uses a focus-managed drawer, field-level validation, discard protection, and a deliberate reset action.
+- `charging-goals.css` owns package 13 and only consumes semantic design-system tokens.
+
+## Data control contract
+
+- Charging sessions, monthly summaries, and seasonal comparisons are available from one clearly scoped export area.
+- Full-history export deliberately omits the year query while year-level exports keep the currently selected dashboard context.
+- Server-stored charging data and browser-only personalisation are explained as separate data sources in plain language.
+- Local backups contain only allowlisted dashboard preferences, never charging sessions, credentials, or unrelated browser storage.
+- Restore files are size-limited, format- and version-checked, previewed before use, and applied only after explicit confirmation.
+- The data drawer traps focus, restores it on close, supports Escape, and remains operable across mobile, landscape, forced-colors, and reduced-motion modes.
+- `data-control.css` owns package 14 and only consumes semantic design-system tokens.
+
+## Personal action centre contract
+
+- Recommendations are derived from existing goals, signals, and charging behaviour and are ordered by practical impact.
+- The overview initially exposes only the highest-priority actions; additional recommendations remain progressively disclosed.
+- Dismissed recommendations are scoped to the selected year, stay in the current browser, and can always be restored.
+- Each recommendation leads directly to the relevant filtered history or analysis view instead of ending in a dead-end card.
+- `personal-action-center.css` owns package 15 and only consumes semantic design-system tokens.
+
+## Data quality contract
+
+- Missing context, missing core measurements, statistical outliers, and likely duplicates are reported without changing source data automatically.
+- Every issue exposes the affected session, a plain-language reason, direct editing, and an explicit reviewed state.
+- Bulk actions require a deliberate selection and support safe metadata tagging or local review acknowledgement; destructive bulk deletion is intentionally excluded.
+- Reviewed issue IDs and unfinished session drafts stay in the current browser and are included in allowlisted preference backups.
+- `data-quality.css` owns package 16 and only consumes semantic design-system tokens.
+
+## Notification centre contract
+
+- Notifications are generated from existing goals, data quality, monthly summaries, and saving opportunities; no parallel analytics model is introduced.
+- The header badge reflects only visible unread items. Reading, dismissing, category preferences, and seven-day snoozing persist locally.
+- Notification destinations reuse the app's established history and analysis navigation and move users directly to the relevant context.
+- The drawer traps focus, restores it on close, supports Escape, mobile safe areas, forced colors, and reduced motion.
+- Telegram `/summary` provides an on-demand annual snapshot without enabling unsolicited outbound alerts.
+- `notifications.css` owns package 17 and only consumes semantic design-system tokens.
+
+## Installable web-app contract
+
+- The production UI registers one same-origin service worker and caches only the app shell and static assets; API responses remain network-owned.
+- Navigation uses a network-first strategy and falls back to a cached shell or a dedicated offline explanation when the shell has not been loaded before.
+- Online loss, a waiting update, installation availability, and installed display mode are separate states and never rely on color alone.
+- A waiting worker activates only after an explicit user action; the first service-worker install does not trigger an unnecessary reload.
+- The manifest provides standalone presentation, home-screen icons, and direct shortcuts into session entry and history.
+- `pwa-experience.css` owns package 18 and only consumes semantic design-system tokens.
+
+## Global quick-access contract
+
+- `Cmd/Ctrl + K` opens quick access globally; `/` does the same only when focus is not inside an editable control.
+- Results combine top-level destinations, established drawers, primary actions, and the selected year's charging sessions without creating a second navigation model.
+- Search is case- and accent-insensitive and covers provider, location, vehicle, connector, tags, notes, date, and energy.
+- Arrow keys move through results, Enter activates, Escape closes, focus stays inside the dialog, and launcher focus is restored afterwards.
+- Selecting a session reuses the existing history editor and direct actions reuse existing application callbacks.
+- Mobile presentation becomes a safe-area-aware bottom sheet while desktop keeps a centred command palette.
+- `quick-access.css` owns package 19 and only consumes semantic design-system tokens.
+
+## Performance and architecture contract
+
+- Shared interface icons live in `icons.jsx`; new cross-feature icons must not duplicate inline path definitions.
+- Below-the-fold reports, charts, and configuration drawers load in dedicated chunks and retain labelled loading feedback.
+- Long history rows use browser rendering containment in addition to progressive row disclosure, so off-screen content skips paint work without losing table semantics.
+- The production build is checked against explicit JavaScript and CSS size budgets through `npm run check:bundle`.
+- Package 20 must keep mobile, landscape, reduced-motion, and keyboard behaviour intact while reducing initial work.
+
+## Explainability contract
+
+- Goal scores and personal recommendations expose their data basis, sample-derived confidence, expected effect, and limitations on demand.
+- Explanations remain progressively disclosed and never rely on colour alone to communicate confidence.
+- Savings estimates are presented as directional annualised potential, never as a guaranteed amount.
+- Shared explanation logic lives in `explainability.js`; `explainability.css` owns package 21.
+
+## Charging profile contract
+
+- Charging profiles combine home or public context, grid/PV source, fixed or time-dependent prices, and a preferred charging window.
+- The active profile persists locally, is included in allowlisted preference backups, and pre-fills new sessions without overwriting a restored draft.
+- Time windows may span midnight; price selection and session defaults remain covered by pure unit tests.
+- Editing uses a focus-managed responsive drawer and the overview presents only one compact active-profile summary.
+- `charging-profiles.css` owns package 22 and only consumes semantic design-system tokens.

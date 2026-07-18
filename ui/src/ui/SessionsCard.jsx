@@ -11,6 +11,12 @@ import { confirmAction, reloadCurrentPage, showAlert } from "../platform/runtime
 import { parseTags } from "./sessionMetadata.js";
 import { buildSessionMetadataOptions } from "./sessionMetadataOptions.js";
 import { CONNECTOR_OPTIONS as SHARED_CONNECTOR_OPTIONS } from "../app/constants.js";
+import { buildSessionHistoryView, normalizeHistoryFilters } from "./sessionHistoryView.js";
+import {
+  deleteHistoryFilterProfile,
+  readSavedHistoryFilters,
+  saveHistoryFilterProfile,
+} from "./savedHistoryFilters.js";
 import {
   buildSessionEditDraft,
   effectivePricePerKwh,
@@ -33,10 +39,6 @@ function secsToHHMM(s) {
   return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
 }
 
-function monthNumber(value) {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date.getMonth() + 1;
-}
 function sessionScoreTone(score) {
   const value = Number(score);
   if (!Number.isFinite(value)) return "neutral";
@@ -64,9 +66,10 @@ export default function SessionsCard({
   onChanged,
   sessionScoresById = {},
   sessionOutliersById = {},
+  requestedEditId = null,
+  onRequestedEditHandled,
 }) {
   const { t } = useI18n();
-  const hasMany = sessions.length > 5;
   const sessionsCsvUrl = getSessionsCsvUrl(year);
   const [editingId, setEditingId] = React.useState(null);
   const [draft, setDraft] = React.useState(null);
@@ -75,6 +78,13 @@ export default function SessionsCard({
   const [flashState, setFlashState] = React.useState(null);
   const [detailSessionId, setDetailSessionId] = React.useState(null);
   const [visibleCount, setVisibleCount] = React.useState(12);
+  const [filtersOpen, setFiltersOpen] = React.useState(() =>
+    Boolean(filters?.month || filters?.provider || filters?.location || filters?.vehicle || filters?.tag)
+  );
+  const [savedFilters, setSavedFilters] = React.useState(() => readSavedHistoryFilters());
+  const [selectedSavedFilterId, setSelectedSavedFilterId] = React.useState("");
+  const [savedFilterName, setSavedFilterName] = React.useState("");
+  const filterPanelId = React.useId();
   const latestDate = sessions.reduce((latest, row) => {
     const ts = row?.date ? new Date(row.date).getTime() : NaN;
     if (!Number.isFinite(ts)) return latest;
@@ -90,18 +100,20 @@ export default function SessionsCard({
     () => buildSessionMetadataOptions({ sessions, intelligence }),
     [intelligence, sessions]
   );
+  const normalizedFilters = React.useMemo(() => normalizeHistoryFilters(filters), [filters]);
   const filteredSessions = React.useMemo(
-    () =>
-      sessions.filter((session) => {
-        if (filters?.month != null && monthNumber(session?.date) !== Number(filters.month)) return false;
-        if (filters?.provider && String(session?.provider || "") !== String(filters.provider)) return false;
-        if (filters?.location && String(session?.location || "") !== String(filters.location)) return false;
-        if (filters?.vehicle && String(session?.vehicle || "") !== String(filters.vehicle)) return false;
-        if (filters?.tag && !parseTags(session?.tags).some((tag) => tag.toLowerCase() === String(filters.tag).toLowerCase())) return false;
-        return true;
-      }),
-    [filters, sessions]
+    () => buildSessionHistoryView(sessions, normalizedFilters),
+    [normalizedFilters, sessions]
   );
+  const advancedFilterCount = [
+    normalizedFilters.month,
+    normalizedFilters.provider,
+    normalizedFilters.location,
+    normalizedFilters.vehicle,
+    normalizedFilters.tag,
+  ].filter(Boolean).length;
+  const activeFilterCount = advancedFilterCount + (normalizedFilters.query ? 1 : 0);
+  const hasMany = filteredSessions.length > 5;
   const detailSession = React.useMemo(
     () => sessions.find((session) => String(session.id) === String(detailSessionId)) || null,
     [detailSessionId, sessions]
@@ -113,7 +125,7 @@ export default function SessionsCard({
 
   React.useEffect(() => {
     setVisibleCount(12);
-  }, [filters?.location, filters?.month, filters?.provider, filters?.tag, filters?.vehicle, sessions.length]);
+  }, [normalizedFilters, sessions.length]);
 
   React.useEffect(() => {
     if (!undoState) return undefined;
@@ -132,10 +144,86 @@ export default function SessionsCard({
     else reloadCurrentPage();
   }
 
+  function updateFilters(updates) {
+    onFiltersChange?.((current) => normalizeHistoryFilters({ ...(current || {}), ...(updates || {}) }));
+  }
+
+  function clearAllFilters() {
+    setSelectedSavedFilterId("");
+    onFiltersChange?.((current) => normalizeHistoryFilters({ sort: current?.sort }));
+  }
+
+  function applySavedFilter(profileId) {
+    setSelectedSavedFilterId(profileId);
+    const profile = savedFilters.find((entry) => entry.id === profileId);
+    if (!profile) {
+      setSavedFilterName("");
+      return;
+    }
+    setSavedFilterName(profile.name);
+    setFiltersOpen(true);
+    onFiltersChange?.(() => normalizeHistoryFilters(profile.filters));
+  }
+
+  function saveCurrentFilter() {
+    const name = savedFilterName.trim();
+    if (!name) {
+      showAlert(t("sessionsCard.savedFilters.nameRequired"), {
+        title: t("sessionsCard.savedFilters.saveErrorTitle"),
+      });
+      return;
+    }
+    const result = saveHistoryFilterProfile({
+      id: selectedSavedFilterId,
+      name,
+      filters: normalizedFilters,
+    }, savedFilters);
+    if (!result.profile) return;
+    setSavedFilters(result.profiles);
+    setSelectedSavedFilterId(result.profile.id);
+    setSavedFilterName(result.profile.name);
+    showAlert(t("sessionsCard.savedFilters.savedMessage", { name: result.profile.name }), {
+      title: t("sessionsCard.savedFilters.savedTitle"),
+      tone: "success",
+    });
+  }
+
+  async function deleteCurrentFilter() {
+    const profile = savedFilters.find((entry) => entry.id === selectedSavedFilterId);
+    if (!profile) return;
+    const confirmed = await confirmAction(t("sessionsCard.savedFilters.deleteMessage", { name: profile.name }), {
+      title: t("sessionsCard.savedFilters.deleteTitle"),
+      confirmLabel: t("sessionsCard.savedFilters.deleteConfirm"),
+      cancelLabel: t("common.cancel"),
+      tone: "danger",
+    });
+    if (!confirmed) return;
+    setSavedFilters(deleteHistoryFilterProfile(profile.id, savedFilters));
+    setSelectedSavedFilterId("");
+    setSavedFilterName("");
+  }
+
+  function columnSortState(column) {
+    if (column === "date" && normalizedFilters.sort === "date_asc") return "ascending";
+    if (column === "date" && normalizedFilters.sort === "date_desc") return "descending";
+    if (column === "energy" && normalizedFilters.sort === "energy_desc") return "descending";
+    if (column === "duration" && normalizedFilters.sort === "duration_desc") return "descending";
+    if (column === "cost" && normalizedFilters.sort === "cost_desc") return "descending";
+    if (column === "cost" && normalizedFilters.sort === "price_asc") return "other";
+    return undefined;
+  }
+
   function beginEdit(row) {
     setEditingId(row.id);
     setDraft(buildSessionEditDraft(row));
   }
+
+  React.useEffect(() => {
+    if (requestedEditId == null) return;
+    const row = sessions.find((session) => String(session.id) === String(requestedEditId));
+    if (row) beginEdit(row);
+    onRequestedEditHandled?.();
+  }, [requestedEditId]);
 
   function cancelEdit() {
     setEditingId(null);
@@ -276,82 +364,194 @@ export default function SessionsCard({
         </div>
       ) : null}
 
-      <div className="formGrid" style={{ marginBottom: 16 }}>
-        <label className="field">
-          <span>{t("sessionsCard.filters.month")}</span>
-          <select className="input" value={filters?.month ?? ""} onChange={(event) => onFiltersChange?.((current) => ({ ...(current || {}), month: event.target.value ? Number(event.target.value) : null }))}>
-            <option value="">{t("common.all")}</option>
-            {Array.from({ length: 12 }, (_, index) => index + 1).map((month) => (
-              <option key={`month-${month}`} value={month}>
-                {monthLabel(month)}
-              </option>
-            ))}
-          </select>
-        </label>
+      <section className="sessionHistoryTools" aria-label={t("sessionsCard.tools.ariaLabel")}>
+        <div className="sessionHistoryToolbar">
+          <label className="sessionSearchField">
+            <span>{t("sessionsCard.tools.searchLabel")}</span>
+            <span className="sessionSearchControl">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="11" cy="11" r="6.5" />
+                <path d="m16 16 4 4" />
+              </svg>
+              <input
+                type="search"
+                className="input"
+                value={normalizedFilters.query}
+                onChange={(event) => updateFilters({ query: event.target.value })}
+                placeholder={t("sessionsCard.tools.searchPlaceholder")}
+                autoComplete="off"
+              />
+              {normalizedFilters.query ? (
+                <button
+                  type="button"
+                  className="sessionSearchClear"
+                  onClick={() => updateFilters({ query: "" })}
+                  aria-label={t("sessionsCard.tools.clearSearch")}
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="m7 7 10 10M17 7 7 17" />
+                  </svg>
+                </button>
+              ) : null}
+            </span>
+          </label>
 
-        <label className="field">
-          <span>{t("sessionsCard.filters.provider")}</span>
-          <select className="input" value={filters?.provider || ""} onChange={(event) => onFiltersChange?.((current) => ({ ...(current || {}), provider: event.target.value }))}>
-            <option value="">{t("common.all")}</option>
-            {filterOptions.providers.map((provider) => (
-              <option key={provider} value={provider}>
-                {provider}
-              </option>
-            ))}
-          </select>
-        </label>
+          <label className="sessionSortField">
+            <span>{t("sessionsCard.tools.sortLabel")}</span>
+            <select className="input" value={normalizedFilters.sort} onChange={(event) => updateFilters({ sort: event.target.value })}>
+              <option value="date_desc">{t("sessionsCard.sort.dateDesc")}</option>
+              <option value="date_asc">{t("sessionsCard.sort.dateAsc")}</option>
+              <option value="cost_desc">{t("sessionsCard.sort.costDesc")}</option>
+              <option value="energy_desc">{t("sessionsCard.sort.energyDesc")}</option>
+              <option value="price_asc">{t("sessionsCard.sort.priceAsc")}</option>
+              <option value="duration_desc">{t("sessionsCard.sort.durationDesc")}</option>
+            </select>
+          </label>
 
-        <label className="field">
-          <span>{t("sessionsCard.filters.location")}</span>
-          <select className="input" value={filters?.location || ""} onChange={(event) => onFiltersChange?.((current) => ({ ...(current || {}), location: event.target.value }))}>
-            <option value="">{t("common.all")}</option>
-            {filterOptions.locations.map((location) => (
-              <option key={location} value={location}>
-                {location}
-              </option>
-            ))}
-          </select>
-        </label>
+          <button
+            type="button"
+            className={`sessionFilterToggle ${filtersOpen ? "active" : ""}`}
+            onClick={() => setFiltersOpen((open) => !open)}
+            aria-expanded={filtersOpen}
+            aria-controls={filterPanelId}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 7h16M7 12h10M10 17h4" />
+            </svg>
+            <span>{t("sessionsCard.tools.filtersButton")}</span>
+            {advancedFilterCount ? <span className="sessionFilterCount">{advancedFilterCount}</span> : null}
+          </button>
+        </div>
 
-        <label className="field">
-          <span>{t("sessionsCard.filters.vehicle")}</span>
-          <select className="input" value={filters?.vehicle || ""} onChange={(event) => onFiltersChange?.((current) => ({ ...(current || {}), vehicle: event.target.value }))}>
-            <option value="">{t("common.all")}</option>
-            {filterOptions.vehicles.map((vehicle) => (
-              <option key={vehicle} value={vehicle}>
-                {vehicle}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className="sessionHistoryResultBar">
+          <span role="status" aria-live="polite">
+            {t("sessionsCard.tools.resultCount", { visible: filteredSessions.length, total: sessions.length })}
+          </span>
+          {activeFilterCount ? (
+            <button type="button" className="sessionClearFilters" onClick={clearAllFilters}>
+              {t("common.clearFilters")}
+            </button>
+          ) : null}
+        </div>
 
-        <label className="field">
-          <span>{t("sessionsCard.filters.tag")}</span>
-          <select className="input" value={filters?.tag || ""} onChange={(event) => onFiltersChange?.((current) => ({ ...(current || {}), tag: event.target.value }))}>
-            <option value="">{t("common.all")}</option>
-            {filterOptions.tags.map((tag) => (
-              <option key={tag} value={tag}>
-                {tag}
-              </option>
+        {activeFilterCount ? (
+          <div className="sessionActiveFilters" aria-label={t("sessionsCard.tools.activeFilters")}>
+            {[
+              normalizedFilters.query ? ["query", t("sessionsCard.filterChips.query", { value: normalizedFilters.query })] : null,
+              normalizedFilters.month ? ["month", t("sessionsCard.filterChips.month", { value: monthLabel(normalizedFilters.month) })] : null,
+              normalizedFilters.provider ? ["provider", t("sessionsCard.filterChips.provider", { value: normalizedFilters.provider })] : null,
+              normalizedFilters.location ? ["location", t("sessionsCard.filterChips.location", { value: normalizedFilters.location })] : null,
+              normalizedFilters.vehicle ? ["vehicle", t("sessionsCard.filterChips.vehicle", { value: normalizedFilters.vehicle })] : null,
+              normalizedFilters.tag ? ["tag", t("sessionsCard.filterChips.tag", { value: normalizedFilters.tag })] : null,
+            ].filter(Boolean).map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                className="sessionActiveFilter"
+                onClick={() => updateFilters({ [key]: key === "month" ? null : "" })}
+                aria-label={t("sessionsCard.tools.removeFilter", { filter: label })}
+              >
+                <span>{label}</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m8 8 8 8M16 8l-8 8" />
+                </svg>
+              </button>
             ))}
-          </select>
-        </label>
-      </div>
+          </div>
+        ) : null}
+
+        {filtersOpen ? (
+          <div id={filterPanelId} className="sessionAdvancedFilters">
+            <div className="sessionFilterPanelHeader">
+              <div>
+                <strong>{t("sessionsCard.tools.filterPanelTitle")}</strong>
+                <span>{t("sessionsCard.tools.filterPanelText")}</span>
+              </div>
+            </div>
+
+            <div className="formGrid sessionFilterGrid">
+              <label className="field">
+                <span>{t("sessionsCard.filters.month")}</span>
+                <select className="input" value={normalizedFilters.month ?? ""} onChange={(event) => updateFilters({ month: event.target.value ? Number(event.target.value) : null })}>
+                  <option value="">{t("common.all")}</option>
+                  {Array.from({ length: 12 }, (_, index) => index + 1).map((month) => (
+                    <option key={`month-${month}`} value={month}>{monthLabel(month)}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="field">
+                <span>{t("sessionsCard.filters.provider")}</span>
+                <select className="input" value={normalizedFilters.provider} onChange={(event) => updateFilters({ provider: event.target.value })}>
+                  <option value="">{t("common.all")}</option>
+                  {filterOptions.providers.map((provider) => <option key={provider} value={provider}>{provider}</option>)}
+                </select>
+              </label>
+
+              <label className="field">
+                <span>{t("sessionsCard.filters.location")}</span>
+                <select className="input" value={normalizedFilters.location} onChange={(event) => updateFilters({ location: event.target.value })}>
+                  <option value="">{t("common.all")}</option>
+                  {filterOptions.locations.map((location) => <option key={location} value={location}>{location}</option>)}
+                </select>
+              </label>
+
+              <label className="field">
+                <span>{t("sessionsCard.filters.vehicle")}</span>
+                <select className="input" value={normalizedFilters.vehicle} onChange={(event) => updateFilters({ vehicle: event.target.value })}>
+                  <option value="">{t("common.all")}</option>
+                  {filterOptions.vehicles.map((vehicle) => <option key={vehicle} value={vehicle}>{vehicle}</option>)}
+                </select>
+              </label>
+
+              <label className="field">
+                <span>{t("sessionsCard.filters.tag")}</span>
+                <select className="input" value={normalizedFilters.tag} onChange={(event) => updateFilters({ tag: event.target.value })}>
+                  <option value="">{t("common.all")}</option>
+                  {filterOptions.tags.map((tag) => <option key={tag} value={tag}>{tag}</option>)}
+                </select>
+              </label>
+            </div>
+
+            <div className="sessionSavedFilters">
+              <div className="sessionSavedFiltersCopy">
+                <strong>{t("sessionsCard.savedFilters.title")}</strong>
+                <span>{t("sessionsCard.savedFilters.text")}</span>
+              </div>
+              <label className="field">
+                <span>{t("sessionsCard.savedFilters.selectLabel")}</span>
+                <select className="input" value={selectedSavedFilterId} onChange={(event) => applySavedFilter(event.target.value)}>
+                  <option value="">{savedFilters.length ? t("sessionsCard.savedFilters.selectPlaceholder") : t("sessionsCard.savedFilters.none")}</option>
+                  {savedFilters.map((profile) => <option key={profile.id} value={profile.id}>{profile.name}</option>)}
+                </select>
+              </label>
+              <label className="field">
+                <span>{t("sessionsCard.savedFilters.nameLabel")}</span>
+                <input className="input" value={savedFilterName} onChange={(event) => setSavedFilterName(event.target.value)} placeholder={t("sessionsCard.savedFilters.namePlaceholder")} maxLength={60} />
+              </label>
+              <div className="sessionSavedFilterActions">
+                <button type="button" className="pill" onClick={saveCurrentFilter}>{selectedSavedFilterId ? t("sessionsCard.savedFilters.update") : t("sessionsCard.savedFilters.save")}</button>
+                <button type="button" className="pill ghostPill" onClick={deleteCurrentFilter} disabled={!selectedSavedFilterId}>{t("sessionsCard.savedFilters.delete")}</button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </section>
 
       <div className="tableWrap" role="table" aria-label={t("sessionsCard.table.ariaLabel")} aria-rowcount={filteredSessions.length + 1}>
         <div className="tableHead" role="row">
-          <div role="columnheader">{t("sessionsCard.table.date")}</div>
+          <div role="columnheader" aria-sort={columnSortState("date")}>{t("sessionsCard.table.date")}</div>
           <div role="columnheader">{t("sessionsCard.table.connector")}</div>
           <div role="columnheader">{t("sessionsCard.table.soc")}</div>
-          <div role="columnheader">{t("sessionsCard.table.energy")}</div>
-          <div role="columnheader">{t("sessionsCard.table.duration")}</div>
-          <div role="columnheader">{t("sessionsCard.table.cost")}</div>
+          <div role="columnheader" aria-sort={columnSortState("energy")}>{t("sessionsCard.table.energy")}</div>
+          <div role="columnheader" aria-sort={columnSortState("duration")}>{t("sessionsCard.table.duration")}</div>
+          <div role="columnheader" aria-sort={columnSortState("cost")}>{t("sessionsCard.table.cost")}</div>
         </div>
 
         <div className={`tableBody ${hasMany ? "tableBodyScroll" : ""}`} role="rowgroup">
           {filteredSessions.length === 0 ? (
             <div className="emptyRow" role="row"><span role="cell">
-              {filters?.month || filters?.provider || filters?.location || filters?.vehicle || filters?.tag
+              {activeFilterCount
                 ? t("sessionsCard.table.emptyFiltered")
                 : t("sessionsCard.table.emptyInitial")}
             </span></div>

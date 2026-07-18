@@ -4,8 +4,11 @@ export function getStatsRemote(year = 2026) {
   return fetchApiJson(`/api/stats?year=${encodeURIComponent(year)}`);
 }
 
-export function getDashboardBundleRemote(year = 2026) {
-  return fetchApiJson(`/api/dashboard?year=${encodeURIComponent(year)}`);
+export function getDashboardBundleRemote(year = 2026, vehicleScope = null) {
+  const query = new URLSearchParams({ year: String(year) });
+  if (vehicleScope?.id) query.set("vehicleProfileId", vehicleScope.id);
+  if (vehicleScope?.name) query.set("vehicle", vehicleScope.name);
+  return fetchApiJson(`/api/dashboard?${query.toString()}`);
 }
 
 export function getSessionsRemote(year = 2026) {
@@ -59,7 +62,8 @@ export function getMonthlyCsvUrlRemote(year = 2026) {
 }
 
 export function getSessionsCsvUrlRemote(year = 2026) {
-  return buildOptionalApiUrl(`/api/export/sessions.csv?year=${encodeURIComponent(year)}`);
+  const query = year == null || year === "" ? "" : `?year=${encodeURIComponent(year)}`;
+  return buildOptionalApiUrl(`/api/export/sessions.csv${query}`);
 }
 
 export function getSeasonsCsvUrlRemote(year = 2026) {

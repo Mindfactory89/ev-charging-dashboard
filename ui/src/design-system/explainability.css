@@ -1,0 +1,52 @@
+.explainabilityDisclosure {
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.explainabilityDisclosure summary {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  min-height: 44px;
+  color: var(--color-text-secondary);
+  font-size: var(--ds-font-size-sm);
+  font-weight: var(--ds-font-semibold);
+  cursor: pointer;
+  list-style: none;
+}
+
+.explainabilityDisclosure summary::-webkit-details-marker { display: none; }
+.explainabilityDisclosure summary svg { fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
+.explainabilityDisclosure[open] summary { color: var(--color-primary); }
+
+.explainabilityBody {
+  display: grid;
+  gap: var(--ds-space-3);
+  padding: 0 0 var(--ds-space-3);
+}
+
+.explainabilityBody dl { display: grid; gap: var(--ds-space-2); margin: 0; }
+.explainabilityBody dl > div { display: grid; grid-template-columns: minmax(7.5rem, .8fr) minmax(0, 1.8fr); gap: var(--ds-space-2); }
+.chargingGoalCard .explainabilityBody dl > div,
+.personalActionCard .explainabilityBody dl > div { grid-template-columns: 1fr; gap: var(--ds-space-1); }
+.explainabilityBody dt { color: var(--color-text-tertiary); font-size: var(--ds-font-size-xs); font-weight: var(--ds-font-bold); text-transform: uppercase; letter-spacing: var(--ds-tracking-wide); }
+.explainabilityBody dd { margin: 0; color: var(--color-text-primary); font-size: var(--ds-font-size-sm); }
+.explainabilityBody p { margin: 0; color: var(--color-text-tertiary); font-size: var(--ds-font-size-xs); line-height: var(--ds-leading-normal); }
+
+.explainabilityConfidence { display: inline-flex; align-items: center; min-height: 24px; padding: 0 var(--ds-space-2); border-radius: var(--ds-radius-full); background: var(--color-surface-sunken); }
+.explainabilityConfidence.high { color: var(--color-success); background: var(--color-success-soft); }
+.explainabilityConfidence.medium { color: var(--color-warning); background: var(--color-warning-soft); }
+
+/* Browser-level rendering virtualization for long histories. Rows outside the viewport keep their layout size but skip paint work. */
+.sessionsPanel .tableRow {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 112px;
+}
+
+@media (max-width: 700px) {
+  .explainabilityBody dl > div { grid-template-columns: 1fr; gap: var(--ds-space-1); }
+  .sessionsPanel .tableRow { contain-intrinsic-size: auto 420px; }
+}
+
+@media (forced-colors: active) {
+  .explainabilityDisclosure { border-color: CanvasText; }
+}

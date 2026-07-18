@@ -60,7 +60,7 @@ test("writePersistedUiState can push navigational URL state without duplicate en
       activeScreen: "analysis",
       overviewMode: "cost",
       analysisMode: "time",
-      historyFilters: { month: 5, provider: "Ionity" },
+      historyFilters: { month: 5, provider: "Ionity", query: "Hamburg", sort: "cost_desc" },
       historyMode: "push",
     });
 
@@ -70,6 +70,8 @@ test("writePersistedUiState can push navigational URL state without duplicate en
     assert.match(browser.calls[0].url, /screen=analysis/);
     assert.match(browser.calls[0].url, /analysis=time/);
     assert.match(browser.calls[0].url, /month=5/);
+    assert.match(browser.calls[0].url, /q=Hamburg/);
+    assert.match(browser.calls[0].url, /sort=cost_desc/);
 
     const restored = readPersistedUiState();
     assert.equal(restored.year, 2031);
@@ -77,13 +79,15 @@ test("writePersistedUiState can push navigational URL state without duplicate en
     assert.equal(restored.analysisMode, "time");
     assert.equal(restored.historyFilters.month, 5);
     assert.equal(restored.historyFilters.provider, "Ionity");
+    assert.equal(restored.historyFilters.query, "Hamburg");
+    assert.equal(restored.historyFilters.sort, "cost_desc");
 
     writePersistedUiState({
       year: 2031,
       activeScreen: "analysis",
       overviewMode: "cost",
       analysisMode: "time",
-      historyFilters: { month: 5, provider: "Ionity" },
+      historyFilters: { month: 5, provider: "Ionity", query: "Hamburg", sort: "cost_desc" },
       historyMode: "push",
     });
 

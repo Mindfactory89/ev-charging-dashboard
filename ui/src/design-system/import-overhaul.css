@@ -234,6 +234,220 @@
   line-height: var(--line-height-snug);
 }
 
+.importMappingPanel {
+  overflow: hidden;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface-subtle);
+}
+
+.importMappingPanel.needsAttention {
+  border-color: var(--color-border-warning);
+}
+
+.importMappingPanel > summary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 68px;
+  padding: var(--space-3) var(--space-4);
+  cursor: pointer;
+  list-style: none;
+}
+
+.importMappingPanel > summary::-webkit-details-marker {
+  display: none;
+}
+
+.importMappingPanel > summary:hover,
+.importMappingPanel > summary:focus-visible {
+  background: var(--color-surface-accent-subtle);
+}
+
+.importMappingPanel > summary > span:nth-child(2) {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.importMappingPanel > summary small,
+.importMappingSectionHeading span,
+.importMappingGrid small {
+  color: var(--color-text-muted);
+}
+
+.importMappingSummaryIcon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  color: var(--color-text-accent);
+  border: 1px solid var(--color-border-accent);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-accent-subtle);
+}
+
+.importMappingSummaryIcon svg {
+  width: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.importMappingCoverage {
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-text-success);
+  border: 1px solid currentColor;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  text-align: center;
+}
+
+.importMappingCoverage.warning {
+  color: var(--color-warning);
+}
+
+.importMappingBody {
+  display: grid;
+  gap: var(--space-5);
+  padding: var(--space-5);
+  border-top: 1px solid var(--color-border-subtle);
+  background: var(--color-surface);
+}
+
+.importSavedProfiles,
+.importColumnMapping {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.importSavedProfiles {
+  padding: var(--space-4);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-subtle);
+}
+
+.importMappingSectionHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.importMappingSectionHeading > div {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.importSavedProfileControls {
+  display: grid;
+  grid-template-columns: minmax(180px, .8fr) minmax(220px, 1fr) auto;
+  align-items: end;
+  gap: var(--space-3);
+}
+
+.importSavedProfileControls label,
+.importMappingGrid label {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.importSavedProfileControls label > span,
+.importMappingGrid label > span {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.importSavedProfileActions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.importSavedProfileActions .pill {
+  white-space: nowrap;
+}
+
+.importWorkflowCard .dangerPill {
+  color: var(--color-text-danger);
+  border-color: var(--color-border-danger);
+}
+
+.importProfileMessage,
+.importMappingAlert {
+  padding: var(--space-3);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+}
+
+.importProfileMessage.success {
+  color: var(--color-text-success);
+  border-color: var(--color-text-success);
+}
+
+.importProfileMessage.error,
+.importMappingGrid label.hasError > span {
+  color: var(--color-text-danger);
+}
+
+.importMappingAlert {
+  display: grid;
+  gap: var(--space-1);
+  color: var(--color-warning);
+  border-color: var(--color-border-warning);
+  background: var(--color-surface-warning-subtle);
+}
+
+.importMappingGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.importMappingGrid label {
+  align-content: start;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-subtle);
+}
+
+.importMappingGrid label.hasError {
+  border-color: var(--color-border-danger);
+}
+
+.importMappingGrid label > span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.importMappingGrid label > span b {
+  padding: var(--space-1) var(--space-2);
+  color: var(--color-text-accent);
+  border-radius: var(--radius-full);
+  background: var(--color-surface-accent-subtle);
+  font-size: var(--font-size-xs);
+}
+
+.importMappingGrid label.hasError > span b {
+  color: var(--color-text-danger);
+  background: var(--color-surface-danger-subtle);
+}
+
+.importMappingGrid small {
+  min-height: 2.7em;
+  overflow-wrap: anywhere;
+  line-height: var(--line-height-snug);
+}
+
 .importSummaryGrid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -401,6 +615,18 @@
   .importConfiguration {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .importMappingGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .importSavedProfileControls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .importSavedProfileActions {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (max-width: 760px) {
@@ -441,12 +667,36 @@
   .importProgress {
     display: grid;
   }
+
+  .importMappingPanel > summary {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .importMappingCoverage {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .importMappingSectionHeading {
+    align-items: stretch;
+    flex-direction: column;
+  }
 }
 
 @media (max-width: 480px) {
   .importConfiguration,
-  .importSummaryGrid {
+  .importSummaryGrid,
+  .importMappingGrid,
+  .importSavedProfileControls {
     grid-template-columns: 1fr;
+  }
+
+  .importSavedProfileActions {
+    display: grid;
+  }
+
+  .importMappingBody {
+    padding: var(--space-3);
   }
 
   .importDropzone {

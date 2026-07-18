@@ -264,6 +264,44 @@
   min-width: 58px;
 }
 
+.shellVehicleControl {
+  display: grid;
+  gap: 2px;
+  min-width: 190px;
+  min-height: 52px;
+  padding: 7px var(--ds-space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--ds-radius-lg);
+  background: var(--color-surface-raised);
+}
+
+.shellVehicleControl > span {
+  color: var(--color-text-tertiary);
+  font-size: 10px;
+  font-weight: var(--ds-font-semibold);
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.shellVehicleControl select {
+  width: 100%;
+  min-height: 27px;
+  border: 0;
+  color: var(--color-text-primary);
+  background: transparent;
+  font: inherit;
+  font-size: var(--font-body-sm);
+  font-weight: var(--ds-font-semibold);
+  cursor: pointer;
+}
+
+.shellVehicleControl select:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--ds-radius-sm);
+}
+
 .shellSettings {
   position: relative;
 }
@@ -407,6 +445,19 @@
   padding-top: var(--ds-space-8);
 }
 
+@media (max-width: 1500px) {
+  .shellHeader {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+    gap: var(--ds-space-4);
+  }
+
+  .shellHeaderControls {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+}
+
 @media (min-width: 1024px) {
   .floatingAddButton {
     display: none;
@@ -502,7 +553,7 @@
   }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 900px) {
   .appWorkspace {
     padding: var(--ds-space-3) var(--ds-space-3) calc(104px + var(--safe-bottom));
   }
@@ -517,6 +568,11 @@
 
   .shellHeaderControls {
     justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .shellVehicleControl {
+    flex: 1 1 220px;
   }
 
   .shellYearControl {
@@ -556,6 +612,10 @@
   }
 
   .shellYearControl {
+    width: 100%;
+  }
+
+  .shellVehicleControl {
     width: 100%;
   }
 

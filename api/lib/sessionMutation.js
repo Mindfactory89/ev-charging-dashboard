@@ -125,6 +125,7 @@ function buildSessionMutationData(payload, parsed) {
     provider: normalizeOptionalText(payload.provider),
     location: normalizeOptionalText(payload.location),
     vehicle: normalizeOptionalText(payload.vehicle),
+    vehicle_profile_id: normalizeOptionalText(payload.vehicle_profile_id),
     tags: normalizeTagsInput(payload.tags),
     soc_start: parsed.soc.soc_start,
     soc_end: parsed.soc.soc_end,

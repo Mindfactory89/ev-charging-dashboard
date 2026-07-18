@@ -1,0 +1,395 @@
+/* Package 15: prioritised, personal next-best actions. */
+
+.personalActionCenter {
+  position: relative;
+  display: grid;
+  gap: var(--ds-space-5);
+  padding: var(--ds-space-5);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--ds-radius-xl);
+  background: linear-gradient(145deg, var(--color-surface-raised), var(--color-surface));
+  box-shadow: var(--shadow-surface);
+}
+
+.personalActionCenter::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  content: "";
+  background: linear-gradient(90deg, var(--color-primary), var(--color-success));
+}
+
+.personalActionHeader,
+.personalActionIdentity,
+.personalActionHeaderMeta,
+.personalActionCardTop,
+.personalActionCta,
+.personalActionEmpty,
+.personalActionUndo {
+  display: flex;
+  align-items: center;
+}
+
+.personalActionHeader {
+  justify-content: space-between;
+  gap: var(--ds-space-5);
+}
+
+.personalActionIdentity {
+  min-width: 0;
+  gap: var(--ds-space-3);
+}
+
+.personalActionIdentity h3 {
+  margin: var(--ds-space-1) 0 0;
+  color: var(--color-text-primary);
+  font-size: var(--ds-font-size-xl);
+  letter-spacing: var(--ds-tracking-tight);
+}
+
+.personalActionIdentity p {
+  max-width: 68ch;
+  margin: var(--ds-space-1) 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--ds-font-size-sm);
+  line-height: var(--ds-leading-normal);
+}
+
+.personalActionCenterIcon,
+.personalActionIcon,
+.personalActionEmptyIcon {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--color-primary-border);
+  border-radius: var(--ds-radius-md);
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+
+.personalActionCenterIcon svg,
+.personalActionIcon svg,
+.personalActionDismiss svg {
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.personalActionHeaderMeta {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--ds-space-2);
+}
+
+.personalActionGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--ds-space-3);
+}
+
+.personalActionCard {
+  display: grid;
+  grid-template-rows: auto auto auto minmax(2.8em, auto) auto auto;
+  gap: var(--ds-space-2);
+  min-width: 0;
+  padding: var(--ds-space-4);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--ds-radius-lg);
+  background: var(--color-surface);
+  transition: border-color var(--ds-duration-normal) var(--ds-ease-standard), transform var(--ds-duration-normal) var(--ds-ease-standard), box-shadow var(--ds-duration-normal) var(--ds-ease-standard);
+}
+
+.personalActionCard:hover {
+  border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-raised);
+  transform: translateY(-2px);
+}
+
+.personalActionCard.danger {
+  border-color: color-mix(in srgb, var(--color-danger) 32%, var(--color-border));
+  background: color-mix(in srgb, var(--color-danger-soft) 34%, var(--color-surface));
+}
+
+.personalActionCard.warning {
+  border-color: color-mix(in srgb, var(--color-warning) 34%, var(--color-border));
+  background: color-mix(in srgb, var(--color-warning-soft) 32%, var(--color-surface));
+}
+
+.personalActionCard.positive {
+  border-color: color-mix(in srgb, var(--color-success) 32%, var(--color-border));
+  background: color-mix(in srgb, var(--color-success-soft) 34%, var(--color-surface));
+}
+
+.personalActionCardTop {
+  min-height: 38px;
+  gap: var(--ds-space-2);
+}
+
+.personalActionIcon {
+  flex-basis: 38px;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--ds-radius-sm);
+}
+
+.personalActionIcon svg {
+  width: 19px;
+  height: 19px;
+}
+
+.personalActionCard.danger .personalActionIcon {
+  border-color: color-mix(in srgb, var(--color-danger) 42%, var(--color-border));
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
+}
+
+.personalActionCard.warning .personalActionIcon {
+  border-color: color-mix(in srgb, var(--color-warning) 42%, var(--color-border));
+  color: var(--color-warning);
+  background: var(--color-warning-soft);
+}
+
+.personalActionCard.positive .personalActionIcon {
+  border-color: color-mix(in srgb, var(--color-success) 42%, var(--color-border));
+  color: var(--color-success);
+  background: var(--color-success-soft);
+}
+
+.personalActionPriority {
+  padding: var(--ds-space-1-5) var(--ds-space-2);
+  border-radius: var(--ds-radius-full);
+  color: var(--color-text-secondary);
+  background: var(--color-surface-sunken);
+  font-size: var(--ds-font-size-xs);
+  font-weight: var(--ds-font-bold);
+  white-space: nowrap;
+}
+
+.personalActionPriority.danger {
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
+}
+
+.personalActionPriority.warning {
+  color: var(--color-warning);
+  background: var(--color-warning-soft);
+}
+
+.personalActionPriority.positive {
+  color: var(--color-success);
+  background: var(--color-success-soft);
+}
+
+.personalActionDismiss {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-left: auto;
+  border: 0;
+  border-radius: var(--ds-radius-sm);
+  color: var(--color-text-tertiary);
+  background: transparent;
+  cursor: pointer;
+}
+
+.personalActionDismiss:hover {
+  color: var(--color-text-primary);
+  background: var(--color-surface-sunken);
+}
+
+.personalActionDismiss svg {
+  width: 18px;
+  height: 18px;
+}
+
+.personalActionRank {
+  margin-top: var(--ds-space-2);
+  color: var(--color-text-tertiary);
+  font-size: var(--ds-font-size-xs);
+  font-weight: var(--ds-font-bold);
+  text-transform: uppercase;
+  letter-spacing: var(--ds-tracking-wide);
+}
+
+.personalActionCard h4,
+.personalActionEmpty h4 {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: var(--ds-font-size-lg);
+  letter-spacing: var(--ds-tracking-tight);
+}
+
+.personalActionCard p,
+.personalActionEmpty p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--ds-font-size-sm);
+  line-height: var(--ds-leading-normal);
+}
+
+.personalActionMetric {
+  align-self: end;
+  padding: var(--ds-space-2-5) var(--ds-space-3);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--ds-radius-sm);
+  color: var(--color-text-primary);
+  background: var(--color-surface-sunken);
+  font-size: var(--ds-font-size-sm);
+  font-weight: var(--ds-font-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.personalActionCta {
+  justify-content: space-between;
+  gap: var(--ds-space-3);
+  min-height: 44px;
+  padding: var(--ds-space-2-5) var(--ds-space-3);
+  border: 1px solid var(--color-primary-border);
+  border-radius: var(--ds-radius-sm);
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+  font-size: var(--ds-font-size-sm);
+  font-weight: var(--ds-font-bold);
+  text-align: left;
+  cursor: pointer;
+}
+
+.personalActionCta:hover {
+  color: var(--color-primary-foreground);
+  background: var(--color-primary);
+}
+
+.personalActionMore {
+  justify-self: center;
+  min-height: 44px;
+  padding: var(--ds-space-2) var(--ds-space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--ds-radius-full);
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  font-weight: var(--ds-font-semibold);
+  cursor: pointer;
+}
+
+.personalActionMore:hover {
+  border-color: var(--color-primary-border);
+  color: var(--color-primary);
+}
+
+.personalActionEmpty {
+  gap: var(--ds-space-4);
+  padding: var(--ds-space-4);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--ds-radius-lg);
+  background: var(--color-surface);
+}
+
+.personalActionEmpty > div {
+  display: grid;
+  flex: 1;
+  gap: var(--ds-space-1);
+}
+
+.personalActionEmptyIcon {
+  border-color: color-mix(in srgb, var(--color-success) 38%, var(--color-border));
+  color: var(--color-success);
+  background: var(--color-success-soft);
+  font-size: var(--ds-font-size-xl);
+  font-weight: var(--ds-font-bold);
+}
+
+.personalActionUndo {
+  justify-content: space-between;
+  gap: var(--ds-space-3);
+  padding: var(--ds-space-3) var(--ds-space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--ds-radius-md);
+  color: var(--color-text-secondary);
+  background: var(--color-surface-sunken);
+  font-size: var(--ds-font-size-sm);
+}
+
+.personalActionUndo button {
+  min-height: 44px;
+  border: 0;
+  color: var(--color-primary);
+  background: transparent;
+  font-weight: var(--ds-font-bold);
+  cursor: pointer;
+}
+
+@media (max-width: 960px) {
+  .personalActionGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .personalActionCard {
+    grid-template-rows: auto;
+  }
+}
+
+@media (max-width: 700px) {
+  .personalActionCenter {
+    gap: var(--ds-space-4);
+    padding: var(--ds-space-4);
+  }
+
+  .personalActionHeader,
+  .personalActionIdentity,
+  .personalActionEmpty,
+  .personalActionUndo {
+    align-items: flex-start;
+  }
+
+  .personalActionHeader {
+    flex-direction: column;
+  }
+
+  .personalActionHeaderMeta {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .personalActionEmpty,
+  .personalActionUndo {
+    flex-direction: column;
+  }
+
+  .personalActionEmpty .btnSecondary,
+  .personalActionUndo button {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .personalActionCard {
+    transition: none;
+  }
+
+  .personalActionCard:hover {
+    transform: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .personalActionCenter::before {
+    background: Highlight;
+  }
+
+  .personalActionCard,
+  .personalActionMetric,
+  .personalActionCta,
+  .personalActionMore,
+  .personalActionEmpty,
+  .personalActionUndo {
+    border-color: CanvasText;
+  }
+}

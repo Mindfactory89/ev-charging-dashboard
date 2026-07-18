@@ -366,3 +366,35 @@ test("getDashboardBundle exposes stable soc window highlights for a custom demo 
   assert.equal(soc.bands.find((band) => band.key === "40-50")?.count, 5);
   assert.equal(soc.bands.find((band) => band.key === "40-50")?.avg_score, 85);
 });
+
+test("getDashboardBundle isolates sessions by stable vehicle profile id", async () => {
+  const api = await loadDemoApi();
+  api.invalidateDashboardBundleCache();
+  await api.createSession({
+    date: "2039-02-01",
+    energy_kwh: 20,
+    price_per_kwh: 0.4,
+    duration_seconds: 1800,
+    connector: "CCS - DC",
+    soc_start: 20,
+    soc_end: 70,
+    vehicle: "City EV",
+    vehicle_profile_id: "city-ev",
+  });
+  await api.createSession({
+    date: "2039-02-02",
+    energy_kwh: 30,
+    price_per_kwh: 0.5,
+    duration_seconds: 2400,
+    connector: "CCS - DC",
+    soc_start: 10,
+    soc_end: 80,
+    vehicle: "Family EV",
+    vehicle_profile_id: "family-ev",
+  });
+
+  const scoped = await api.getDashboardBundle(2039, { id: "city-ev", name: "City EV" });
+  assert.equal(scoped.sessions.meta.total, 1);
+  assert.equal(scoped.sessions.rows[0].vehicle_profile_id, "city-ev");
+  assert.equal(scoped.stats.total_energy_kwh, 20);
+});

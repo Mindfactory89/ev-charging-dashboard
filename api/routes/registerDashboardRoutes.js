@@ -1,13 +1,13 @@
 'use strict';
 
 const { buildDashboardPayload } = require('../lib/analytics');
-const { YEAR_QUERY_REQUIRED_SCHEMA } = require('../lib/httpSchemas');
+const { DASHBOARD_QUERY_SCHEMA } = require('../lib/httpSchemas');
 const { yearRange } = require('../lib/year');
 
 function registerDashboardRoutes(fastify) {
   fastify.get('/api/dashboard', {
     schema: {
-      querystring: YEAR_QUERY_REQUIRED_SCHEMA,
+      querystring: DASHBOARD_QUERY_SCHEMA,
     },
   }, async (req, reply) => {
     const year = Number(req.query?.year);
@@ -16,12 +16,25 @@ function registerDashboardRoutes(fastify) {
     }
 
     const range = yearRange(year);
+    const vehicleProfileId = String(req.query?.vehicleProfileId || '').trim();
+    const vehicle = String(req.query?.vehicle || '').trim();
+    const vehicleWhere = vehicleProfileId
+      ? {
+          OR: [
+            { vehicle_profile_id: vehicleProfileId },
+            ...(vehicle ? [{ vehicle_profile_id: null, vehicle }] : []),
+          ],
+        }
+      : vehicle
+        ? { vehicle }
+        : {};
     const [sessions, allSessionDates] = await Promise.all([
       fastify.prisma.chargingSession.findMany({
-        where: { date: { gte: range.from, lt: range.to } },
+        where: { date: { gte: range.from, lt: range.to }, ...vehicleWhere },
         orderBy: { date: 'asc' },
       }),
       fastify.prisma.chargingSession.findMany({
+        where: vehicleWhere,
         select: { date: true },
         orderBy: { date: 'asc' },
       }),

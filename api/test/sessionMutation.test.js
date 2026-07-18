@@ -14,6 +14,7 @@ test("parseSessionMutation normalizes optional metadata", () => {
     provider: "  Ionity  ",
     location: " Brohltal Ost ",
     vehicle: " CUPRA Born 79 kWh ",
+    vehicle_profile_id: " cupra-born ",
     tags: ["#HPC", "reise", "reise"],
   });
 
@@ -21,6 +22,7 @@ test("parseSessionMutation normalizes optional metadata", () => {
   assert.equal(result.data.provider, "Ionity");
   assert.equal(result.data.location, "Brohltal Ost");
   assert.equal(result.data.vehicle, "CUPRA Born 79 kWh");
+  assert.equal(result.data.vehicle_profile_id, "cupra-born");
   assert.equal(result.data.tags, "HPC, reise");
   assert.equal(result.data.total_cost, 26.25);
 });

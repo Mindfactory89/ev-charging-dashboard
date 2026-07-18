@@ -1,7 +1,8 @@
 const dashboardBundleCache = new Map();
 
-export function dashboardCacheKey(year, mode = "real") {
-  return `${mode}:${Number(year) || 2026}`;
+export function dashboardCacheKey(year, mode = "real", scopeKey = "") {
+  const base = `${mode}:${Number(year) || 2026}`;
+  return scopeKey ? `${base}:${encodeURIComponent(scopeKey)}` : base;
 }
 
 export function getDashboardCacheEntry(key) {
@@ -35,5 +36,7 @@ export function invalidateDashboardBundleCache(mode, year = null) {
   }
 
   const exactKey = dashboardCacheKey(year, mode || "real");
-  dashboardBundleCache.delete(exactKey);
+  for (const key of dashboardBundleCache.keys()) {
+    if (key === exactKey || key.startsWith(`${exactKey}:`)) dashboardBundleCache.delete(key);
+  }
 }

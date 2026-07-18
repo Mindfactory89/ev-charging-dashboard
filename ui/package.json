@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 5173 --strictPort",
     "build": "vite build",
+    "check:bundle": "node ./scripts/check-build-budget.js",
     "lint": "node ./scripts/lint.js",
     "preview": "vite preview --host 0.0.0.0 --port 5173 --strictPort",
     "mobile:sync": "npm run build && npx cap sync",

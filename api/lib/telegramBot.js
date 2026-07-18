@@ -1,11 +1,13 @@
 'use strict';
 
+const sharedConfig = require('../../shared/domain/config.cjs');
+
 const { parseSessionMutation } = require('./sessionMutation');
 const { normalizeOptionalText } = require('./sessionMetadata');
 
 const TELEGRAM_API_BASE = 'https://api.telegram.org';
 const DEFAULT_CONNECTOR_OPTIONS = ['CCS - DC', 'CCS AC', 'Wallbox AC'];
-const DEFAULT_VEHICLE = 'CUPRA Born 79 kWh';
+const DEFAULT_VEHICLE = String(sharedConfig?.defaultVehicle || 'Elektroauto');
 const DRAFT_TTL_MS = 24 * 60 * 60 * 1000;
 const CONTROL_TEXT_ALIASES = {
   cancel: new Set(['/cancel', 'abbrechen', 'cancel', '❌ abbrechen']),
@@ -58,6 +60,7 @@ const STEP_KEYBOARD_ROWS = {
 };
 const CALLBACK_ACTIONS = new Map([
   ['menu:new', { type: 'command', text: '/new' }],
+  ['menu:summary', { type: 'command', text: '/summary' }],
   ['nav:cancel', { type: 'command', text: '/cancel' }],
   ['date:today', { type: 'step', step: 'date', text: '1' }],
   ['date:yesterday', { type: 'step', step: 'date', text: '2' }],
@@ -294,6 +297,7 @@ function buildInlineKeyboard(rows) {
 function menuKeyboard() {
   return buildInlineKeyboard([
     [{ text: '✨ Neue Session starten', callback_data: 'menu:new' }],
+    [{ text: '📊 Jahresübersicht', callback_data: 'menu:summary' }],
   ]);
 }
 
@@ -526,9 +530,41 @@ function createTelegramBot(options = {}) {
   async function sendWelcome(chatId) {
     await sendMessage(
       chatId,
-      'Hallo 👋\nIch bin dein privater Session-Assistent für dein Mobility Dashboard 😊\n\nWenn du möchtest, trage ich mit dir Schritt für Schritt einen neuen Ladevorgang ein.\nStarte einfach über den Button „✨ Neue Session starten“ oder mit /new.\n\nHilfreiche Befehle:\n/new\n/cancel\n/help\n/whoami',
+      'Hallo 👋\nIch bin dein privater Session-Assistent für dein Mobility Dashboard 😊\n\nWenn du möchtest, trage ich mit dir Schritt für Schritt einen neuen Ladevorgang ein.\nStarte einfach über den Button „✨ Neue Session starten“ oder mit /new.\n\nHilfreiche Befehle:\n/new\n/summary\n/cancel\n/help\n/whoami',
       menuKeyboard()
     );
+  }
+
+  async function sendDashboardSummary(chatId) {
+    const reference = now();
+    const year = reference.getFullYear();
+    const start = new Date(year, 0, 1);
+    const end = new Date(year + 1, 0, 1);
+    try {
+      const rows = await prisma.chargingSession.findMany({
+        where: { date: { gte: start, lt: end } },
+        orderBy: { date: 'desc' },
+      });
+      if (!rows.length) {
+        await sendMessage(chatId, `Für ${year} sind noch keine Ladevorgänge gespeichert.`, menuKeyboard());
+        return;
+      }
+      const energy = rows.reduce((sum, row) => sum + (Number(row.energy_kwh) || 0), 0);
+      const cost = rows.reduce((sum, row) => sum + (Number(row.total_cost) || 0), 0);
+      const averagePrice = energy > 0 ? cost / energy : null;
+      const latest = rows[0]?.date ? new Date(rows[0].date) : null;
+      const latestLabel = latest && !Number.isNaN(latest.getTime())
+        ? latest.toLocaleDateString('de-DE')
+        : '–';
+      await sendMessage(
+        chatId,
+        `📊 Deine Ladeübersicht ${year}\n\n🔌 Sessions: ${rows.length}\n⚡ Energie: ${formatDecimal(energy, 1)} kWh\n💶 Kosten: ${formatDecimal(cost)} EUR\n🏷️ Ø Preis: ${averagePrice != null ? `${formatDecimal(averagePrice, 3)} EUR/kWh` : '–'}\n📅 Letzte Session: ${latestLabel}\n\nDie priorisierten Hinweise und Datenqualitätsaufgaben findest du im Benachrichtigungs-Center des Dashboards.`,
+        menuKeyboard()
+      );
+    } catch (error) {
+      log.error({ error, chatId }, 'Telegram summary failed');
+      await sendMessage(chatId, 'Die Jahresübersicht konnte gerade nicht geladen werden. Bitte versuche es später erneut.', menuKeyboard());
+    }
   }
 
   async function sendUnauthorized(chatId, message) {
@@ -770,6 +806,11 @@ function createTelegramBot(options = {}) {
 
     if (normalized === '/new') {
       await beginDraft(chatId);
+      return;
+    }
+
+    if (normalized === '/summary') {
+      await sendDashboardSummary(chatId);
       return;
     }
 

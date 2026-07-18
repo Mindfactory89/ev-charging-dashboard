@@ -13,6 +13,8 @@ import {
 import { deriveMobilityForSession } from "./sessionIntelligence.js";
 import { formatTags } from "./sessionMetadata.js";
 import { buildSessionMetadataOptions } from "./sessionMetadataOptions.js";
+import { clearAddSessionDraft, readAddSessionDraft, writeAddSessionDraft } from "./addSessionDraft.js";
+import { addSessionDefaultsForChargingProfile } from "../config/chargingProfiles.js";
 
 const PROVIDER_LIST_ID = "add-session-provider-options";
 const LOCATION_LIST_ID = "add-session-location-options";
@@ -82,19 +84,43 @@ function FieldLabel({ children, required = false, requiredLabel }) {
   );
 }
 
-export default function AddSessionCard({ onCreated, demo = false, intelligence = null, sessions = [] }) {
+export default function AddSessionCard({ chargingProfile = null, onCreated, demo = false, intelligence = null, sessions = [], vehicleProfile = null }) {
   const { t } = useI18n();
-  const [values, setValues] = React.useState(() => ({
-    ...createInitialAddSessionValues(),
-    connector: CONNECTOR_OPTIONS[0] || "CCS - DC",
-    vehicle: DEFAULT_VEHICLE,
-  }));
+  const profileVehicleName = vehicleProfile?.sessionVehicleName || vehicleProfile?.name || DEFAULT_VEHICLE;
+  const restoredDraftRef = React.useRef(null);
+  if (restoredDraftRef.current === null) restoredDraftRef.current = readAddSessionDraft() || false;
+  function blankValues() {
+    return {
+      ...createInitialAddSessionValues(),
+      connector: CONNECTOR_OPTIONS[0] || "CCS - DC",
+      vehicle: profileVehicleName,
+      ...addSessionDefaultsForChargingProfile(chargingProfile),
+    };
+  }
+  const [values, setValues] = React.useState(() => restoredDraftRef.current
+    ? { ...blankValues(), ...restoredDraftRef.current.values }
+    : blankValues());
+  const [draftRestored, setDraftRestored] = React.useState(Boolean(restoredDraftRef.current));
   const [touched, setTouched] = React.useState({});
   const [submitAttempted, setSubmitAttempted] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
   const [status, setStatus] = React.useState(null);
   const inputRefs = React.useRef({});
   const optionalDetailsRef = React.useRef(null);
+  const previousProfileVehicleRef = React.useRef(profileVehicleName);
+
+  React.useEffect(() => {
+    writeAddSessionDraft(values);
+  }, [values]);
+
+  React.useEffect(() => {
+    const previousName = previousProfileVehicleRef.current;
+    setValues((current) => {
+      if (current.vehicle && current.vehicle !== DEFAULT_VEHICLE && current.vehicle !== previousName) return current;
+      return { ...current, vehicle: profileVehicleName };
+    });
+    previousProfileVehicleRef.current = profileVehicleName;
+  }, [profileVehicleName]);
 
   const metadataOptions = React.useMemo(
     () => buildSessionMetadataOptions({ sessions, intelligence }),
@@ -111,6 +137,9 @@ export default function AddSessionCard({ onCreated, demo = false, intelligence =
       ? parsedEnergy / (parsedDuration / 3600)
       : null;
   const previewSocDelta = Math.max(0, Number(values.socEnd) - Number(values.socStart));
+  const profileBatteryWindowKwh = vehicleProfile?.batteryKwh != null && Number.isFinite(Number(vehicleProfile.batteryKwh))
+    ? (Number(vehicleProfile.batteryKwh) * previewSocDelta) / 100
+    : null;
   const mobilityPreview = React.useMemo(() => {
     if (!Number.isFinite(parsedOdometer)) return null;
     return deriveMobilityForSession(sessions, {
@@ -143,6 +172,15 @@ export default function AddSessionCard({ onCreated, demo = false, intelligence =
   function updateField(field, value) {
     setValues((current) => ({ ...current, [field]: value }));
     setStatus(null);
+  }
+
+  function resetDraft() {
+    clearAddSessionDraft();
+    setValues(blankValues());
+    setTouched({});
+    setSubmitAttempted(false);
+    setStatus(null);
+    setDraftRestored(false);
   }
 
   function markTouched(field) {
@@ -209,6 +247,7 @@ export default function AddSessionCard({ onCreated, demo = false, intelligence =
         provider: values.provider,
         location: values.location,
         vehicle: values.vehicle,
+        vehicle_profile_id: vehicleProfile?.id || null,
         tags: formatTags(values.tags),
         connector: values.connector,
         soc_start: Number(values.socStart),
@@ -224,7 +263,9 @@ export default function AddSessionCard({ onCreated, demo = false, intelligence =
         title: t("addSession.feedback.savedTitle"),
         message: t("addSession.messages.saved"),
       });
-      setValues((current) => ({ ...current, note: "" }));
+      clearAddSessionDraft();
+      setValues(blankValues());
+      setDraftRestored(false);
       setTouched({});
       setSubmitAttempted(false);
       await onCreated?.();
@@ -257,7 +298,14 @@ export default function AddSessionCard({ onCreated, demo = false, intelligence =
           <p className="sessionEntryIntro">{t("addSession.intro")}</p>
         </div>
         <div className="sessionEntryMeta">
+          {draftRestored ? (
+            <span className="sessionDraftRestored">
+              {t("addSession.draft.restored")}
+              <button type="button" onClick={resetDraft}>{t("addSession.draft.discard")}</button>
+            </span>
+          ) : null}
           <span className="pill ghostPill">{demo ? t("addSession.metaDemo") : t("addSession.metaLive")}</span>
+          <span className="pill ghostPill">{t("addSession.metaVehicleProfile", { name: vehicleProfile?.name || profileVehicleName })}</span>
           <span className={issueCount ? "sessionReadiness review" : "sessionReadiness ready"}>
             {issueCount
               ? t("addSession.readiness.review", { count: issueCount })
@@ -351,7 +399,11 @@ export default function AddSessionCard({ onCreated, demo = false, intelligence =
                 autoComplete="off"
                 required
               />
-              <span id="add-session-energy-help" className="sessionFieldHelp">{t("addSession.helpers.energy")}</span>
+              <span id="add-session-energy-help" className="sessionFieldHelp">
+                {profileBatteryWindowKwh != null
+                  ? t("addSession.helpers.energyProfile", { name: vehicleProfile?.name || profileVehicleName, value: num(profileBatteryWindowKwh, 1) })
+                  : t("addSession.helpers.energy")}
+              </span>
               <FieldError field="energyKwh" issue={energyField.issue} id={energyField.errorId} />
             </label>
 

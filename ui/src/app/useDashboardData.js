@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getDashboardBundle } from "../ui/api.js";
 
-export function useDashboardData(year) {
+export function useDashboardData(year, vehicleScope = null) {
   const [stats, setStats] = useState(null);
   const [sessions, setSessions] = useState([]);
   const [monthly, setMonthly] = useState(null);
@@ -26,7 +26,7 @@ export function useDashboardData(year) {
     setErr(null);
 
     try {
-      const bundle = await getDashboardBundle(year);
+      const bundle = await getDashboardBundle(year, vehicleScope);
 
       if (requestId !== refreshRequestRef.current) return;
 
@@ -49,7 +49,7 @@ export function useDashboardData(year) {
         setRefreshing(false);
       }
     }
-  }, [year]);
+  }, [vehicleScope?.id, vehicleScope?.name, year]);
 
   useEffect(() => {
     refresh();

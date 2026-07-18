@@ -72,15 +72,18 @@ function WelcomeVisual() {
 
 export default function OnboardingFlow({
   activeScreen,
+  activeVehicleProfileId,
   onAdd,
   onComplete,
   onDismiss,
   open,
   screenOptions,
+  vehicleProfiles = [],
 }) {
   const { t } = useI18n();
   const [step, setStep] = useState(0);
   const [selectedScreen, setSelectedScreen] = useState(activeScreen || "overview");
+  const [selectedVehicleProfileId, setSelectedVehicleProfileId] = useState(activeVehicleProfileId || "generic-ev");
   const dialogRef = useRef(null);
   const titleRef = useRef(null);
 
@@ -88,7 +91,8 @@ export default function OnboardingFlow({
     if (!open) return;
     setStep(0);
     setSelectedScreen(activeScreen || "overview");
-  }, [activeScreen, open]);
+    setSelectedVehicleProfileId(activeVehicleProfileId || "generic-ev");
+  }, [activeScreen, activeVehicleProfileId, open]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -236,6 +240,21 @@ export default function OnboardingFlow({
                     ))}
                   </div>
                 </section>
+
+                <section className="onboardingPreferenceCard onboardingVehiclePreference" aria-labelledby="onboarding-vehicle-title">
+                  <div>
+                    <h3 id="onboarding-vehicle-title">{t("onboarding.personalize.vehicleTitle")}</h3>
+                    <p>{t("onboarding.personalize.vehicleText")}</p>
+                  </div>
+                  <label>
+                    <span>{t("onboarding.personalize.vehicleLabel")}</span>
+                    <select value={selectedVehicleProfileId} onChange={(event) => setSelectedVehicleProfileId(event.target.value)}>
+                      {vehicleProfiles.map((profile) => (
+                        <option key={profile.id} value={profile.id}>{profile.name}</option>
+                      ))}
+                    </select>
+                  </label>
+                </section>
               </div>
             </div>
           ) : null}
@@ -256,7 +275,7 @@ export default function OnboardingFlow({
                     <p>{t("onboarding.start.privacyText")}</p>
                   </div>
                 </article>
-                <button type="button" className="onboardingStartCard actionable" onClick={onAdd}>
+                <button type="button" className="onboardingStartCard actionable" onClick={() => onAdd(selectedVehicleProfileId)}>
                   <span className="onboardingIcon"><FeatureIcon kind="add" /></span>
                   <span>
                     <strong>{t("onboarding.start.addTitle")}</strong>
@@ -282,7 +301,7 @@ export default function OnboardingFlow({
                 {t("onboarding.next")}
               </button>
             ) : (
-              <button type="button" className="onboardingPrimary" onClick={() => onComplete(selectedScreen)}>
+              <button type="button" className="onboardingPrimary" onClick={() => onComplete(selectedScreen, selectedVehicleProfileId)}>
                 {t("onboarding.finish")}
               </button>
             )}

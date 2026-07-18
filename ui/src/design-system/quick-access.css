@@ -1,0 +1,265 @@
+/* Package 19: global quick access and charging-session search. */
+
+.shellUtilityButtons {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+}
+
+.shellQuickAccessButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ds-space-2);
+  min-width: 48px;
+  height: 48px;
+  padding: 0 var(--ds-space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--ds-radius-md);
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  cursor: pointer;
+  transition: var(--transition-interactive);
+}
+
+.shellQuickAccessButton:hover {
+  border-color: var(--color-primary-border);
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+
+.shellQuickAccessButton svg,
+.quickAccessClose svg,
+.quickAccessResultIcon svg,
+.quickAccessSearch svg {
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.shellQuickAccessButton kbd,
+.quickAccessPalette kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 27px;
+  min-height: 24px;
+  padding: 0 var(--ds-space-1-5);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  color: var(--color-text-tertiary);
+  background: var(--color-surface-sunken);
+  font-family: var(--ds-font-mono);
+  font-size: 11px;
+  line-height: 1;
+}
+
+.quickAccessOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--ds-z-modal);
+  display: grid;
+  align-items: start;
+  justify-items: center;
+  padding: max(8vh, var(--ds-space-6)) var(--ds-space-4);
+  background: var(--color-overlay);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: quickAccessFade var(--ds-duration-normal) var(--ds-ease-standard);
+}
+
+.quickAccessPalette {
+  display: grid;
+  width: min(720px, 100%);
+  max-height: min(760px, calc(100dvh - 12vh));
+  overflow: hidden;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--ds-radius-xl);
+  color: var(--color-text-primary);
+  background: var(--color-surface-raised);
+  box-shadow: var(--shadow-overlay);
+  animation: quickAccessEnter var(--ds-duration-slow) var(--ds-ease-enter);
+}
+
+.quickAccessHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ds-space-4);
+  padding: var(--ds-space-4) var(--ds-space-5) var(--ds-space-3);
+}
+
+.quickAccessHeader h2 {
+  margin: var(--ds-space-1) 0 0;
+  font-size: var(--ds-font-size-xl);
+  letter-spacing: var(--ds-tracking-tight);
+}
+
+.quickAccessClose {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  border: 1px solid transparent;
+  border-radius: var(--ds-radius-sm);
+  color: var(--color-text-secondary);
+  background: transparent;
+  cursor: pointer;
+  font-size: 24px;
+}
+
+.quickAccessClose:hover { border-color: var(--color-border); background: var(--color-surface); }
+
+.quickAccessSearch {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-3);
+  min-height: 58px;
+  margin: 0 var(--ds-space-5) var(--ds-space-3);
+  padding: 0 var(--ds-space-3);
+  border: 1px solid var(--color-primary-border);
+  border-radius: var(--ds-radius-lg);
+  color: var(--color-primary);
+  background: var(--color-surface);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-primary) 8%, transparent);
+}
+
+.quickAccessSearch input {
+  flex: 1;
+  min-width: 0;
+  height: 54px;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  color: var(--color-text-primary);
+  background: transparent;
+  font: inherit;
+  font-size: var(--ds-font-size-base);
+}
+
+.quickAccessSearch input::placeholder { color: var(--color-text-tertiary); }
+
+.quickAccessResults {
+  display: grid;
+  gap: var(--ds-space-4);
+  min-height: 180px;
+  padding: 0 var(--ds-space-3) var(--ds-space-4);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.quickAccessGroup { display: grid; gap: var(--ds-space-1); }
+.quickAccessGroup h3 {
+  margin: 0;
+  padding: var(--ds-space-2) var(--ds-space-2) var(--ds-space-1);
+  color: var(--color-text-tertiary);
+  font-size: var(--ds-font-size-xs);
+  font-weight: var(--ds-font-bold);
+  letter-spacing: var(--ds-tracking-wide);
+  text-transform: uppercase;
+}
+
+.quickAccessResult {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-3);
+  width: 100%;
+  min-height: 60px;
+  padding: var(--ds-space-2);
+  border: 1px solid transparent;
+  border-radius: var(--ds-radius-md);
+  color: var(--color-text-primary);
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: var(--transition-interactive);
+}
+
+.quickAccessResult:hover,
+.quickAccessResult.active {
+  border-color: var(--color-primary-border);
+  background: var(--color-primary-soft);
+}
+
+.quickAccessResultIcon {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--ds-radius-sm);
+  color: var(--color-primary);
+  background: var(--color-surface);
+}
+
+.quickAccessResultIcon.session { color: var(--color-accent); background: var(--color-accent-soft); }
+.quickAccessResultCopy { display: grid; flex: 1; gap: 3px; min-width: 0; }
+.quickAccessResultCopy strong { font-size: var(--ds-font-size-sm); overflow-wrap: anywhere; }
+.quickAccessResultCopy small { color: var(--color-text-secondary); font-size: var(--ds-font-size-xs); line-height: var(--ds-leading-normal); overflow-wrap: anywhere; }
+.quickAccessArrow { color: var(--color-text-tertiary); font-size: var(--ds-font-size-lg); }
+.quickAccessSessionMetric { display: grid; flex: 0 0 auto; gap: 2px; text-align: right; font-size: var(--ds-font-size-sm); font-weight: var(--ds-font-bold); font-variant-numeric: tabular-nums; }
+.quickAccessSessionMetric small { color: var(--color-text-secondary); font-size: var(--ds-font-size-xs); font-weight: var(--ds-font-medium); }
+
+.quickAccessEmpty {
+  display: grid;
+  place-items: center;
+  gap: var(--ds-space-2);
+  min-height: 180px;
+  padding: var(--ds-space-5);
+  text-align: center;
+}
+
+.quickAccessEmpty span { max-width: 48ch; color: var(--color-text-secondary); font-size: var(--ds-font-size-sm); line-height: var(--ds-leading-normal); }
+
+.quickAccessFooter {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ds-space-4);
+  min-height: 48px;
+  padding: var(--ds-space-2) var(--ds-space-5);
+  border-top: 1px solid var(--color-border-subtle);
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  font-size: var(--ds-font-size-xs);
+}
+
+.quickAccessFooter span { display: inline-flex; align-items: center; gap: var(--ds-space-1); }
+.quickAccessFooter span:last-child { margin-left: auto; }
+
+@keyframes quickAccessFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes quickAccessEnter { from { opacity: 0; transform: translateY(-12px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+@media (max-width: 900px) {
+  .shellQuickAccessButton kbd { display: none; }
+  .shellQuickAccessButton { width: 48px; padding-inline: var(--ds-space-2); }
+}
+
+@media (max-width: 620px) {
+  .shellUtilityButtons { justify-content: flex-start; width: 100%; }
+  .quickAccessOverlay { align-items: end; padding: 0; }
+  .quickAccessPalette { width: 100%; max-height: calc(100dvh - max(12px, env(safe-area-inset-top))); border-radius: var(--ds-radius-xl) var(--ds-radius-xl) 0 0; }
+  .quickAccessHeader { padding: var(--ds-space-4) var(--ds-space-4) var(--ds-space-3); }
+  .quickAccessSearch { margin-inline: var(--ds-space-3); }
+  .quickAccessResults { padding-inline: var(--ds-space-2); }
+  .quickAccessFooter { padding: var(--ds-space-2) var(--ds-space-3) calc(var(--ds-space-2) + env(safe-area-inset-bottom)); }
+  .quickAccessFooter span:nth-child(-n + 2) { display: none; }
+  .quickAccessFooter span:last-child { margin-left: 0; }
+  .quickAccessResult > kbd,
+  .quickAccessArrow { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quickAccessOverlay,
+  .quickAccessPalette { animation: none; }
+}
+
+@media (forced-colors: active) {
+  .quickAccessResult.active { outline: 2px solid Highlight; }
+}

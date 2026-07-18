@@ -84,6 +84,7 @@ export default function AnalysisScreen({
   seasonsCsvUrl,
   sessions,
   socWindowAnalysis,
+  vehicleScope,
   year,
 }) {
   const { t } = useI18n();
@@ -143,7 +144,7 @@ export default function AnalysisScreen({
       );
     }
 
-    return <CompareMode availableYears={availableYears} year={year} />;
+    return <CompareMode availableYears={availableYears} vehicleScope={vehicleScope} year={year} />;
   }
 
   return (

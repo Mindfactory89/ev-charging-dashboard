@@ -1,7 +1,8 @@
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import AddSessionCard from "../../ui/AddSessionCard.jsx";
 import ImportSessionsCard from "../../ui/ImportSessionsCard.jsx";
 import SessionsCard from "../../ui/SessionsCard.jsx";
+import DataQualityCenter from "../../ui/DataQualityCenter.jsx";
 import { useI18n } from "../../i18n/I18nProvider.jsx";
 import { datumDE, num } from "../formatters.js";
 import { monthLabel } from "../../ui/monthLabels.js";
@@ -34,18 +35,32 @@ export default function HistoryScreen({
   drilldownSource,
   historyFilters,
   intelligence,
+  dataQualityReport,
+  dataQualityReviewed,
   onCreated,
   onClearHistoryFilters,
   onHistoryFiltersChange,
+  onDataQualityReviewedChange,
+  onRequestedSessionEditHandled,
   onReturnToSource,
   openAdd,
   sessionOutliersById,
   sessionScoresById,
   sessions,
+  requestedSessionEditId,
+  vehicleProfile,
+  chargingProfile,
   year,
 }) {
   const { t } = useI18n();
   const importDetailsRef = useRef(null);
+  const [requestedEditId, setRequestedEditId] = useState(null);
+
+  useEffect(() => {
+    if (requestedSessionEditId == null) return;
+    setRequestedEditId(requestedSessionEditId);
+    onRequestedSessionEditHandled?.();
+  }, [onRequestedSessionEditHandled, requestedSessionEditId]);
 
   function sourceLabel(source) {
     if (source === "analysis") return t("history.source.analysis");
@@ -68,6 +83,7 @@ export default function HistoryScreen({
     historyFilters?.location ? t("history.filters.location", { value: historyFilters.location }) : null,
     historyFilters?.vehicle ? t("history.filters.vehicle", { value: historyFilters.vehicle }) : null,
     historyFilters?.tag ? t("history.filters.tag", { value: historyFilters.tag }) : null,
+    historyFilters?.query ? t("history.filters.query", { value: historyFilters.query }) : null,
   ].filter(Boolean);
   const hasHistoryContext = Boolean(drilldownSource) || filterLabels.length > 0;
   const totalEnergy = sessions.reduce((sum, session) => sum + (Number(session.energy_kwh) || 0), 0);
@@ -184,7 +200,19 @@ export default function HistoryScreen({
             {t("common.collapse")}
           </button>
         </div>
-        <AddSessionCard onCreated={onCreated} demo={demo} intelligence={intelligence} sessions={sessions} />
+        <AddSessionCard chargingProfile={chargingProfile} onCreated={onCreated} demo={demo} intelligence={intelligence} sessions={sessions} vehicleProfile={vehicleProfile} />
+      </section>
+
+      <section className="row">
+        <DataQualityCenter
+          onChanged={onCreated}
+          onEditSession={setRequestedEditId}
+          onReviewedChange={onDataQualityReviewedChange}
+          report={dataQualityReport}
+          reviewed={dataQualityReviewed}
+          sessions={sessions}
+          year={year}
+        />
       </section>
 
       <section className="row">
@@ -197,6 +225,8 @@ export default function HistoryScreen({
           onChanged={onCreated}
           sessionScoresById={sessionScoresById}
           sessionOutliersById={sessionOutliersById}
+          requestedEditId={requestedEditId}
+          onRequestedEditHandled={() => setRequestedEditId(null)}
         />
       </section>
 
@@ -212,7 +242,7 @@ export default function HistoryScreen({
           <span className="historyImportState" aria-hidden="true">+</span>
         </summary>
         <div className="historyImportContent">
-          <ImportSessionsCard onImported={onCreated} sessions={sessions} />
+          <ImportSessionsCard onImported={onCreated} sessions={sessions} vehicleProfile={vehicleProfile} />
         </div>
       </details>
     </>

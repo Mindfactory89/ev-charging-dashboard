@@ -23,6 +23,17 @@ const YEAR_QUERY_OPTIONAL_SCHEMA = {
   },
 };
 
+const DASHBOARD_QUERY_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['year'],
+  properties: {
+    year: YEAR_SCHEMA,
+    vehicleProfileId: { type: 'string', minLength: 1, maxLength: 120 },
+    vehicle: { type: 'string', minLength: 1, maxLength: 160 },
+  },
+};
+
 const SESSION_ID_PARAMS_SCHEMA = {
   type: 'object',
   additionalProperties: false,
@@ -55,6 +66,7 @@ const SESSION_MUTATION_PROPERTIES = {
   provider: OPTIONAL_STRING_SCHEMA,
   location: OPTIONAL_STRING_SCHEMA,
   vehicle: OPTIONAL_STRING_SCHEMA,
+  vehicle_profile_id: OPTIONAL_STRING_SCHEMA,
   tags: {
     anyOf: [
       { type: 'string' },
@@ -91,6 +103,7 @@ const PATCH_SESSION_BODY_SCHEMA = {
 
 module.exports = {
   CREATE_SESSION_BODY_SCHEMA,
+  DASHBOARD_QUERY_SCHEMA,
   PATCH_SESSION_BODY_SCHEMA,
   SESSION_ID_PARAMS_SCHEMA,
   SESSION_QUERY_SCHEMA,

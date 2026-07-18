@@ -105,3 +105,17 @@ export async function downloadFileFromUrl(url, options = {}) {
 
   return openExternalUrl(url);
 }
+
+export async function downloadTextFile(content, options = {}) {
+  if (typeof Blob !== "function") return false;
+  const blob = new Blob([String(content ?? "")], {
+    type: options.type || "text/plain;charset=utf-8",
+  });
+  const fileName = sanitizeFileName(options.fileName || "download.txt");
+
+  if (await tryShareFile(blob, fileName, options.title || fileName)) {
+    return true;
+  }
+
+  return triggerBrowserDownload(blob, fileName);
+}

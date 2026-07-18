@@ -20,6 +20,35 @@ test('dashboard route rejects missing year before touching prisma', async () => 
   await app.close();
 });
 
+test('dashboard route filters by stable vehicle profile id with a legacy name fallback', async () => {
+  const calls = [];
+  const app = createApp({
+    prisma: {
+      chargingSession: {
+        findMany: async (query) => {
+          calls.push(query);
+          return [];
+        },
+      },
+    },
+    logger: false,
+  });
+
+  const response = await app.inject({
+    method: 'GET',
+    url: '/api/dashboard?year=2026&vehicleProfileId=city-ev&vehicle=City%20EV',
+  });
+
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(calls[0].where.OR, [
+    { vehicle_profile_id: 'city-ev' },
+    { vehicle_profile_id: null, vehicle: 'City EV' },
+  ]);
+  assert.deepEqual(calls[1].where.OR, calls[0].where.OR);
+
+  await app.close();
+});
+
 test('session list rejects invalid limit values', async () => {
   const app = createApp({
     prisma: {},

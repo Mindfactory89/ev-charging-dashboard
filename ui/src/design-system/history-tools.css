@@ -1,0 +1,323 @@
+/* Package 11: search, sorting, advanced filters, and locally saved history views. */
+
+.sessionHistoryTools {
+  margin-top: var(--ds-space-5);
+  padding: var(--ds-space-4);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--ds-radius-xl);
+  background: var(--color-surface-sunken);
+}
+
+.sessionHistoryToolbar {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) minmax(190px, 0.34fr) auto;
+  align-items: end;
+  gap: var(--ds-space-3);
+}
+
+.sessionSearchField,
+.sessionSortField {
+  display: grid;
+  gap: var(--ds-space-2);
+  min-width: 0;
+}
+
+.sessionSearchField > span:first-child,
+.sessionSortField > span:first-child {
+  color: var(--color-text-secondary);
+  font-size: var(--font-label);
+  font-weight: var(--ds-font-semibold);
+  letter-spacing: var(--ds-tracking-wide);
+}
+
+.sessionSearchControl {
+  position: relative;
+  display: block;
+}
+
+.sessionSearchControl > svg {
+  position: absolute;
+  top: 50%;
+  left: var(--ds-space-4);
+  z-index: 1;
+  width: 20px;
+  height: 20px;
+  color: var(--color-text-tertiary);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.sessionSearchControl .input {
+  width: 100%;
+  padding-left: 46px;
+  padding-right: 52px;
+  background: var(--color-surface);
+}
+
+.sessionSearchClear {
+  position: absolute;
+  top: 50%;
+  right: 2px;
+  display: inline-grid;
+  place-items: center;
+  width: var(--touch-target-min);
+  height: var(--touch-target-min);
+  padding: 0;
+  border: 0;
+  border-radius: var(--ds-radius-md);
+  color: var(--color-text-secondary);
+  background: transparent;
+  transform: translateY(-50%);
+  transition: var(--transition-interactive);
+}
+
+.sessionSearchClear:hover {
+  color: var(--color-text-primary);
+  background: var(--color-surface-sunken);
+}
+
+.sessionSearchClear svg,
+.sessionFilterToggle svg,
+.sessionActiveFilter svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sessionSortField .input {
+  width: 100%;
+  background: var(--color-surface);
+}
+
+.sessionFilterToggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ds-space-2);
+  min-height: var(--control-min-height);
+  padding: 0 var(--ds-space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--ds-radius-md);
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  font: inherit;
+  font-size: var(--ds-font-size-sm);
+  font-weight: var(--ds-font-semibold);
+  white-space: nowrap;
+  transition: var(--transition-interactive);
+}
+
+.sessionFilterToggle:hover,
+.sessionFilterToggle.active {
+  color: var(--color-text-primary);
+  border-color: var(--color-primary-border);
+  background: var(--color-primary-soft);
+}
+
+.sessionFilterCount {
+  display: inline-grid;
+  place-items: center;
+  min-width: 24px;
+  height: 24px;
+  padding-inline: var(--ds-space-1-5);
+  border-radius: var(--ds-radius-full);
+  color: var(--color-primary-foreground);
+  background: var(--color-primary);
+  font-size: var(--ds-font-size-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.sessionHistoryResultBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space-3);
+  min-height: 32px;
+  margin-top: var(--ds-space-2);
+  color: var(--color-text-secondary);
+  font-size: var(--ds-font-size-sm);
+}
+
+.sessionClearFilters {
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  color: var(--color-primary);
+  background: transparent;
+  font: inherit;
+  font-size: var(--ds-font-size-sm);
+  font-weight: var(--ds-font-semibold);
+}
+
+.sessionClearFilters:hover {
+  color: var(--color-primary-hover);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.sessionActiveFilters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-2);
+  margin-top: var(--ds-space-2);
+}
+
+.sessionActiveFilter {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  min-height: var(--touch-target-min);
+  padding: 0 var(--ds-space-2) 0 var(--ds-space-3);
+  border: 1px solid var(--color-primary-border);
+  border-radius: var(--ds-radius-full);
+  color: var(--color-text-primary);
+  background: var(--color-primary-soft);
+  font: inherit;
+  font-size: var(--ds-font-size-sm);
+  transition: var(--transition-interactive);
+}
+
+.sessionActiveFilter:hover {
+  color: var(--color-primary-hover);
+  border-color: var(--color-primary);
+}
+
+.sessionActiveFilter svg {
+  width: 16px;
+  height: 16px;
+}
+
+.sessionAdvancedFilters {
+  margin-top: var(--ds-space-4);
+  padding: var(--ds-space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--ds-radius-lg);
+  background: var(--color-surface);
+  animation: sessionFilterPanelIn var(--ds-duration-normal) var(--ds-ease-enter);
+}
+
+.sessionFilterPanelHeader strong,
+.sessionFilterPanelHeader span,
+.sessionSavedFiltersCopy strong,
+.sessionSavedFiltersCopy span {
+  display: block;
+}
+
+.sessionFilterPanelHeader strong,
+.sessionSavedFiltersCopy strong {
+  color: var(--color-text-primary);
+  font-size: var(--ds-font-size-sm);
+}
+
+.sessionFilterPanelHeader span,
+.sessionSavedFiltersCopy span {
+  margin-top: var(--ds-space-1);
+  color: var(--color-text-secondary);
+  font-size: var(--ds-font-size-xs);
+  line-height: var(--ds-leading-normal);
+}
+
+.sessionFilterGrid.formGrid {
+  grid-template-columns: repeat(5, minmax(130px, 1fr));
+  gap: var(--ds-space-3);
+  margin-top: var(--ds-space-4);
+}
+
+.sessionSavedFilters {
+  display: grid;
+  grid-template-columns: minmax(170px, 1.1fr) minmax(160px, 1fr) minmax(160px, 1fr) auto;
+  align-items: end;
+  gap: var(--ds-space-3);
+  margin-top: var(--ds-space-4);
+  padding-top: var(--ds-space-4);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.sessionSavedFilterActions {
+  display: flex;
+  gap: var(--ds-space-2);
+}
+
+.sessionSavedFilterActions .pill {
+  min-height: var(--control-min-height);
+  white-space: nowrap;
+}
+
+.sessionsPanel .tableWrap {
+  margin-top: var(--ds-space-4);
+}
+
+@keyframes sessionFilterPanelIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 1040px) {
+  .sessionFilterGrid.formGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .sessionSavedFilters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sessionSavedFiltersCopy,
+  .sessionSavedFilterActions {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 720px) {
+  .sessionHistoryTools {
+    padding: var(--ds-space-3);
+    border-radius: var(--ds-radius-lg);
+  }
+
+  .sessionHistoryToolbar,
+  .sessionFilterGrid.formGrid,
+  .sessionSavedFilters {
+    grid-template-columns: 1fr;
+  }
+
+  .sessionFilterToggle,
+  .sessionSavedFilterActions,
+  .sessionSavedFilterActions .pill {
+    width: 100%;
+  }
+
+  .sessionSavedFiltersCopy,
+  .sessionSavedFilterActions {
+    grid-column: auto;
+  }
+
+  .sessionSavedFilterActions {
+    flex-direction: column;
+  }
+
+  .sessionHistoryResultBar {
+    align-items: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sessionAdvancedFilters {
+    animation: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .sessionHistoryTools,
+  .sessionAdvancedFilters,
+  .sessionFilterToggle,
+  .sessionActiveFilter {
+    border: 1px solid CanvasText;
+  }
+}

@@ -1,4 +1,5 @@
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { getDocument } from "../platform/runtime.js";
 import {
   DEFAULT_LOCALE,
   SUPPORTED_LOCALES,
@@ -32,6 +33,11 @@ export function I18nProvider({ children }) {
   }, []);
 
   setActiveLocale(locale);
+
+  useEffect(() => {
+    const documentTarget = getDocument();
+    if (documentTarget?.documentElement) documentTarget.documentElement.lang = locale;
+  }, [locale]);
 
   const value = useMemo(
     () => ({

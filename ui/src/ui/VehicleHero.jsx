@@ -40,6 +40,16 @@ function SpecIcon({ kind }) {
     );
   }
 
+  if (kind === "consumption") {
+    return (
+      <svg className="chipIcon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 15.5a8 8 0 1 1 16 0" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        <path d="m12 12 4-3" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        <path d="M7 18h10" fill="none" stroke="currentColor" strokeWidth="1.2" opacity="0.55" />
+      </svg>
+    );
+  }
+
   return null;
 }
 
@@ -110,11 +120,12 @@ export default function VehicleHero({ profile, latestDateLabel, year }) {
       </div>
 
       <div className="heroImg heroImgHybrid">
-        <div className="heroCupraSlash" aria-hidden="true" />
-        <div className="heroGlow heroGlowCupra" aria-hidden="true" />
+        <div className="heroBrandAccent" aria-hidden="true" />
+        <div className="heroGlow heroGlowBrand" aria-hidden="true" />
 
         {hasImage ? (
           <img
+            className={profile?.imageSource === "user" ? "heroUserImage" : undefined}
             src={profile.imageSrc}
             alt={profile?.imageAlt || profile?.name || t("hero.vehicle")}
             style={{ display: heroStatus === "ready" ? "block" : "none" }}
@@ -122,9 +133,15 @@ export default function VehicleHero({ profile, latestDateLabel, year }) {
         ) : null}
 
         {heroStatus === "error" || heroStatus === "missing" ? (
-          <div className="heroFallback">
-            {profile?.fallbackLabel || t("hero.imageFallback")}
-            <br />
+          <div className="heroFallback heroProfileVisual">
+            <svg viewBox="0 0 320 130" aria-hidden="true">
+              <path d="M42 86c15-28 38-45 74-52h74c31 6 53 23 72 52" />
+              <path d="M25 86h270v23H25z" />
+              <circle cx="84" cy="108" r="20" />
+              <circle cx="238" cy="108" r="20" />
+              <path d="M118 35 93 84h122l-28-49" />
+            </svg>
+            <strong>{profile?.fallbackLabel || t("hero.imageFallback")}</strong>
             <span>{profile?.fallbackHint || t("hero.assetMissing")}</span>
           </div>
         ) : null}

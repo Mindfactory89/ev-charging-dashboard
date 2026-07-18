@@ -95,6 +95,39 @@ function autoMapHeaders(headers, profileId = "generic") {
   return mapping;
 }
 
+export const IMPORT_MAPPING_FIELDS = [
+  "date",
+  "provider",
+  "location",
+  "vehicle",
+  "tags",
+  "connector",
+  "soc_start",
+  "soc_end",
+  "energy_kwh",
+  "price_per_kwh",
+  "total_cost",
+  "duration_seconds",
+  "duration_hhmm",
+  "odometer_km",
+  "note",
+];
+
+export const REQUIRED_IMPORT_MAPPING_FIELDS = ["date", "energy_kwh"];
+
+function applyMappingOverrides(automaticMapping, mappingOverrides, headers) {
+  if (!mappingOverrides || typeof mappingOverrides !== "object") return automaticMapping;
+
+  const mapping = { ...automaticMapping };
+  for (const field of IMPORT_MAPPING_FIELDS) {
+    if (!Object.prototype.hasOwnProperty.call(mappingOverrides, field)) continue;
+    const header = String(mappingOverrides[field] || "");
+    if (header && headers.includes(header)) mapping[field] = header;
+    else delete mapping[field];
+  }
+  return mapping;
+}
+
 function readMappedValue(record, mapping, field) {
   const header = mapping?.[field];
   return header ? record[header] : "";
@@ -217,7 +250,8 @@ export function buildImportPreview(text, sessions = [], options = {}) {
   const detectedProfile = detectImportProfile(headers);
   const activeProfile = getImportProfile(options?.profileId || detectedProfile?.id || "generic");
   const genericProfile = getImportProfile("generic");
-  const mapping = autoMapHeaders(headers, activeProfile?.id || "generic");
+  const automaticMapping = autoMapHeaders(headers, activeProfile?.id || "generic");
+  const mapping = applyMappingOverrides(automaticMapping, options?.mapping, headers);
   const existingKeys = buildExistingKeys(sessions);
   const seenImportKeys = new Set();
   const fallbacks = {
@@ -247,6 +281,7 @@ export function buildImportPreview(text, sessions = [], options = {}) {
   return {
     headers,
     mapping,
+    automaticMapping,
     availableProfiles: getImportProfiles(),
     profile: {
       activeId: activeProfile?.id || "generic",

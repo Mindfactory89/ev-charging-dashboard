@@ -20,4 +20,4 @@ RUN npx prisma generate
 RUN npm prune --omit=dev
 
 EXPOSE 3000
-CMD ["node", "server.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy && exec node server.js"]

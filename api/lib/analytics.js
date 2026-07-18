@@ -1173,6 +1173,7 @@ function buildSessionsCsvRows(rows) {
       provider: session.provider ?? '',
       location: session.location ?? '',
       vehicle: session.vehicle ?? '',
+      vehicle_profile_id: session.vehicle_profile_id ?? '',
       tags: session.tags ?? '',
       connector: session.connector,
       soc_start: session.soc_start,

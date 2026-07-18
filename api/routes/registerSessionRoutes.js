@@ -98,6 +98,7 @@ function buildPatchSessionPayload(existing, patch = {}) {
     provider: existing.provider,
     location: existing.location,
     vehicle: existing.vehicle,
+    vehicle_profile_id: existing.vehicle_profile_id,
     tags: existing.tags,
     connector: existing.connector,
     soc_start: existing.soc_start,

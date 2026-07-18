@@ -1,3 +1,5 @@
+import { DEFAULT_SESSION_SORT, normalizeHistoryFilters } from "../ui/sessionHistoryView.js";
+
 const STORAGE_KEY = "mobility-dashboard-ui-state-v2";
 const SCREEN_IDS = new Set(["overview", "analysis", "verlauf"]);
 
@@ -33,16 +35,6 @@ function readScreen(value, fallback = "overview") {
   return SCREEN_IDS.has(screen) ? screen : fallback;
 }
 
-function normalizeHistoryFilters(value = {}) {
-  return {
-    month: value?.month != null && value.month !== "" ? Number(value.month) : null,
-    provider: readString(value?.provider, ""),
-    location: readString(value?.location, ""),
-    vehicle: readString(value?.vehicle, ""),
-    tag: readString(value?.tag, ""),
-  };
-}
-
 export function readPersistedUiState() {
   if (typeof window === "undefined") {
     return {
@@ -68,6 +60,8 @@ export function readPersistedUiState() {
       location: search.get("location") ?? stored.historyFilters?.location,
       vehicle: search.get("vehicle") ?? stored.historyFilters?.vehicle,
       tag: search.get("tag") ?? stored.historyFilters?.tag,
+      query: search.get("q") ?? stored.historyFilters?.query,
+      sort: search.get("sort") ?? stored.historyFilters?.sort,
     }),
   };
 }
@@ -100,6 +94,8 @@ export function writePersistedUiState(state) {
       ["location", payload.historyFilters.location],
       ["vehicle", payload.historyFilters.vehicle],
       ["tag", payload.historyFilters.tag],
+      ["q", payload.historyFilters.query],
+      ["sort", payload.historyFilters.sort !== DEFAULT_SESSION_SORT ? payload.historyFilters.sort : ""],
     ];
 
     for (const [key, value] of filterEntries) {
