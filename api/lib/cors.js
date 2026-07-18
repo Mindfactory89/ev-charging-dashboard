@@ -1,6 +1,7 @@
 'use strict';
 
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '::1']);
+const MAX_ORIGIN_LENGTH = 2048;
 
 function normalizeString(value, fallback = '') {
   return String(value ?? fallback).trim();
@@ -14,8 +15,8 @@ function parseCsv(value) {
 }
 
 function normalizeOrigin(value) {
-  const raw = normalizeString(value).replace(/\/+$/, '');
-  if (!raw) return '';
+  const raw = normalizeString(value);
+  if (!raw || raw.length > MAX_ORIGIN_LENGTH) return '';
 
   try {
     return new URL(raw).origin;
