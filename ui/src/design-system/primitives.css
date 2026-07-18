@@ -1,7 +1,4 @@
-/*
- * Design System · Layer 1: Primitives
- * Raw values only. Components must consume semantic or component tokens.
- */
+/* Design system primitives */
 :root {
   /* Neutral scale */
   --ds-neutral-0: #ffffff;
@@ -21,7 +18,7 @@
   --ds-neutral-950: #080a0f;
   --ds-neutral-1000: #05070a;
 
-  /* CUPRA-inspired copper */
+  /* Primary copper scale */
   --ds-copper-100: #f8e8d8;
   --ds-copper-200: #f0cfad;
   --ds-copper-300: #e8b684;

@@ -292,7 +292,7 @@ export default {
   },
   header: {
     kicker: "Mobility Intelligence",
-    subtitle: "A calm charging cockpit focused on history, price level, and charging quality.",
+    subtitle: "Everything important about your charging sessions, costs, and energy in one place.",
     demoPill: "DEMO",
     demoText: "Demo data active – no persistence, no API/DB",
     year: "Year",

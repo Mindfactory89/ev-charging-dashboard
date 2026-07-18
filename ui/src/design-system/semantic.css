@@ -1,7 +1,4 @@
-/*
- * Design System · Layer 2: Semantics
- * Dark is the product default. Theme overrides only remap meaning.
- */
+/* Semantic theme tokens */
 :root,
 :root[data-theme="dark"] {
   color-scheme: dark;
@@ -158,7 +155,7 @@
   --touch-target-min: 44px;
   --transition-interactive: color var(--ds-duration-fast) var(--ds-ease-standard), background-color var(--ds-duration-fast) var(--ds-ease-standard), border-color var(--ds-duration-fast) var(--ds-ease-standard), box-shadow var(--ds-duration-normal) var(--ds-ease-standard), transform var(--ds-duration-normal) var(--ds-ease-standard);
 
-  /* Legacy aliases. Existing screens inherit the new system immediately. */
+  /* Compatibility aliases */
   --bg0: var(--color-background);
   --bg1: var(--color-background-end);
   --glass: var(--color-surface-raised);
