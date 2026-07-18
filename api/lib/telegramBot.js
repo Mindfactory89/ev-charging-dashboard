@@ -492,9 +492,7 @@ function createTelegramBot(options = {}) {
           inline_keyboard: [],
         },
       });
-    } catch {
-      // Alte Buttons dürfen im Fehlerfall einfach stehenbleiben.
-    }
+    } catch {}
   }
 
   function clearExpiredDrafts() {

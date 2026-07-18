@@ -1,4 +1,4 @@
-/* Design System · Layer 3: Component contracts */
+/* Shared component tokens */
 :root {
   --button-bg: var(--color-primary);
   --button-fg: var(--color-primary-foreground);

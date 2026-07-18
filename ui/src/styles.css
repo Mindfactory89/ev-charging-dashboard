@@ -8,7 +8,7 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --floating-action-offset: calc(22px + var(--safe-bottom));
 
-  /* Cupra Copper */
+  /* Primary copper accent */
   --cupra: rgba(205,132,64,0.95);
   --cupraSoft: rgba(205,132,64,0.22);
 }
@@ -917,7 +917,7 @@ a{ color:inherit; text-decoration:none; }
 .heroTitle{ margin-top: 8px; font-size: 18px; font-weight: 780; }
 .heroMeta{ margin-top: 6px; font-size: 12px; color: rgba(255,255,255,0.60); }
 
-/* Spec chips: Cupra-ish (kantig) */
+/* Vehicle specification chips */
 .heroChips{
   display:flex;
   flex-wrap: wrap;
@@ -964,7 +964,7 @@ a{ color:inherit; text-decoration:none; }
   opacity: 0.95;
 }
 
-/* Hero Image area (Cupra showroom) */
+/* Vehicle hero image */
 .heroImg{
   position: relative;
   height: 260px;
@@ -1236,7 +1236,7 @@ a{ color:inherit; text-decoration:none; }
   border: 1px solid rgba(255,255,255,0.10);
   overflow: hidden;
   background: rgba(255,255,255,0.04);
-  padding: 0; /* div-table handles padding internally */
+  padding: 0;
 }
 
 .tableHead{
@@ -1474,7 +1474,7 @@ a{ color:inherit; text-decoration:none; }
   .heroRight{ width: 100%; justify-content: flex-start; }
 }
 
-/* === Tuning: HERO image bigger (premium) === */
+/* Hero image sizing */
 .heroImg{
   height: 300px;
   padding: 10px;
@@ -1493,7 +1493,7 @@ a{ color:inherit; text-decoration:none; }
   .heroImg{ height: 240px; padding: 10px; }
 }
 
-/* === Tuning: INSIGHTS less cramped + more premium === */
+/* Insight card spacing */
 .insightsCard .sectionHeader{
   padding: 18px 16px 14px;
 }
@@ -1536,7 +1536,7 @@ a{ color:inherit; text-decoration:none; }
   opacity: 0.62;
 }
 
-/* === Trend Badges (Insights) === */
+/* Insight trend badges */
 .trendBadge{
   margin-top: 10px;
   display:inline-flex;
@@ -1561,9 +1561,7 @@ a{ color:inherit; text-decoration:none; }
   background: rgba(255,120,120,0.10);
 }
 .trendFlat{ opacity: 0.85; }
-/* =========================================================
-   DEMO STATUS BANNER (Premium, unübersehbar)
-   ========================================================= */
+/* Demo status banner */
 .demoBanner{
   display:flex;
   align-items:center;
@@ -1631,11 +1629,7 @@ a{ color:inherit; text-decoration:none; }
   border: 1px solid rgba(255,255,255,0.10);
 }
 
-/* =========================================================
-   PREMIUM FORM (fix für AddSessionCard: formGrid/field/input)
-   ========================================================= */
-
-/* AddSessionCard nutzt: formGrid, field, input, formMsg, btnPrimary */
+/* Session form */
 .formGrid{
   display:grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1746,10 +1740,7 @@ a{ color:inherit; text-decoration:none; }
   transform: translateY(1px);
 }
 
-/* =========================================================
-   PREMIUM UI PASS
-   Ziel: ruhiger, präziser, hochwertiger
-   ========================================================= */
+/* Core surfaces and typography */
 :root{
   --surface-0: rgba(10,10,14,0.88);
   --surface-1: rgba(18,18,24,0.82);
@@ -2315,10 +2306,7 @@ body::before{
   .chartLegendRow{ width: 100%; }
 }
 
-/* =========================================================
-   PREMIUM REFINEMENT PASS
-   Ziel: weniger Dashboard-Optik, mehr Premium-Cockpit
-   ========================================================= */
+/* Analysis and control layout */
 .heroPillStack{
   display:flex;
   align-items:center;
@@ -3469,10 +3457,7 @@ body::before{
   }
 }
 
-/* =========================================================
-   DESIGN LANGUAGE PASS
-   Ziel: eine konsistente Cupra / Apple / Tesla Designsprache
-   ========================================================= */
+/* Shared product design tokens */
 :root{
   --design-radius-panel: 32px;
   --design-radius-tile: 28px;
@@ -4027,10 +4012,7 @@ body::before{
   }
 }
 
-/* =========================================================
-   PREMIUM RESTRAINT PASS
-   Ziel: weniger Lautstärke, mehr Ruhe und klarere Hierarchie
-   ========================================================= */
+/* Content hierarchy and spacing */
 
 .title{
   font-size: clamp(34px, 4.2vw, 54px);
@@ -4805,10 +4787,7 @@ body::before{
   }
 }
 
-/* =========================================================
-   HERO REFINEMENT PASS
-   Ziel: ruhigeres Cockpit, weniger Showroom, mehr Präzision
-   ========================================================= */
+/* Hero layout */
 
 .topBarPremium{
   align-items: flex-start;
@@ -5152,10 +5131,7 @@ body::before{
   }
 }
 
-/* =========================================================
-   FINAL PRODUCT POLISH
-   Ziel: Chart, Vergleich, Composer und Edit-Flow weiter beruhigen
-   ========================================================= */
+/* Chart, comparison, composer, and editing layout */
 
 .premiumSecondaryGrid{
   gap: 22px;
@@ -6753,10 +6729,7 @@ body :is(
   border:0;
 }
 
-/* =========================================================
-   UX CLARITY PASS
-   Ziel: ruhiger, scanbarer, dashboard-tauglicher
-   ========================================================= */
+/* Dashboard clarity and scanning */
 :root{
   color-scheme: dark;
   --ux-bg: #06080d;

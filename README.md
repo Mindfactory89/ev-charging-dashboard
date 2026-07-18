@@ -28,7 +28,6 @@ The public demo deliberately does not accept vehicle-image uploads. Personal ins
 There is still a lot planned for the future 🚀
 
 - [Experimental Mobile App] An experimental mobile app for iOS and Android, so the dashboard will also be easy to use on the go
-- A Home Assistant integration
 - More ideas for the structure, features, and overall product direction
 
 ### Feedback 💬
