@@ -19,7 +19,7 @@
     "test": "node --test"
   },
   "dependencies": {
-    "@capacitor/android": "^8.4.2",
+    "@capacitor/android": "^8.4.3",
     "@capacitor/cli": "^8.4.2",
     "@capacitor/core": "^8.2.0",
     "@capacitor/ios": "^8.4.2",
